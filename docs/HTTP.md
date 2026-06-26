@@ -36,6 +36,12 @@ spec). A seed migration is the other path (loads at boot). (docs/OBJECTS.md G1; 
 over *every* type at once (the `entity_data.search_vector` GIN tsvector); ranked by `ts_rank`; a blank `q`
 → **400**. Leak-free by the same reach gate as the object reads. (docs/OBJECTS.md G3; CASE 0008.)
 
+**Orchestrator (`/api/feature-runs`).** The 5-role pipeline as DB state: `POST /api/feature-runs`
+`{case_id?, title}` (start) · `POST /api/feature-runs/:id/handoffs` `{role, gate, outcome, note}` (advance —
+`pass`/`fail`/`test-drift`/`escalate`) · `GET /api/feature-runs/:id` · `GET ?case_id=`. The circuit breaker
+is a `SELECT` (≤3 retries/gate, ≤8 hops/run → `escalated`). **403/404** (no reach on the run's Case) · **422**
+(unknown outcome · wrong role for the phase · a closed run). (docs/OBJECTS.md G5; CASE 0010.)
+
 ## 1. Verb → status matrix
 
 All error bodies are problem+json (§6). `<PREFIX>_<hex>` ids; `:type` is validated once against the

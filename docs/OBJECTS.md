@@ -499,6 +499,12 @@ subject.
 The 5-role chain's state, **in the DB** (source of truth; any on-disk ledger is a derived cache for
 MCP-down). The circuit breaker is a `SELECT`, not agent discipline — prompt-discipline drifts.
 
+> **LIVE (CASE 0010).** `crates/api/src/orchestrator.rs`: `POST /api/feature-runs` (start) ·
+> `POST .../:id/handoffs` (advance) · `GET .../:id` · `GET ?case_id=`. The pipeline advances on `pass`,
+> loops to `code` on `fail`, re-adjudicates on `test-drift`; the breaker — **a `SELECT`: ≤3 retries/gate,
+> ≤8 hops/run** — `escalated`s the run instead of letting it spin. Each handoff's `role` must match the
+> current phase (chain order enforced). Authority = reach on the run's Case (Edit to advance, View to read).
+
 ### `feature_runs` — one row per orchestrated run
 | column | kind | notes |
 |---|---|---|

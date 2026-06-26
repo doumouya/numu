@@ -15,6 +15,7 @@ pub mod ids;
 pub mod members;
 pub mod oauth;
 pub mod objects;
+pub mod orchestrator;
 pub mod ratelimit;
 pub mod rbac;
 pub mod registry;
@@ -110,6 +111,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .merge(types::router())
         .merge(relations::router())
         .merge(search::router())
+        .merge(orchestrator::router())
         .merge(auth_routes)
         .merge(oauth::router())
         .merge(debug::router())

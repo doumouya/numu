@@ -7,6 +7,7 @@ use sqlx::PgPool;
 
 use crate::error::AppResult;
 use crate::registry::TypeDef;
+use crate::state::AppState;
 
 #[derive(Clone, Debug)]
 pub struct Caller {
@@ -67,6 +68,29 @@ pub async fn require_action(
     };
     let rank = crate::rbac::effective_rank(pool, &caller.actor_id, object_id).await?;
     Ok(rank.is_some_and(|r| r >= min_rank))
+}
+
+/// Resolve an arbitrary entity's type from `entities`, then apply the Plane-A gate for `action`. A missing
+/// entity (no row / unknown type) yields `false` — indistinguishable from no reach. For the surfaces
+/// (relations, orchestrator) that gate on an entity whose type they don't statically know.
+pub async fn reach_action(
+    st: &AppState,
+    caller: &Caller,
+    entity_id: &str,
+    action: Action,
+) -> AppResult<bool> {
+    let reg = st.registry.load_full();
+    let type_id: Option<String> = sqlx::query_scalar("select type from entities where id = $1")
+        .bind(entity_id)
+        .fetch_optional(&st.pool)
+        .await?;
+    let Some(type_id) = type_id else {
+        return Ok(false);
+    };
+    let Some(td) = reg.get(&type_id) else {
+        return Ok(false);
+    };
+    require_action(&st.pool, caller, td, Some(entity_id), action).await
 }
 
 /// (verb, Action) for a resource — the locked map. OPTIONS is a View-gated capability listing.

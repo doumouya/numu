@@ -53,28 +53,6 @@ struct ListQ {
     relation_type: Option<String>,
 }
 
-/// Resolve an entity's type and ask the Plane-A gate whether `caller` may take `action` on it. A missing
-/// entity (no `entities` row, or an unknown type) yields `false` — indistinguishable from no reach.
-async fn caller_can(
-    st: &AppState,
-    caller: &Caller,
-    entity_id: &str,
-    action: Action,
-) -> AppResult<bool> {
-    let reg = st.registry.load_full();
-    let type_id: Option<String> = sqlx::query_scalar("select type from entities where id = $1")
-        .bind(entity_id)
-        .fetch_optional(&st.pool)
-        .await?;
-    let Some(type_id) = type_id else {
-        return Ok(false);
-    };
-    let Some(td) = reg.get(&type_id) else {
-        return Ok(false);
-    };
-    caller::require_action(&st.pool, caller, td, Some(entity_id), action).await
-}
-
 fn deny_404(ctx: &RequestCtx) -> AppError {
     AppError::not_found().with_request_id(ctx.request_id.clone())
 }
@@ -120,8 +98,8 @@ async fn create_relation(
     // write = edit the subject AND at least VIEW the object. The object gate is load-bearing: without it the
     // create's status codes (201/409 on a real id vs the FK's 422 on a missing one) would be an existence
     // oracle over entities the caller can't reach. Both denials collapse to the same leak-free 404.
-    if !caller_can(&st, &caller, &input.subject_id, Action::Edit).await?
-        || !caller_can(&st, &caller, &input.object_id, Action::View).await?
+    if !caller::reach_action(&st, &caller, &input.subject_id, Action::Edit).await?
+        || !caller::reach_action(&st, &caller, &input.object_id, Action::View).await?
     {
         return Err(deny_404(&ctx));
     }
@@ -170,7 +148,7 @@ async fn list_relations(
             .with_request_id(ctx.request_id.clone())
     })?;
     // you must be able to view the anchor entity to enumerate its edges.
-    if !caller_can(&st, &caller, &entity, Action::View).await? {
+    if !caller::reach_action(&st, &caller, &entity, Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let rows = sqlx::query(&format!(
@@ -228,7 +206,7 @@ async fn delete_relation(
         return Err(deny_404(&ctx));
     };
     // delete = edit the subject (same authority that created it).
-    if !caller_can(&st, &caller, &subject, Action::Edit).await? {
+    if !caller::reach_action(&st, &caller, &subject, Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
     sqlx::query("delete from relations where id = $1")
