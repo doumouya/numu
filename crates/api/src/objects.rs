@@ -16,6 +16,7 @@ use sqlx::{PgPool, Row};
 use crate::caller::{self, Action, Caller};
 use crate::db;
 use crate::error::{AppError, AppResult};
+use crate::field_perms;
 use crate::ids;
 use crate::rbac;
 use crate::registry::{FieldDef, TypeDef};
@@ -251,9 +252,11 @@ async fn options_body(
     pool: &PgPool,
     td: &TypeDef,
     caller: &Caller,
+    object_id: Option<&str>,
     is_item: bool,
     etag_version: Option<i32>,
 ) -> AppResult<Value> {
+    let readable = field_perms::readable_set(pool, caller, td, object_id).await?;
     let fields: Vec<Value> = td
         .fields
         .iter()
@@ -261,7 +264,7 @@ async fn options_body(
             json!({
                 "field": f.field, "label": f.label, "kind": f.kind, "required": f.required,
                 "editable": f.editable, "perm_class": f.perm_class, "options": f.options,
-                "can_read": true,                // dev: all readable; real field-perm filter is a follow-on
+                "can_read": readable.contains(&f.field),
                 "can_write": f.writable(),
             })
         })
@@ -287,8 +290,8 @@ async fn options_body(
         "type": td.type_id,
         "id_prefix": td.id_prefix,
         "resource": if is_item { "item" } else { "collection" },
-        "allow": caller::permitted_verbs(pool, caller, td, is_item).await?,
-        "rbac": caller::rbac_verdict(pool, caller, td, is_item).await?,
+        "allow": caller::permitted_verbs(pool, caller, td, object_id, is_item).await?,
+        "rbac": caller::rbac_verdict(pool, caller, td, object_id, is_item).await?,
         "fields": fields,
         "validation": { "required": required, "refs": Value::Object(refs) },
     });
@@ -345,15 +348,15 @@ async fn coll_get(
         .await?
     };
 
-    let items = rows
-        .iter()
-        .map(|r| -> AppResult<Value> {
-            let id: String = r.try_get("entity_id")?;
-            let data: Value = r.try_get("data")?;
-            let version: i32 = r.try_get("version")?;
-            Ok(entity_json(&id, &type_id, data, version))
-        })
-        .collect::<AppResult<Vec<_>>>()?;
+    let mut items = Vec::with_capacity(rows.len());
+    for r in &rows {
+        let eid: String = r.try_get("entity_id")?;
+        let data: Value = r.try_get("data")?;
+        let version: i32 = r.try_get("version")?;
+        // Plane B: omit fields the caller can't read (no-op for the platform-admin path above).
+        let data = field_perms::filter_readable(&st.pool, &caller, td, &eid, data).await?;
+        items.push(entity_json(&eid, &type_id, data, version));
+    }
 
     Ok(Json(json!({ "items": items, "limit": limit, "offset": offset })).into_response())
 }
@@ -459,10 +462,10 @@ async fn coll_options(
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
-    let allow = caller::permitted_verbs(&st.pool, &caller, td, false)
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, None, false)
         .await?
         .join(", ");
-    let body = options_body(&st.pool, td, &caller, false, None).await?;
+    let body = options_body(&st.pool, td, &caller, None, false, None).await?;
     Ok((StatusCode::OK, [(header::ALLOW, allow)], Json(body)).into_response())
 }
 
@@ -472,7 +475,7 @@ async fn m405_coll(
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, false).await?;
+    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, None, false).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 
@@ -497,6 +500,7 @@ async fn item_get(
             .ok_or_else(|| deny_404(&ctx))?;
     let data: Value = row.try_get("data")?;
     let version: i32 = row.try_get("version")?;
+    let data = field_perms::filter_readable(&st.pool, &Caller::dev(), td, &id, data).await?;
 
     if if_none_match_hit(&headers, version) {
         return Ok((StatusCode::NOT_MODIFIED, [(header::ETAG, etag(version))]).into_response());
@@ -553,6 +557,11 @@ async fn item_put(
     check_input(td, &payload, false)?;
     let data = build_put_data(td, existing, &payload);
     validate_final(td, &data)?;
+    let written: Vec<String> = payload
+        .as_object()
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default();
+    field_perms::require_write(&st.pool, &Caller::dev(), td, &id, &written, &ctx).await?;
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -612,6 +621,11 @@ async fn item_patch(
     check_input(td, &payload, false)?;
     let data = merge_patch(existing, &payload);
     validate_final(td, &data)?;
+    let written: Vec<String> = payload
+        .as_object()
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default();
+    field_perms::require_write(&st.pool, &Caller::dev(), td, &id, &written, &ctx).await?;
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -709,10 +723,10 @@ async fn item_options(
             .await?
             .ok_or_else(|| deny_404(&ctx))?
             .try_get("version")?;
-    let allow = caller::permitted_verbs(&st.pool, &caller, td, true)
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, Some(&id), true)
         .await?
         .join(", ");
-    let body = options_body(&st.pool, td, &caller, true, Some(version)).await?;
+    let body = options_body(&st.pool, td, &caller, Some(&id), true, Some(version)).await?;
     Ok((StatusCode::OK, [(header::ALLOW, allow)], Json(body)).into_response())
 }
 
@@ -722,7 +736,7 @@ async fn m405_item(
     Path((type_id, _id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, true).await?;
+    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, None, true).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 

@@ -23,7 +23,7 @@ gate, committed and **held for Em's push**. RBAC core first: **A0 → B0 → B1 
 | **B1** | Reach resolver + Plane A + reach-scoped LIST + `grant_owner` wiring + scope-required-on-create | **DONE** (e7344c7) |
 | **B2** | `tools/rbac-audit` gate (require_action parity, grant_owner, context_role, deny_404) | **DONE** (this commit) |
 | **C** | Object sharing `/:id/members` + the SEV-0 membership guards | **DONE** (this commit) |
-| D | Field perms Plane B (rank-driven) + OPTIONS per-object verdict | pending |
+| **D** | Field perms Plane B (rank-driven) + OPTIONS per-object verdict | **DONE** (this commit) |
 
 (Auth/OAuth — A2, E0–E3, F — is the second track per the plan.)
 

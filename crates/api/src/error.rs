@@ -40,10 +40,18 @@ impl AppError {
     pub fn not_found() -> Self {
         Self::new(StatusCode::NOT_FOUND, "not_found", "Not found")
     }
-    /// The field-perm gate (after existence is admitted). Wired by the RBAC slice. Staged seam.
-    #[allow(dead_code)]
+    /// Authority denial AFTER existence is admitted (manage-authority on a roster, etc.) — leak-free
+    /// because the caller already proved they can see the object.
     pub fn forbidden() -> Self {
         Self::new(StatusCode::FORBIDDEN, "forbidden", "Forbidden")
+    }
+    /// The Plane-B field gate (after existence) — names the field, which leaks nothing (existence admitted).
+    pub fn forbidden_field(field: &str) -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            "field_forbidden",
+            format!("field not writable for your role: {field}"),
+        )
     }
     // Client errors — specific, actionable detail is fine (the request is the problem, not a secret).
     pub fn bad_request(d: impl Into<String>) -> Self {

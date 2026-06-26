@@ -5,6 +5,7 @@
 pub mod caller;
 pub mod db;
 pub mod error;
+pub mod field_perms;
 pub mod health;
 pub mod ids;
 pub mod members;

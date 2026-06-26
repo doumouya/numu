@@ -50,6 +50,13 @@ the caller's membership role on the object):
 - **`standard`** — read/write gated by the per-type×role field matrix (the normal case).
 - **`owner_grade`** — only `owner`+ on the object may write (sensitive fields).
 
+Each class is a **rank floor** `(read_min, write_min)` over the role ladder — `standard` = read `viewer`/
+write `member`, `owner_grade` = read `admin`/write `owner`, `system`/`readonly` = never user-written — so a
+**custom role slots in by rank** with zero code. A sparse **`field_permissions(type_id, field, role,
+can_read, can_write)`** `[SYSTEM]` table overrides a specific `(type, field)` (resolved role→rank). The gate
+runs AFTER the Plane-A object gate: a write violation is `403` (existence already admitted); reads omit
+unreadable fields passively.
+
 **kind = `ref`** stores another entity's id; the target type is given as `ref→PREFIX`. A `ref` whose
 target is one of the type's `scope_parents` is also the **reach edge** (see `entity_data.scope_parent_id`).
 
@@ -102,7 +109,7 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 | Group | Objects | Layer |
 |---|---|---|
 | **G1 · Registry spine** | type_definitions, entities, type_fields, entity_data | `[SYSTEM]` |
-| **G2 · Access & org** | memberships, roles, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
+| **G2 · Access & org** | memberships, roles, field_permissions, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
 | **G3 · Audit & observability** | events, audit_runs, audit_findings, omnisearch (index + `search()`) | `[SYSTEM]` |
 | **G4 · Work tracking (coordination core)** | workflows, case_close_checks `[SYSTEM]` · case, comment, attachment `[TYPE]` |
 | **G5 · Orchestrator / feature pipeline** | feature_runs, role_handoffs | `[SYSTEM]` |

@@ -96,6 +96,7 @@ pub async fn permitted_verbs(
     pool: &PgPool,
     caller: &Caller,
     td: &TypeDef,
+    object_id: Option<&str>,
     is_item: bool,
 ) -> AppResult<Vec<String>> {
     let masked = td.masked_verbs();
@@ -104,7 +105,7 @@ pub async fn permitted_verbs(
         if masked.contains(&v.to_string()) {
             continue;
         }
-        if require_action(pool, caller, td, None, *a).await? {
+        if require_action(pool, caller, td, object_id, *a).await? {
             out.push(v.to_string());
         }
     }
@@ -116,6 +117,7 @@ pub async fn rbac_verdict(
     pool: &PgPool,
     caller: &Caller,
     td: &TypeDef,
+    object_id: Option<&str>,
     is_item: bool,
 ) -> AppResult<serde_json::Value> {
     let masked = td.masked_verbs();
@@ -123,7 +125,7 @@ pub async fn rbac_verdict(
     for (verb, action) in verb_actions(is_item) {
         let entry = if masked.contains(&verb.to_string()) {
             serde_json::json!({ "allowed": false, "reason": "masked by method_policy" })
-        } else if require_action(pool, caller, td, None, *action).await? {
+        } else if require_action(pool, caller, td, object_id, *action).await? {
             serde_json::json!({ "allowed": true })
         } else {
             serde_json::json!({ "allowed": false, "reason": "insufficient reach" })
