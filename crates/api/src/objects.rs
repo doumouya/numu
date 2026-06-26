@@ -94,7 +94,7 @@ fn if_none_match_hit(headers: &HeaderMap, version: i32) -> bool {
         .unwrap_or(false)
 }
 
-fn read_json(headers: &HeaderMap, body: &Bytes, allow_merge: bool) -> AppResult<Value> {
+pub(crate) fn read_json(headers: &HeaderMap, body: &Bytes, allow_merge: bool) -> AppResult<Value> {
     let ct = headers
         .get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())

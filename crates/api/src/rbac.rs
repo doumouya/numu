@@ -86,3 +86,34 @@ pub async fn reachable_entity_ids(
     .await?;
     Ok(ids)
 }
+
+/// The rank of a registered role, or `None` if the role is not registered. Used by the membership guards
+/// to reject privilege escalation (you cannot grant a role above your own).
+pub async fn rank_of(pool: &PgPool, role: &str) -> AppResult<Option<i32>> {
+    let rank: Option<i32> = sqlx::query_scalar("select rank from roles where role = $1")
+        .bind(role)
+        .fetch_optional(pool)
+        .await?;
+    Ok(rank)
+}
+
+/// True if `target_id` is among `root_id`'s principals (itself + the teams it transitively belongs to).
+/// The team-nesting cycle guard: granting M a role ON O closes a cycle iff M already (transitively)
+/// contains O, i.e. `principals_contain(O, M)` — M ∈ principals(O).
+pub async fn principals_contain(pool: &PgPool, root_id: &str, target_id: &str) -> AppResult<bool> {
+    let hit: Option<i32> = sqlx::query_scalar(
+        "with recursive principals(id) as ( \
+            select $1::text \
+            union \
+            select m.object_id from memberships m \
+              join principals p on m.member_id = p.id \
+              join entities e on e.id = m.object_id and e.type = 'team' \
+         ) \
+         select 1 from principals where id = $2 limit 1",
+    )
+    .bind(root_id)
+    .bind(target_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(hit.is_some())
+}

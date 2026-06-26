@@ -9,14 +9,16 @@ SRC=crates/api/src
 findings=0
 flag() { echo "  FINDING [$1] $2"; findings=$((findings + 1)); }
 
-# R1 — every objects.rs handler that reads/writes entity data must call require_action (the object gate).
+# R1 — every HANDLER (takes State<AppState>) that reads/writes entity or membership data must gate via
+# require_action (objects) or require_rank (members). Helpers (pool: &PgPool) are exempt.
 gateless=$(awk '
-  /^async fn / { f=$3; sub(/\(.*/, "", f); db=0; g=0; next }
-  f != "" && /entity_data|insert into entities|reachable_entity_ids/ { db=1 }
-  f != "" && /require_action/ { g=1 }
-  /^}/ { if (f != "" && db && !g) print f; f="" }
-' "$SRC"/objects.rs)
-for f in $gateless; do flag require-action-parity "handler '$f' reads/writes entity data without require_action"; done
+  /^async fn / { f=$3; sub(/\(.*/, "", f); h=0; db=0; g=0; next }
+  f != "" && /State<AppState>/ { h=1 }
+  f != "" && /entity_data|insert into entities|reachable_entity_ids|memberships/ { db=1 }
+  f != "" && /require_action|require_rank/ { g=1 }
+  /^}/ { if (f != "" && h && db && !g) print f; f="" }
+' "$SRC"/objects.rs "$SRC"/members.rs)
+for f in $gateless; do flag require-action-parity "handler '$f' reads/writes entity/membership data without a gate (require_action/require_rank)"; done
 
 # R2 — every create path (insert into entities) must grant the creator an owner edge (no ownerless object).
 ownerless=$(awk '

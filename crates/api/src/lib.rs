@@ -7,6 +7,7 @@ pub mod db;
 pub mod error;
 pub mod health;
 pub mod ids;
+pub mod members;
 pub mod objects;
 pub mod rbac;
 pub mod registry;
@@ -43,7 +44,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState { pool, registry };
 
     let app = Router::new()
-        .nest("/api/objects", objects::router())
+        .nest("/api/objects", objects::router().merge(members::router()))
         .route("/healthz", get(health::healthz))
         .route("/readyz", get(health::readyz))
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
