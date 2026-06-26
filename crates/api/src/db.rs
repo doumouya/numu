@@ -51,3 +51,33 @@ pub async fn grant_owner(
     .await?;
     Ok(())
 }
+
+/// Sync the typed `cases` projection from a case's `data` (the workflow engine + status index + the
+/// cases_guard trigger operate on these typed columns; `entity_data` stays the canonical full record).
+pub async fn upsert_case_mirror<'e, E: sqlx::PgExecutor<'e>>(
+    exec: E,
+    entity_id: &str,
+    data: &serde_json::Value,
+    version: i32,
+) -> sqlx::Result<()> {
+    let s = |k: &str| data.get(k).and_then(|v| v.as_str());
+    sqlx::query(
+        "insert into cases (entity_id, title, status, workflow_id, priority, assignee_id, project_id, version, updated_at) \
+         values ($1, $2, $3, $4, $5, $6, $7, $8, now()) \
+         on conflict (entity_id) do update set \
+           title = excluded.title, status = excluded.status, workflow_id = excluded.workflow_id, \
+           priority = excluded.priority, assignee_id = excluded.assignee_id, project_id = excluded.project_id, \
+           version = excluded.version, updated_at = now()",
+    )
+    .bind(entity_id)
+    .bind(s("title").unwrap_or(""))
+    .bind(s("status").unwrap_or("backlog"))
+    .bind(s("workflow_id").unwrap_or("default"))
+    .bind(s("priority").unwrap_or("normal"))
+    .bind(s("assignee_id"))
+    .bind(s("project_id"))
+    .bind(version)
+    .execute(exec)
+    .await?;
+    Ok(())
+}

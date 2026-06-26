@@ -17,6 +17,7 @@ pub mod rbac;
 pub mod registry;
 pub mod request_id;
 pub mod state;
+pub mod workflow;
 
 use std::sync::Arc;
 
@@ -45,7 +46,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     sqlx::migrate!("../../migrations").run(&pool).await?;
     let registry = Arc::new(registry::TypeDefCache::load(&pool).await?);
-    let state = AppState { pool, registry };
+    let workflows = Arc::new(workflow::WorkflowCache::load(&pool).await?);
+    let state = AppState {
+        pool,
+        registry,
+        workflows,
+    };
 
     let app = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))

@@ -69,6 +69,10 @@ impl AppError {
     pub fn unprocessable(d: impl Into<String>) -> Self {
         Self::new(StatusCode::UNPROCESSABLE_ENTITY, "unprocessable_entity", d)
     }
+    /// An illegal workflow transition (a status move the workflow doesn't permit). 422.
+    pub fn illegal_transition(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::UNPROCESSABLE_ENTITY, "illegal_transition", d)
+    }
     /// Unique / sole-owner / dependency conflict. Wired by the membership + workflow slices. Staged seam.
     #[allow(dead_code)]
     pub fn conflict(d: impl Into<String>) -> Self {

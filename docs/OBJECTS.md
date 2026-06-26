@@ -374,6 +374,11 @@ sibling of the `/api/objects/:type` routes, leak-free by the same reach gate ([`
 The heart of numu: Cases are the handoff bus between sessions/agents, with workflow **as data** and a
 DB-enforced close gate.
 
+> **Engine status (CASE 0006).** G4.1 is **live**: the `default` workflow + `case` type are seeded; a
+> `workflow` cache validates status changes (illegal move → `422 illegal_transition`); the typed `cases`
+> table is a synced projection of `entity_data` (the engine + status index operate on it). The
+> `cases_guard` close-gate trigger (G4.2) and `comment`/`attachment` (G4.3) follow.
+
 ### `workflows` `[SYSTEM]` — workflow-as-data
 A new workflow is a row, not a recompile. Transitions are **permissive** (forward + one-step-back +
 reopen — kanban drag), terminality is "last element of `states`", and `close_checks` are the named

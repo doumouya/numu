@@ -186,12 +186,15 @@ fn build_create_data(td: &TypeDef, payload: &Value) -> Value {
     let pin = payload.as_object().cloned().unwrap_or_default();
     let mut out = serde_json::Map::new();
     for f in &td.fields {
-        if !f.settable() {
-            continue;
-        }
-        if let Some(v) = pin.get(&f.field).filter(|v| !v.is_null()) {
-            out.insert(f.field.clone(), v.clone());
+        if f.settable() {
+            if let Some(v) = pin.get(&f.field).filter(|v| !v.is_null()) {
+                out.insert(f.field.clone(), v.clone());
+            } else if let Some(def) = f.options.get("default") {
+                out.insert(f.field.clone(), def.clone());
+            }
         } else if let Some(def) = f.options.get("default") {
+            // an engine-owned (readonly) field with a default — the user can't set it, the engine applies
+            // it (e.g. `workflow_id = "default"` on a case).
             out.insert(f.field.clone(), def.clone());
         }
     }
@@ -387,6 +390,17 @@ async fn coll_create(
     check_input(td, &payload, true)?;
     let data = build_create_data(td, &payload);
     validate_final(td, &data)?;
+    // G4 — a case's initial status must be the workflow's `initial` state.
+    if td.type_id == "case" {
+        let wf = data
+            .get("workflow_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default");
+        let status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        st.workflows
+            .validate(wf, None, status)
+            .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+    }
     let sp = scope_parent(td, &data);
 
     // Plane A on CREATE. A root type (no scope_parents) is open to any authenticated caller, who becomes
@@ -431,6 +445,10 @@ async fn coll_create(
     .await?;
     // "no object without an owner" — the creator gets an owner edge in the same txn.
     db::grant_owner(&mut tx, &id, &caller.actor_id).await?;
+    // G4 — maintain the typed `cases` projection for the workflow engine.
+    if td.type_id == "case" {
+        db::upsert_case_mirror(&mut *tx, &id, &data, 1).await?;
+    }
     tx.commit().await?;
 
     db::record_event(
@@ -560,6 +578,10 @@ async fn item_put(
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, false)?;
+    let old_status = existing
+        .get("status")
+        .and_then(|v| v.as_str())
+        .map(String::from);
     let data = build_put_data(td, existing, &payload);
     validate_final(td, &data)?;
     let written: Vec<String> = payload
@@ -567,6 +589,16 @@ async fn item_put(
         .map(|o| o.keys().cloned().collect())
         .unwrap_or_default();
     field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
+    if td.type_id == "case" {
+        let wf = data
+            .get("workflow_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default");
+        let new_status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        st.workflows
+            .validate(wf, old_status.as_deref(), new_status)
+            .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+    }
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -584,6 +616,9 @@ async fn item_put(
         return Err(AppError::precondition_failed().with_request_id(ctx.request_id));
     }
     let new_version = expected + 1;
+    if td.type_id == "case" {
+        db::upsert_case_mirror(&st.pool, &id, &data, new_version).await?;
+    }
     db::record_event(
         &st.pool,
         &ctx,
@@ -625,6 +660,10 @@ async fn item_patch(
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, true)?;
     check_input(td, &payload, false)?;
+    let old_status = existing
+        .get("status")
+        .and_then(|v| v.as_str())
+        .map(String::from);
     let data = merge_patch(existing, &payload);
     validate_final(td, &data)?;
     let written: Vec<String> = payload
@@ -632,6 +671,16 @@ async fn item_patch(
         .map(|o| o.keys().cloned().collect())
         .unwrap_or_default();
     field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
+    if td.type_id == "case" {
+        let wf = data
+            .get("workflow_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default");
+        let new_status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        st.workflows
+            .validate(wf, old_status.as_deref(), new_status)
+            .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+    }
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -649,6 +698,9 @@ async fn item_patch(
         return Err(AppError::precondition_failed().with_request_id(ctx.request_id));
     }
     let new_version = expected + 1;
+    if td.type_id == "case" {
+        db::upsert_case_mirror(&st.pool, &id, &data, new_version).await?;
+    }
     db::record_event(
         &st.pool,
         &ctx,
