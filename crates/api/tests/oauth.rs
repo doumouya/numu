@@ -5,7 +5,7 @@
 
 use numu_api::error::AppResult;
 use numu_api::http_client::Fetcher;
-use numu_api::oauth::{complete_login, Provider};
+use numu_api::oauth::{complete_login, Provider, ProviderKind};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 
@@ -34,6 +34,7 @@ fn test_provider() -> Provider {
         client_id: "cid".into(),
         client_secret: "secret".into(),
         redirect_uri: "https://x/cb".into(),
+        kind: ProviderKind::Userinfo,
     }
 }
 
@@ -46,7 +47,7 @@ async fn google_login_upserts_by_sub(pool: PgPool) -> Result<(), Box<dyn std::er
     let p = test_provider();
 
     // first login → an actor entity + identity + a session cookie
-    let cookie = complete_login(&pool, &p, &mock, "code1").await?;
+    let cookie = complete_login(&pool, &p, &mock, "code1", "n1").await?;
     assert!(cookie.starts_with("numu_session="));
     let actor: String = sqlx::query_scalar(
         "select actor_id from auth_identities where provider = 'google' and sub = 'g-123'",
@@ -66,7 +67,7 @@ async fn google_login_upserts_by_sub(pool: PgPool) -> Result<(), Box<dyn std::er
     assert_eq!(email.as_deref(), Some("a@b.com"));
 
     // second login with the SAME sub → SAME actor, no duplicate
-    let _ = complete_login(&pool, &p, &mock, "code2").await?;
+    let _ = complete_login(&pool, &p, &mock, "code2", "n1").await?;
     let identities: i64 =
         sqlx::query_scalar("select count(*) from auth_identities where sub = 'g-123'")
             .fetch_one(&pool)

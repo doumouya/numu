@@ -30,6 +30,14 @@ const SECURE: &str = if cfg!(debug_assertions) {
     "; Secure"
 };
 
+/// How a provider yields the identity after the token exchange.
+pub enum ProviderKind {
+    /// Google/Facebook/TikTok: GET `userinfo` with the access token.
+    Userinfo,
+    /// Apple (OIDC): the token response carries an `id_token` (a JWT) verified against the provider's JWKS.
+    IdToken { jwks_url: String, issuer: String },
+}
+
 /// A provider, shaped around its OUTPUT. Config (id/secret/redirect) is per-env today; a `(provider,
 /// tenant)` config row is the future seam for OIDC-SSO.
 pub struct Provider {
@@ -41,6 +49,7 @@ pub struct Provider {
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
+    pub kind: ProviderKind,
 }
 
 fn google() -> Option<Provider> {
@@ -53,12 +62,33 @@ fn google() -> Option<Provider> {
         client_id: std::env::var("GOOGLE_CLIENT_ID").ok()?,
         client_secret: std::env::var("GOOGLE_CLIENT_SECRET").ok()?,
         redirect_uri: std::env::var("GOOGLE_REDIRECT_URI").ok()?,
+        kind: ProviderKind::Userinfo,
+    })
+}
+
+fn apple() -> Option<Provider> {
+    Some(Provider {
+        name: "apple".into(),
+        authorize_url: "https://appleid.apple.com/auth/authorize".into(),
+        token_url: "https://appleid.apple.com/auth/token".into(),
+        userinfo_url: String::new(), // unused — Apple returns an id_token
+        scopes: "name email".into(),
+        client_id: std::env::var("APPLE_CLIENT_ID").ok()?,
+        // For Apple the "client_secret" is a generated ES256 JWT signed with the Apple key (a deploy
+        // concern); the token POST is otherwise standard.
+        client_secret: std::env::var("APPLE_CLIENT_SECRET").ok()?,
+        redirect_uri: std::env::var("APPLE_REDIRECT_URI").ok()?,
+        kind: ProviderKind::IdToken {
+            jwks_url: "https://appleid.apple.com/auth/keys".into(),
+            issuer: "https://appleid.apple.com".into(),
+        },
     })
 }
 
 fn provider(name: &str) -> Option<Provider> {
     match name {
         "google" => google(),
+        "apple" => apple(),
         _ => None,
     }
 }
@@ -182,13 +212,64 @@ async fn upsert_identity(
     Ok(actor_id)
 }
 
-/// Exchange code→token→userinfo via the (SSRF-gated) fetcher, upsert by sub, mint a session. Returns the
-/// session `Set-Cookie`. Pure of the HTTP layer (takes a `&dyn Fetcher`), so it's unit-tested with a mock.
+#[derive(Deserialize)]
+struct IdClaims {
+    sub: String,
+    #[serde(default)]
+    email: Option<String>,
+    #[serde(default)]
+    nonce: Option<String>,
+}
+
+/// Verify an OIDC `id_token` (Apple): RS256 against the provider's JWKS (kid-matched), audience ==
+/// client_id, issuer, `exp` (default leeway), and the `nonce` == the per-flow value. Any failure → 401
+/// (an untrusted token must never mint a session). The JWKS fetch goes through the SSRF gate.
+pub async fn verify_id_token(
+    id_token: &str,
+    client_id: &str,
+    issuer: &str,
+    jwks_url: &str,
+    fetcher: &dyn Fetcher,
+    expected_nonce: &str,
+) -> AppResult<(String, Option<String>)> {
+    use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
+    let header = decode_header(id_token).map_err(|_| AppError::unauthorized())?;
+    let kid = header.kid.ok_or_else(AppError::unauthorized)?;
+    let jwks = fetcher.get_json(jwks_url, None).await?;
+    let jwk = jwks
+        .get("keys")
+        .and_then(|k| k.as_array())
+        .ok_or_else(AppError::unauthorized)?
+        .iter()
+        .find(|k| k.get("kid").and_then(|v| v.as_str()) == Some(kid.as_str()))
+        .ok_or_else(AppError::unauthorized)?;
+    let n = jwk
+        .get("n")
+        .and_then(|v| v.as_str())
+        .ok_or_else(AppError::unauthorized)?;
+    let e = jwk
+        .get("e")
+        .and_then(|v| v.as_str())
+        .ok_or_else(AppError::unauthorized)?;
+    let key = DecodingKey::from_rsa_components(n, e).map_err(|_| AppError::unauthorized())?;
+    let mut v = Validation::new(Algorithm::RS256);
+    v.set_audience(&[client_id]);
+    v.set_issuer(&[issuer]);
+    let data = decode::<IdClaims>(id_token, &key, &v).map_err(|_| AppError::unauthorized())?;
+    if data.claims.nonce.as_deref() != Some(expected_nonce) {
+        return Err(AppError::unauthorized());
+    }
+    Ok((data.claims.sub, data.claims.email))
+}
+
+/// Exchange code→token, derive the identity (userinfo OR a verified id_token), upsert by (provider, sub),
+/// mint a session → the session `Set-Cookie`. Takes a `&dyn Fetcher`, so it's tested with a mock (E1/E2).
 pub async fn complete_login(
     pool: &PgPool,
     p: &Provider,
     fetcher: &dyn Fetcher,
     code: &str,
+    nonce: &str,
 ) -> AppResult<String> {
     let token = fetcher
         .post_form(
@@ -202,12 +283,25 @@ pub async fn complete_login(
             ],
         )
         .await?;
-    let access = token
-        .get("access_token")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::bad_request("token endpoint returned no access_token"))?;
-    let userinfo = fetcher.get_json(&p.userinfo_url, Some(access)).await?;
-    let (sub, email, name) = extract_identity(&userinfo)?;
+    let (sub, email, name) = match &p.kind {
+        ProviderKind::Userinfo => {
+            let access = token
+                .get("access_token")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| AppError::bad_request("token endpoint returned no access_token"))?;
+            let userinfo = fetcher.get_json(&p.userinfo_url, Some(access)).await?;
+            extract_identity(&userinfo)?
+        }
+        ProviderKind::IdToken { jwks_url, issuer } => {
+            let id_token = token
+                .get("id_token")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| AppError::bad_request("token endpoint returned no id_token"))?;
+            let (sub, email) =
+                verify_id_token(id_token, &p.client_id, issuer, jwks_url, fetcher, nonce).await?;
+            (sub, email, String::new())
+        }
+    };
     let actor_id = upsert_identity(pool, &p.name, &sub, email.as_deref(), &name).await?;
     crate::auth::mint_session(pool, &actor_id).await
 }
@@ -232,6 +326,7 @@ async fn start(Path(name): Path<String>) -> AppResult<Response> {
             ("redirect_uri", p.redirect_uri.as_str()),
             ("scope", p.scopes.as_str()),
             ("state", nonce.as_str()),
+            ("nonce", nonce.as_str()),
         ],
     )
     .map_err(|_| AppError::internal("bad authorize url"))?;
@@ -279,7 +374,7 @@ async fn callback(
     if nonce != q.state || now_unix() > exp {
         return Err(AppError::unauthorized());
     }
-    let session = complete_login(&st.pool, &p, &SsrfFetcher, &q.code).await?;
+    let session = complete_login(&st.pool, &p, &SsrfFetcher, &q.code, nonce).await?;
     // clear the state cookie, set the session cookie, land the user
     let cleared = format!("{STATE_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0{SECURE}");
     Ok((
