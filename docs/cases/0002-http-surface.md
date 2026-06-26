@@ -1,6 +1,6 @@
 # CASE 0002 — numu uniform HTTP surface + http skill + debuggability
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** task
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

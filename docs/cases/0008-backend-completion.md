@@ -1,6 +1,6 @@
 # CASE 0008 — numu backend completion (relations · catalog · omnisearch · ops)
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

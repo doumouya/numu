@@ -1,6 +1,6 @@
 # CASE 0004 — numu CI gate (tools/ci.sh + debuggability-audit)
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** task
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

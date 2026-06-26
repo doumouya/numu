@@ -1,6 +1,6 @@
 # CASE 0005 — numu RBAC enforcement (turn the allow-all seam into real reach-based RBAC)
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

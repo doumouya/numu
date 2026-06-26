@@ -1,6 +1,6 @@
 # CASE 0001 — numu object catalog (enrich the fields)
 
-- **Status:** in_progress
+- **Status:** done
 - **Type:** task
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

@@ -1,6 +1,6 @@
 # CASE 0003 — numu backend foundation (workspace + migrations + generic object handler)
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)

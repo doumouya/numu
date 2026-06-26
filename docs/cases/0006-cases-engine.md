@@ -1,6 +1,6 @@
 # CASE 0006 — numu Cases / workflow-as-data engine (light up G4)
 
-- **Status:** in_review
+- **Status:** done
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)
