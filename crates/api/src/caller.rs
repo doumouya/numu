@@ -3,6 +3,9 @@
 //! scope_parents) drops in HERE later: object-level denial returns false → the handler maps it to a
 //! leak-free 404; the field-level gate stays in objects.rs (→ 403, after existence). (docs/HTTP.md §4)
 
+use sqlx::PgPool;
+
+use crate::error::AppResult;
 use crate::registry::TypeDef;
 
 #[derive(Clone, Debug)]
@@ -31,15 +34,17 @@ pub enum Action {
     Delete,
 }
 
-/// The object-level gate. FOLLOW-ON: resolve reach via memberships + the `scope_parents` cascade and a
-/// company/tier floor; a denial returns `false` and the caller maps it to 404 (leak-free). v0 allows all.
-pub fn require_action(
+/// The object-level gate. FOLLOW-ON (B1): resolve reach via memberships + the `scope_parents` cascade and
+/// a rank floor; a denial returns `Ok(false)` and the caller maps it to a leak-free 404. B0 async-ifies the
+/// seam (threads the pool) with no behavior change — still allows all.
+pub async fn require_action(
+    _pool: &PgPool,
     _caller: &Caller,
     _td: &TypeDef,
     _object_id: Option<&str>,
     _action: Action,
-) -> bool {
-    true
+) -> AppResult<bool> {
+    Ok(true)
 }
 
 /// (verb, Action) for a resource — the locked map. OPTIONS is a View-gated capability listing.
@@ -65,29 +70,43 @@ fn verb_actions(is_item: bool) -> &'static [(&'static str, Action)] {
 
 /// The verbs this caller may use on this resource: the offered set, minus `method_policy` masks, minus any
 /// the object-gate denies. Same source of truth for the `Allow` header and the OPTIONS verdict.
-pub fn permitted_verbs(caller: &Caller, td: &TypeDef, is_item: bool) -> Vec<String> {
+pub async fn permitted_verbs(
+    pool: &PgPool,
+    caller: &Caller,
+    td: &TypeDef,
+    is_item: bool,
+) -> AppResult<Vec<String>> {
     let masked = td.masked_verbs();
-    verb_actions(is_item)
-        .iter()
-        .filter(|(v, _)| !masked.contains(&v.to_string()))
-        .filter(|(_, a)| require_action(caller, td, None, *a))
-        .map(|(v, _)| v.to_string())
-        .collect()
+    let mut out = Vec::new();
+    for (v, a) in verb_actions(is_item) {
+        if masked.contains(&v.to_string()) {
+            continue;
+        }
+        if require_action(pool, caller, td, None, *a).await? {
+            out.push(v.to_string());
+        }
+    }
+    Ok(out)
 }
 
 /// Per-verb RBAC verdict for the OPTIONS self-description body.
-pub fn rbac_verdict(caller: &Caller, td: &TypeDef, is_item: bool) -> serde_json::Value {
+pub async fn rbac_verdict(
+    pool: &PgPool,
+    caller: &Caller,
+    td: &TypeDef,
+    is_item: bool,
+) -> AppResult<serde_json::Value> {
     let masked = td.masked_verbs();
     let mut out = serde_json::Map::new();
     for (verb, action) in verb_actions(is_item) {
         let entry = if masked.contains(&verb.to_string()) {
             serde_json::json!({ "allowed": false, "reason": "masked by method_policy" })
-        } else if require_action(caller, td, None, *action) {
+        } else if require_action(pool, caller, td, None, *action).await? {
             serde_json::json!({ "allowed": true })
         } else {
             serde_json::json!({ "allowed": false, "reason": "insufficient reach" })
         };
         out.insert(verb.to_string(), entry);
     }
-    serde_json::Value::Object(out)
+    Ok(serde_json::Value::Object(out))
 }

@@ -11,7 +11,7 @@ use axum::routing::get;
 use axum::{Extension, Json, Router};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use sqlx::Row;
+use sqlx::{PgPool, Row};
 
 use crate::caller::{self, Action, Caller};
 use crate::db;
@@ -246,7 +246,13 @@ fn merge_patch(target: Value, patch: &Value) -> Value {
     }
 }
 
-fn options_body(td: &TypeDef, caller: &Caller, is_item: bool, etag_version: Option<i32>) -> Value {
+async fn options_body(
+    pool: &PgPool,
+    td: &TypeDef,
+    caller: &Caller,
+    is_item: bool,
+    etag_version: Option<i32>,
+) -> AppResult<Value> {
     let fields: Vec<Value> = td
         .fields
         .iter()
@@ -280,15 +286,15 @@ fn options_body(td: &TypeDef, caller: &Caller, is_item: bool, etag_version: Opti
         "type": td.type_id,
         "id_prefix": td.id_prefix,
         "resource": if is_item { "item" } else { "collection" },
-        "allow": caller::permitted_verbs(caller, td, is_item),
-        "rbac": caller::rbac_verdict(caller, td, is_item),
+        "allow": caller::permitted_verbs(pool, caller, td, is_item).await?,
+        "rbac": caller::rbac_verdict(pool, caller, td, is_item).await?,
         "fields": fields,
         "validation": { "required": required, "refs": Value::Object(refs) },
     });
     if let Some(v) = etag_version {
         body["concurrency"] = json!({ "etag": etag(v) });
     }
-    body
+    Ok(body)
 }
 
 // ── collection handlers ─────────────────────────────────────────────────────────
@@ -307,7 +313,7 @@ async fn coll_get(
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
     let caller = Caller::dev();
-    if !caller::require_action(&caller, td, None, Action::View) {
+    if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
@@ -341,7 +347,7 @@ async fn coll_head(
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, None, Action::View) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
     Ok(StatusCode::OK.into_response())
@@ -356,7 +362,7 @@ async fn coll_create(
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
     let caller = Caller::dev();
-    if !caller::require_action(&caller, td, None, Action::Create) {
+    if !caller::require_action(&st.pool, &caller, td, None, Action::Create).await? {
         return Err(deny_404(&ctx));
     }
     let payload = read_json(&headers, &body, false)?;
@@ -411,11 +417,13 @@ async fn coll_options(
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
     let caller = Caller::dev();
-    if !caller::require_action(&caller, td, None, Action::View) {
+    if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
-    let allow = caller::permitted_verbs(&caller, td, false).join(", ");
-    let body = options_body(td, &caller, false, None);
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, false)
+        .await?
+        .join(", ");
+    let body = options_body(&st.pool, td, &caller, false, None).await?;
     Ok((StatusCode::OK, [(header::ALLOW, allow)], Json(body)).into_response())
 }
 
@@ -425,7 +433,7 @@ async fn m405_coll(
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&Caller::dev(), td, false);
+    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, false).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 
@@ -438,7 +446,7 @@ async fn item_get(
     headers: HeaderMap,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, Some(&id), Action::View) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let row =
@@ -468,7 +476,7 @@ async fn item_head(
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, Some(&id), Action::View) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let version: i32 =
@@ -490,7 +498,7 @@ async fn item_put(
     body: Bytes,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Edit) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
     let existing: Value =
@@ -548,7 +556,7 @@ async fn item_patch(
     body: Bytes,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Edit) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
     let existing: Value =
@@ -606,7 +614,7 @@ async fn item_delete(
     headers: HeaderMap,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Delete) {
+    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Delete).await? {
         return Err(deny_404(&ctx));
     }
     let exists =
@@ -651,7 +659,7 @@ async fn item_options(
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
     let caller = Caller::dev();
-    if !caller::require_action(&caller, td, Some(&id), Action::View) {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let version: i32 =
@@ -662,8 +670,10 @@ async fn item_options(
             .await?
             .ok_or_else(|| deny_404(&ctx))?
             .try_get("version")?;
-    let allow = caller::permitted_verbs(&caller, td, true).join(", ");
-    let body = options_body(td, &caller, true, Some(version));
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, true)
+        .await?
+        .join(", ");
+    let body = options_body(&st.pool, td, &caller, true, Some(version)).await?;
     Ok((StatusCode::OK, [(header::ALLOW, allow)], Json(body)).into_response())
 }
 
@@ -673,7 +683,7 @@ async fn m405_item(
     Path((type_id, _id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&Caller::dev(), td, true);
+    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, true).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 
