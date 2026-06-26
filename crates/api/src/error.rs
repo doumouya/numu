@@ -151,6 +151,11 @@ impl From<sqlx::Error> for AppError {
             sqlx::Error::Database(ref db) if db.code().as_deref() == Some("23503") => {
                 AppError::unprocessable("a referenced entity does not exist")
             }
+            // a unique-constraint violation (dup id_prefix / type_id / handle) is a client conflict, not a
+            // 500 — the DB backstop behind the type-registration validator and other uniqueness rules.
+            sqlx::Error::Database(ref db) if db.code().as_deref() == Some("23505") => {
+                AppError::conflict("a unique constraint was violated")
+            }
             // the cases_guard trigger's custom sqlstate — the DB backstop for the close-gate.
             sqlx::Error::Database(ref db) if db.code().as_deref() == Some("NU001") => {
                 AppError::close_preconditions_unmet("close preconditions not met")

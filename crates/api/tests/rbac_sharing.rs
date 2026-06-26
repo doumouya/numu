@@ -4,8 +4,6 @@
 //! viewer-can-view-but-not-manage→200/403. See docs/cases/0005-rbac-enforcement.md.
 #![cfg(feature = "db-tests")]
 
-use std::sync::Arc;
-
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::{middleware, Router};
@@ -17,13 +15,9 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 
 async fn build_app(pool: &PgPool) -> Router {
-    let registry = Arc::new(TypeDefCache::load(pool).await.unwrap());
-    let workflows = Arc::new(numu_api::workflow::WorkflowCache::load(pool).await.unwrap());
-    let state = AppState {
-        pool: pool.clone(),
-        registry,
-        workflows,
-    };
+    let registry = TypeDefCache::load(pool).await.unwrap();
+    let workflows = numu_api::workflow::WorkflowCache::load(pool).await.unwrap();
+    let state = AppState::new(pool.clone(), registry, workflows);
     objects::router()
         .merge(members::router())
         .merge(auth::router())

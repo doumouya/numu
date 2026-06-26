@@ -142,15 +142,19 @@ Most types never need one.
 3. **Write the `type_fields` rows** — for each field pick `kind`, `required`, `editable` (false = set-once),
    `perm_class`, and `options`. Scope-parent field = `ref`/required/`editable:false`. Engine-owned defaults
    ⇒ `readonly` + `options.default`.
-4. **Put it in a numbered migration** (today seeds are SQL). Dry-run on a scratch DB; then it loads at boot.
+4. **Land it** — either a numbered **seed migration** (loads at boot; for builtin/shipped types; dry-run on
+   a scratch DB first) **or** **`POST /api/types`** at runtime (admin; the spec is validated + the registry
+   hot-reloaded — no restart; see [`types.rs`](../../../crates/api/src/types.rs)).
 5. **Verify over HTTP** — `OPTIONS /api/objects/:type` returns your field schema + per-caller `can_read`/
    `can_write`; `POST` then `PATCH` to confirm defaults, required, and set-once behave.
 
-### The reload gotcha
-The registry (`TypeDefCache`) loads **once at boot** ([`lib.rs`](../../../crates/api/src/lib.rs) `run()`);
-there is no hot-reload endpoint yet. A freshly-seeded type appears only after migrations run **and the
-process restarts**. In `#[sqlx::test]` integration tests the app is built fresh per test, so a new seed is
-picked up automatically.
+### Boot-load vs runtime registration
+The registry (`TypeDefCache`) is an atomic snapshot ([`state.rs`](../../../crates/api/src/state.rs) — an
+`ArcSwap`). A **SQL-seed migration is picked up only at boot** (it runs before the one boot-time load), so a
+newly-*seeded* type needs a process restart. **`POST /api/types`** instead writes the rows and **atomically
+reloads the snapshot**, so an API-registered type's full surface is live with no restart — that's the same
+`validate_spec` rules above, enforced before the write (422/409). In `#[sqlx::test]` integration tests the
+app is built fresh per test, so a new seed is picked up automatically.
 
 ## Checklist before you commit
 - [ ] `id_prefix` is unique across all seeds.

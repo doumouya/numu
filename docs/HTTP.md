@@ -19,6 +19,13 @@ the per-vertical-object sprawl. `/api/objects/:type` is one route pair, not one 
 
 **Route shape:** collection `/api/objects/:type` · item `/api/objects/:type/:id`.
 
+**Type administration (`/api/types`).** `POST /api/types` (admin) registers a new type *at runtime* — it
+writes the `type_definitions` + `type_fields` rows and **hot-reloads the registry**, so the type's
+`/api/objects/:type` surface above is live with **no restart**. `GET /api/types` lists the catalog;
+`GET /api/types/:type` describes one. Status map: **201** (registered) · **403** (non-admin — a platform
+capability, no object to leak) · **409** (taken `type_id`/`id_prefix`, DB-backstopped) · **422** (malformed
+spec). A seed migration is the other path (loads at boot). (docs/OBJECTS.md G1; CASE 0007.)
+
 ## 1. Verb → status matrix
 
 All error bodies are problem+json (§6). `<PREFIX>_<hex>` ids; `:type` is validated once against the

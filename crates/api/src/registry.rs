@@ -1,6 +1,8 @@
 //! The type registry — `type_definitions` + `type_fields` loaded into an in-process cache. This is what
 //! makes the object handler generic: it reads the type's shape from here, never from per-type code.
-//! (v0 loads once at boot; a hot-reload endpoint is a follow-on, since v0 has no type-admin API yet.)
+//! The cache is held as an atomic snapshot (an `ArcSwap` in `AppState`): boot loads it, and `POST
+//! /api/types` (`crate::types`) reloads + swaps it, so an API-registered type is live with no restart.
+//! (A SQL-seed migration still needs a restart — it runs before the one boot-time load.)
 
 use std::collections::HashMap;
 
@@ -140,5 +142,11 @@ impl TypeDefCache {
 
     pub fn get(&self, type_id: &str) -> Option<&TypeDef> {
         self.by_id.get(type_id)
+    }
+
+    /// Every registered type (unordered) — for listing the registry and for validating that a new type's
+    /// `type_id`/`id_prefix` aren't already taken (`crate::types`).
+    pub fn all(&self) -> impl Iterator<Item = &TypeDef> {
+        self.by_id.values()
     }
 }

@@ -25,6 +25,7 @@ sha2.workspace = true
 hmac.workspace = true
 jsonwebtoken.workspace = true
 reqwest.workspace = true
+arc-swap.workspace = true
 
 [features]
 # db-tests: opt-in DB-backed integration tests (need a live Postgres via DATABASE_URL). ci.sh's `db`

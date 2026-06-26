@@ -17,9 +17,8 @@ pub mod rbac;
 pub mod registry;
 pub mod request_id;
 pub mod state;
+pub mod types;
 pub mod workflow;
-
-use std::sync::Arc;
 
 use axum::routing::get;
 use axum::{middleware, Router};
@@ -45,16 +44,13 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     sqlx::migrate!("../../migrations").run(&pool).await?;
-    let registry = Arc::new(registry::TypeDefCache::load(&pool).await?);
-    let workflows = Arc::new(workflow::WorkflowCache::load(&pool).await?);
-    let state = AppState {
-        pool,
-        registry,
-        workflows,
-    };
+    let registry = registry::TypeDefCache::load(&pool).await?;
+    let workflows = workflow::WorkflowCache::load(&pool).await?;
+    let state = AppState::new(pool, registry, workflows);
 
     let app = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))
+        .merge(types::router())
         .merge(auth::router())
         .merge(oauth::router())
         .route("/healthz", get(health::healthz))

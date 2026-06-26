@@ -19,7 +19,7 @@ use crate::error::{AppError, AppResult};
 use crate::field_perms;
 use crate::ids;
 use crate::rbac;
-use crate::registry::{FieldDef, TypeDef};
+use crate::registry::{FieldDef, TypeDef, TypeDefCache};
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
 
@@ -49,9 +49,8 @@ pub fn router() -> Router<AppState> {
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-fn resolve<'a>(st: &'a AppState, type_id: &str, ctx: &RequestCtx) -> AppResult<&'a TypeDef> {
-    st.registry
-        .get(type_id)
+fn resolve<'a>(reg: &'a TypeDefCache, type_id: &str, ctx: &RequestCtx) -> AppResult<&'a TypeDef> {
+    reg.get(type_id)
         .ok_or_else(|| AppError::not_found().with_request_id(ctx.request_id.clone()))
 }
 
@@ -352,7 +351,8 @@ async fn coll_get(
     Path(type_id): Path<String>,
     Query(q): Query<ListParams>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -403,7 +403,8 @@ async fn coll_head(
     caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -418,7 +419,8 @@ async fn coll_create(
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, true)?;
     let data = build_create_data(td, &payload);
@@ -510,7 +512,8 @@ async fn coll_options(
     caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -527,7 +530,8 @@ async fn m405_coll(
     caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     let allow = caller::permitted_verbs(&st.pool, &caller, td, None, false).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
@@ -541,7 +545,8 @@ async fn item_get(
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -573,7 +578,8 @@ async fn item_head(
     caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -596,7 +602,8 @@ async fn item_put(
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
@@ -670,7 +677,8 @@ async fn item_patch(
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
@@ -744,7 +752,8 @@ async fn item_delete(
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Delete).await? {
         return Err(deny_404(&ctx));
     }
@@ -789,7 +798,8 @@ async fn item_options(
     caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -814,7 +824,8 @@ async fn m405_item(
     caller: Caller,
     Path((type_id, _id)): Path<(String, String)>,
 ) -> AppResult<Response> {
-    let td = resolve(&st, &type_id, &ctx)?;
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
     let allow = caller::permitted_verbs(&st.pool, &caller, td, None, true).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }

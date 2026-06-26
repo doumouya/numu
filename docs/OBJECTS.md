@@ -101,6 +101,11 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
   field-gate denial → `403` only *after* existence is admitted.
 - **Opt-out without code:** `type_definitions.method_policy` masks verbs / raises the DELETE floor per
   type (default `'{}'` = the full surface).
+- **Register a type at runtime:** `POST /api/types` (admin) writes the `type_definitions` + `type_fields`
+  rows and **hot-reloads the registry**, so the new type's whole surface above is live with **no restart**
+  (a seed migration still loads only at boot). `GET /api/types` lists the catalog. The spec is validated
+  before the write (422 malformed · 409 taken `type_id`/`id_prefix`); the DB's unique constraints backstop
+  it. See [`HTTP.md`](HTTP.md) §0 and CASE 0007.
 
 ---
 
