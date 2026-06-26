@@ -44,8 +44,8 @@ fn cookie_token(header_value: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Mint a 256-bit opaque token, store its hash, return the `Set-Cookie` value.
-async fn mint_session(pool: &PgPool, actor_id: &str) -> AppResult<String> {
+/// Mint a 256-bit opaque token, store its hash, return the `Set-Cookie` value. Reused by the OAuth flow.
+pub(crate) async fn mint_session(pool: &PgPool, actor_id: &str) -> AppResult<String> {
     let token = format!("{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple());
     let hash = sha256_hex(&token);
     let sid = ids::mint("SES");
