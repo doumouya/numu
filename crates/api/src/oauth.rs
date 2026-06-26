@@ -85,10 +85,44 @@ fn apple() -> Option<Provider> {
     })
 }
 
+fn facebook() -> Option<Provider> {
+    Some(Provider {
+        name: "facebook".into(),
+        authorize_url: "https://www.facebook.com/v19.0/dialog/oauth".into(),
+        token_url: "https://graph.facebook.com/v19.0/oauth/access_token".into(),
+        userinfo_url: "https://graph.facebook.com/me?fields=id,name,email".into(),
+        scopes: "email public_profile".into(),
+        client_id: std::env::var("FACEBOOK_CLIENT_ID").ok()?,
+        client_secret: std::env::var("FACEBOOK_CLIENT_SECRET").ok()?,
+        redirect_uri: std::env::var("FACEBOOK_REDIRECT_URI").ok()?,
+        kind: ProviderKind::Userinfo,
+    })
+}
+
+fn tiktok() -> Option<Provider> {
+    Some(Provider {
+        name: "tiktok".into(),
+        authorize_url: "https://www.tiktok.com/v2/auth/authorize/".into(),
+        token_url: "https://open.tiktokapis.com/v2/oauth/token/".into(),
+        userinfo_url: "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name"
+            .into(),
+        scopes: "user.info.basic".into(),
+        // NOTE: TikTok names the credential `client_key` in the authorize/token params (not `client_id`)
+        // and its userinfo nests under data.user; the token-param rename is the one live-integration detail
+        // to finalize at app-review time. Identity extraction (the testable part) is handled here.
+        client_id: std::env::var("TIKTOK_CLIENT_KEY").ok()?,
+        client_secret: std::env::var("TIKTOK_CLIENT_SECRET").ok()?,
+        redirect_uri: std::env::var("TIKTOK_REDIRECT_URI").ok()?,
+        kind: ProviderKind::Userinfo,
+    })
+}
+
 fn provider(name: &str) -> Option<Provider> {
     match name {
         "google" => google(),
         "apple" => apple(),
+        "facebook" => facebook(),
+        "tiktok" => tiktok(),
         _ => None,
     }
 }
@@ -143,18 +177,27 @@ fn verify_state(signed: &str) -> Option<String> {
 /// Provider-specific extraction of the canonical OUTPUT from the userinfo JSON. (Google/FB/TikTok are
 /// userinfo-shaped; Apple, E2, supplies the same shape from a verified id_token.)
 fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, String)> {
-    let sub = userinfo
+    // TikTok nests the user under data.user; Google/Facebook are flat. The subject is `sub` (OIDC),
+    // `id` (Facebook), or `open_id` (TikTok); the name is `name` or `display_name`. Email may be absent
+    // (app-review-gated) — identity always resolves by (provider, sub), never by email.
+    let root = userinfo
+        .get("data")
+        .and_then(|d| d.get("user"))
+        .unwrap_or(userinfo);
+    let sub = root
         .get("sub")
-        .or_else(|| userinfo.get("id"))
+        .or_else(|| root.get("id"))
+        .or_else(|| root.get("open_id"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::bad_request("provider returned no subject"))?
         .to_string();
-    let email = userinfo
+    let email = root
         .get("email")
         .and_then(|v| v.as_str())
         .map(str::to_string);
-    let name = userinfo
+    let name = root
         .get("name")
+        .or_else(|| root.get("display_name"))
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();

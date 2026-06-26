@@ -84,3 +84,56 @@ async fn google_login_upserts_by_sub(pool: PgPool) -> Result<(), Box<dyn std::er
     assert_eq!(new_actors, 1, "exactly one actor minted for the sub");
     Ok(())
 }
+
+fn userinfo_provider(name: &str) -> Provider {
+    Provider {
+        name: name.into(),
+        authorize_url: "https://x/a".into(),
+        token_url: "https://x/t".into(),
+        userinfo_url: "https://x/u".into(),
+        scopes: "s".into(),
+        client_id: "cid".into(),
+        client_secret: "secret".into(),
+        redirect_uri: "https://x/cb".into(),
+        kind: ProviderKind::Userinfo,
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn facebook_login_by_id(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    // Facebook's userinfo is flat and keyed `id` (not `sub`).
+    let mock = Mock {
+        token: json!({ "access_token": "at" }),
+        userinfo: json!({ "id": "fb-1", "name": "Bob", "email": "b@fb.com" }),
+    };
+    complete_login(&pool, &userinfo_provider("facebook"), &mock, "code", "n1").await?;
+    let sub: String =
+        sqlx::query_scalar("select sub from auth_identities where provider = 'facebook'")
+            .fetch_one(&pool)
+            .await?;
+    assert_eq!(sub, "fb-1");
+    Ok(())
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn tiktok_login_by_nested_open_id(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    // TikTok nests under data.user, keys the subject `open_id`, names it `display_name`, and gives no email.
+    let mock = Mock {
+        token: json!({ "access_token": "at" }),
+        userinfo: json!({ "data": { "user": { "open_id": "tt-1", "display_name": "Tina" } } }),
+    };
+    complete_login(&pool, &userinfo_provider("tiktok"), &mock, "code", "n1").await?;
+    let (sub, name, email): (String, String, Option<String>) = sqlx::query_as(
+        "select i.sub, d.data->>'display_name', d.data->>'email' \
+         from auth_identities i join entity_data d on d.entity_id = i.actor_id where i.provider = 'tiktok'",
+    )
+    .fetch_one(&pool)
+    .await?;
+    assert_eq!(sub, "tt-1");
+    assert_eq!(name, "Tina");
+    assert!(
+        email.is_none(),
+        "tiktok provides no email — identity resolves by (provider, sub)"
+    );
+    Ok(())
+}
