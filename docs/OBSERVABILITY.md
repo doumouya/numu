@@ -76,8 +76,8 @@ One span taxonomy, four boundaries, all auto-instrumented at the framework layer
 
 **The verbose toggle (D2 made concrete):**
 - `tracing_subscriber` uses an `EnvFilter` (`RUST_LOG`) **plus a runtime-reloadable layer**
-  (`tracing_subscriber::reload`). A platform-admin `PATCH /api/admin/log-level {level}` flips the
-  *render* threshold live — debug a production incident without a redeploy.
+  (`tracing_subscriber::reload`). A platform-admin `PATCH /api/_debug/log-level {level}` flips the
+  *render* threshold live — debug a production incident without a redeploy. **LIVE (CASE 0008 B4).**
 - **The `events` write is outside the filter.** Lowering the console to `warn` never drops an `events`
   row. Capture floor = `events` (always); live verbosity = the tracing filter (tunable). This is the
   literal implementation of "log LEVELS filter the view, never the capture."
@@ -85,6 +85,11 @@ One span taxonomy, four boundaries, all auto-instrumented at the framework layer
 **Fire-and-forget recording:** `event::record` spawns a detached task (never blocks the request); on
 insert failure it logs a `warn` with the request-id rather than failing the user's request — observability
 must not become a new failure mode.
+
+**Ops hardening — LIVE (CASE 0008 B4).** `POST /api/_debug/echo` (the TRACE replacement, §4) and `PATCH
+/api/_debug/log-level` are wired; plus a typed `Config::from_env` (one place reads env), a per-client
+`/auth` rate limit (→ **429**, brute-force backstop), and **graceful shutdown** (drain in-flight requests on
+SIGTERM / Ctrl-C). (`crates/api/src/{config,debug,ratelimit}.rs` + `run()`.)
 
 ## 4. The self-describing API as a debugging aid (HTTP.md ∩ P-DEBUG)
 

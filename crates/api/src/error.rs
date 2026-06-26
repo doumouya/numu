@@ -81,8 +81,16 @@ impl AppError {
             d,
         )
     }
-    /// Unique / sole-owner / dependency conflict. Wired by the membership + workflow slices. Staged seam.
-    #[allow(dead_code)]
+    /// Rate-limit exceeded (the `/auth` per-client limiter). 429.
+    pub fn too_many_requests() -> Self {
+        Self::new(
+            StatusCode::TOO_MANY_REQUESTS,
+            "too_many_requests",
+            "rate limit exceeded",
+        )
+    }
+
+    /// Unique / sole-owner / dependency conflict (and the DB 23505 backstop). 409.
     pub fn conflict(d: impl Into<String>) -> Self {
         Self::new(StatusCode::CONFLICT, "conflict", d)
     }
