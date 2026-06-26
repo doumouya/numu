@@ -10,6 +10,8 @@ pub struct Config {
     /// per-client `/auth` fixed-window limit (requests per window).
     pub auth_rate_limit: u32,
     pub auth_rate_window_secs: u64,
+    /// browser origins allowed to call the API with credentials (the frontend's dev/prod origins).
+    pub cors_origins: Vec<String>,
 }
 
 impl Config {
@@ -23,6 +25,21 @@ impl Config {
             debug: env_flag("NUMU_DEBUG"),
             auth_rate_limit: env_parse("NUMU_AUTH_RATE_LIMIT", 30),
             auth_rate_window_secs: env_parse("NUMU_AUTH_RATE_WINDOW_SECS", 60),
+            // comma-separated; defaults cover the common Vite/Next dev ports so a local frontend works
+            // out of the box. Set NUMU_CORS_ORIGINS to your real origin(s) in any other setup.
+            cors_origins: std::env::var("NUMU_CORS_ORIGINS")
+                .map(|v| {
+                    v.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                })
+                .unwrap_or_else(|_| {
+                    vec![
+                        "http://localhost:5173".to_string(),
+                        "http://localhost:3000".to_string(),
+                    ]
+                }),
         })
     }
 }

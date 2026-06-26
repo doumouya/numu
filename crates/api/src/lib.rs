@@ -27,6 +27,7 @@ pub mod workflow;
 
 use std::time::Duration;
 
+use axum::http::{header, Method};
 use axum::routing::get;
 use axum::{middleware, Router};
 use tracing_subscriber::prelude::*;
@@ -76,6 +77,34 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         async move { ratelimit::enforce(limiter, req, next).await }
     }));
 
+    // CORS so a browser frontend on another origin can call the API WITH its session cookie. Credentials
+    // require explicit origins (never `*`), so we allow the configured list and expose the ETag/Location
+    // the frontend needs for concurrency + create redirects.
+    let cors_origins: Vec<axum::http::HeaderValue> = cfg
+        .cors_origins
+        .iter()
+        .filter_map(|o| o.parse().ok())
+        .collect();
+    let cors = tower_http::cors::CorsLayer::new()
+        .allow_origin(cors_origins)
+        .allow_credentials(true)
+        .allow_methods([
+            Method::GET,
+            Method::HEAD,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::IF_MATCH,
+            header::IF_NONE_MATCH,
+            header::COOKIE,
+        ])
+        .expose_headers([header::ETAG, header::LOCATION]);
+
     let app = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))
         .merge(types::router())
@@ -89,6 +118,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(middleware::from_fn(request_id::request_id_layer))
+        // outermost: handle the CORS preflight before anything else touches the request.
+        .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&cfg.bind).await?;
