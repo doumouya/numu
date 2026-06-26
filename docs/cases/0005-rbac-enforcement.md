@@ -1,6 +1,6 @@
 # CASE 0005 — numu RBAC enforcement (turn the allow-all seam into real reach-based RBAC)
 
-- **Status:** in_progress
+- **Status:** in_review
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)
@@ -24,7 +24,12 @@ gate, committed and **held for Em's push**. RBAC core first: **A0 → B0 → B1 
 | **B2** | `tools/rbac-audit` gate (require_action parity, grant_owner, context_role, deny_404) | **DONE** (this commit) |
 | **C** | Object sharing `/:id/members` + the SEV-0 membership guards | **DONE** (this commit) |
 | **D** | Field perms Plane B (rank-driven) + OPTIONS per-object verdict | **DONE** (a08dde2) |
-| **A2** | Sessions + Caller extractor + dev-login + claim-admin; replace `Caller::dev()` | **DONE** (this commit) — enforcement is now real over HTTP |
+| **A2** | Sessions + Caller extractor + dev-login + claim-admin; replace `Caller::dev()` | **DONE** (83be257) — enforcement is real over HTTP |
+| **E0** | SSRF-gated outbound client + Fetcher abstraction | **DONE** (fdd6d33) |
+| **E1** | OAuth spine + Google + HMAC state cookie + auth_identities | **DONE** (a499054) |
+| **E2** | Apple id_token JWKS/RS256/aud/iss/exp/nonce | **DONE** (c36cecc) |
+| **E3** | Facebook + TikTok (config + userinfo adapters) | **DONE** (e2ac6fe) |
+| **F** | AUTH.md + RBAC.md + DOCMAP + strict-CI sign-off | **DONE** (this commit) |
 
 (Auth/OAuth — A2, E0–E3, F — is the second track per the plan.)
 
@@ -76,3 +81,24 @@ confirmed every A0 assertion before the Rust tests.
   still pass `Caller::dev()` (admin) until **A2** wires the real `Caller` extractor — that's the next slice
   and is where the full HTTP-level matrix (a non-admin request → 404) becomes end-to-end testable. ci green
   with `DATABASE_URL` (fmt/clippy/test + db 10 + debuggability + rbac audits); pushed per the green-ci rule.
+
+- **2026-06-26 — Torv (A2 + the OAuth track E0–E3 + F — the whole plan, done):** Em: "stay in plan order
+  and don't stop until you are done." Landed the rest:
+  - **A2** (83be257): sessions + the `Caller` `FromRequestParts` extractor (cookie → hashed-token →
+    actor + platform_role; no session → 401). Replaced every `Caller::dev()` with the real caller —
+    enforcement is now real over HTTP, proven by `rbac_sharing::non_admin_is_enforced` (401/404/403/200).
+    dev-login (debug) + atomic claim-admin. v0 resolves per-request (no cache → revoke is immediate).
+  - **E0** (fdd6d33): the SSRF-gated outbound client (https-only, redirect=none, IP-pin, metadata/private
+    blocklist) + the `Fetcher` trait (so OAuth is mock-testable, no live server).
+  - **E1** (a499054): OAuth authorization-code spine + Google; HMAC-signed stateless state cookie (no
+    oauth_state table); upsert by (provider, sub).
+  - **E2** (c36cecc): Apple id_token verification (JWKS/RS256 + aud/iss/exp/nonce), with a generated-key
+    offline test (verify + reject nonce-mismatch/wrong-aud).
+  - **E3** (e2ac6fe): Facebook + TikTok (userinfo adapters; subject by sub/id/open_id; nested shape).
+  - **F** (this commit): `docs/RBAC.md` + `docs/AUTH.md` + DOCMAP rows; strict-CI sign-off.
+
+  **Final tally:** 16 slices (A0→F) across ~16 commits, all on numu/main; the `db` gate runs ~20
+  `#[sqlx::test]`s + the `http_client`/`oauth` unit tests; `debuggability-audit` + `rbac-audit` clean.
+  Verified green under **`NUMU_CI_STRICT=1`** (db + every audit non-skippable). The RBAC + auth foundation
+  is complete. Deferred (documented): the 60s Caller cache (+ invalidate-on-revoke), the company/tenant
+  contract layer, TikTok's `client_key` live-integration detail, real-provider live verification. — Torv
