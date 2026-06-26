@@ -1,15 +1,15 @@
 ---
 name: enforcement-gates
 description: >-
-  Use when you want a rule to be ENFORCED rather than remembered — adding a CI check, encoding a recurring
-  fix so it can't regress, making an invariant un-bypassable, or authoring/extending a `tools/*-audit`. This
-  is numu's identity: its disciplines are QUERIES, not prompts — git/DB-enforced, harness-agnostic, so
-  drift fails the tool, not the user ("this is how we survive"). Reach for this whenever you catch yourself
-  writing "remember to…", "always…", or "the reviewer should check…" in docs or a commit message — that
-  sentence wants to be an audit. Also when an invariant matters enough that a *direct DB write* must not be
-  able to break it (the Rust-gate + DB-backstop doubling). Covers authoring a `tools/<name>-audit/audit.sh`
-  (scan- and git-based), how `ci.sh` auto-discovers it, the ratchet, and `NUMU_CI_STRICT`. NOT for the
-  specific rules already shipped — those live in the rbac / api-conventions skills.
+  Use when you want a rule ENFORCED rather than remembered — turning a "remember to…/always…/the reviewer
+  should check…" sentence into a query that fails CI. This is numu's identity: disciplines are QUERIES,
+  git/DB-enforced, so drift fails the tool, not the user. Covers authoring OR tuning a
+  `tools/<name>-audit/audit.sh` (its grep/awk/regex, the FINDING format, `ci.sh` auto-discovery, the
+  ratchet, `NUMU_CI_STRICT`) — including fixing a gate's own false positives/negatives, even when the rule
+  it enforces is RBAC's or a handler convention's (refine the query, don't loosen the rule). Also when
+  STANDING UP the Rust-gate + DB-backstop pair as a unit so a direct DB write can't bypass an invariant.
+  NOT for the access rule itself (use rbac); NOT for wiring `error.rs` sqlstate→HTTP-status mapping on an
+  already-existing trigger (use api-conventions).
 ---
 
 # enforcement-gates — a discipline you can't run is a discipline you don't have

@@ -1,0 +1,105 @@
+{
+  "final": [
+    {
+      "query": "We need to track invoices in numu now \u2014 customer, amount, due date, status (draft/sent/paid/void), and they hang off a project. Walk me through adding this. I don't want to write a new table if I can avoid it.",
+      "should_trigger": true,
+      "rationale": "Textbook new project-scoped business object \u2014 1 type_definitions + N type_fields rows with an enum field; the core type-registry case."
+    },
+    {
+      "query": "Add a `priority` enum field (low/normal/high/urgent) to the case type, defaulting to normal. Where does that live?",
+      "should_trigger": true,
+      "rationale": "New enum field on an existing type with a default \u2014 the type_fields grammar (kind/options.enum/options.default) the skill owns."
+    },
+    {
+      "query": "I want a `ticket` object that customers can open. it should belong to a project the way notes do so whoever can see the project can see its tickets. how do i set that up so i don't have to write any rust?",
+      "should_trigger": true,
+      "rationale": "Scoped type + reach-inheritance via scope_parents, no Rust \u2014 the note seed is the model the skill points at."
+    },
+    {
+      "query": "Marketing wants to capture leads \u2014 name, email, source, owner. Every time we add one of these we end up writing a model struct, a migration and a CRUD handler. There has to be a cheaper way in numu, right?",
+      "should_trigger": true,
+      "rationale": "The exact 'tempted to write a model+table+handler' anti-pattern the skill redirects to a registry row; O(1) thesis."
+    },
+    {
+      "query": "On the comment type I want subject_id to point at ANY object, not just a project \u2014 a comment on a case, a comment on a note, whatever. How do I express a parent that isn't typed to one prefix?",
+      "should_trigger": true,
+      "rationale": "Polymorphic scope-parent (omit the ref in options) \u2014 the documented comment.subject_id scope_parents nuance."
+    },
+    {
+      "query": "case.workflow_id is `readonly required` but creates keep blowing up with a 422 saying workflow_id is required. The user obviously can't set it. what's going on?",
+      "should_trigger": true,
+      "rationale": "The engine-owned-default bug the skill documents (build_create_data must apply options.default to non-settable fields); 'required readonly \u21d2 needs default'."
+    },
+    {
+      "query": "I added a `product` type to a new seed migration, ran migrate, but OPTIONS /api/objects/product still 404s and POST fails too. The SQL definitely ran. Why isn't the new type showing up?",
+      "should_trigger": true,
+      "rationale": "The registry-reload gotcha \u2014 TypeDefCache loads once at boot, needs a process restart; the skill names this explicitly."
+    },
+    {
+      "query": "Want the case's `external_ref` field to be given at creation time and then frozen \u2014 nobody should be able to PATCH it afterward. How do I mark a field set-once?",
+      "should_trigger": true,
+      "rationale": "settable-vs-writable / editable:false set-once semantics \u2014 core type_fields grammar the skill spells out."
+    },
+    {
+      "query": "Should `case.status` live as a real column in the cases projection table, or just in entity_data.data like everything else? Trying to decide if this new `region` field on case needs to be typed too.",
+      "should_trigger": true,
+      "rationale": "Pure-JSONB vs typed-projection decision \u2014 the skill's section on when a projection is justified (index/trigger need only)."
+    },
+    {
+      "query": "Adding a `perm_class: owner_grade` field to the invoice type so only owners can write the amount after creation. Does that go in the field definition or somewhere in rbac.rs?",
+      "should_trigger": true,
+      "rationale": "Beats-sibling: tempting for rbac, but the ACT is declaring a field \u2014 perm_class is authored in the type_fields row; type-registry wins, defers gate behavior to rbac."
+    },
+    {
+      "query": "Why did GET /api/objects/case/CAS_abc123 return 404 for this user when the row clearly exists? I thought they were a member. Trying to understand the reach logic.",
+      "should_trigger": false,
+      "rationale": "rbac sibling: 404-vs-leak reasoning about object reach is Plane A (reach resolver / IDOR backstop), not type definition."
+    },
+    {
+      "query": "I'm adding a new endpoint and I want to share a case with another member and give them editor rank. Where do I call grant_owner / require_action and how does the reach cascade pick it up?",
+      "should_trigger": false,
+      "rationale": "rbac sibling: membership change + require_action/grant_owner is access-control mechanics, despite scope_parent/reach word overlap."
+    },
+    {
+      "query": "My handler does `sqlx::query(...).fetch_one(&db).await.unwrap()` and a missing row gives a bare 500 with no request-id. How should I be mapping the sqlx error to a proper problem+json response?",
+      "should_trigger": false,
+      "rationale": "api-conventions sibling: unwrap-on-handler-path + sqlx\u2192status + problem+json is the handler house-style, not type definition."
+    },
+    {
+      "query": "PATCH on a case isn't honoring If-Match \u2014 I can clobber a stale version. How do I wire the ETag/optimistic-concurrency check correctly in this handler?",
+      "should_trigger": false,
+      "rationale": "api-conventions sibling: If-Match/ETag concurrency mechanics; the case type already exists, no registry change."
+    },
+    {
+      "query": "We keep forgetting that every `required readonly` field needs a default. Can we make that a CI check so a bad seed fails the build instead of failing at runtime?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates sibling: wants to ENCODE the registry invariant as an audit.sh, even though the rule itself originates in type-registry."
+    },
+    {
+      "query": "I want a DB trigger plus a handler check that both refuse to let scope_parent_id be changed after create, so even a direct SQL UPDATE can't break set-once. How do I do the Rust-gate + DB-backstop doubling?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates sibling: Rust-gate + DB-backstop doubling for an invariant is the enforcement mechanism, not defining the set-once field."
+    },
+    {
+      "query": "The omnisearch index over `searchable` fields \u2014 how is it actually built and refreshed? I want to add the projects/notes to it.",
+      "should_trigger": false,
+      "rationale": "Adjacent: searchable is a field attribute but building the index is a later slice the skill explicitly defers, not type definition."
+    },
+    {
+      "query": "Add a migration to create the `sessions` table \u2014 we need server-side session storage with an expiry and a last-seen column. What columns should it have?",
+      "should_trigger": false,
+      "rationale": "Adjacent: sessions is a SYSTEM table (engine machinery) the skill explicitly excludes; it's a real migration, not a registry row."
+    },
+    {
+      "query": "How does the cases_guard trigger validate workflow transitions on the cases projection? Want to add a new status transition rule to the workflow engine.",
+      "should_trigger": false,
+      "rationale": "Adjacent: workflow-engine trigger logic on the cases projection (workflow.rs / cases_guard) is engine work, not defining a type or its fields."
+    },
+    {
+      "query": "Refactor objects.rs build_create_data so it reads cleaner \u2014 the defaults loop and the required-check are tangled. Pure code-quality pass, no behavior change.",
+      "should_trigger": false,
+      "rationale": "Adjacent near-miss: names the handler the skill references, but it's a Rust refactor with no type/field/registry change \u2014 a naive 'objects.rs' match must not pull this skill."
+    }
+  ],
+  "changes": "LABEL AUDIT: All 13 candidate positives were correctly labeled type-registry and all 11 negatives correctly non-triggering (each genuinely lives in a sibling/adjacent area), so no flips were needed. Confirmed the tricky ones against SKILL.md: perm_class field-declaration stays type-registry (the row is authored here; only the gate behavior defers to rbac) \u2014 kept as the beats-sibling case; the 'CI check for required-readonly default' and 'DB-trigger+handler set-once doubling' both correctly stay enforcement-gates even though the underlying invariant originates in type-registry.\\n\\nCULL to hit exactly 20 (10/10):\\n- Cut 3 positives, all near-duplicates of the plain 'add-a-field-with-kind+options' facet that priority(enum+default) and invoices already cover: (a) 'note tags/pinned list+bool default' (generic field-add, dup of priority and of the existing note seed), (b) 'due_date date field + validate regex' (another field-add; the validate option didn't add enough distinct signal over priority), (c) 'root organization scope_parents:[]' (real facet, but I prioritized keeping the high-value beats-sibling perm_class case and the projection-decision/reload/polymorphic/engine-default uncommon facets over a second scope-parent variant, since 'ticket scoped like notes' already exercises scope_parents). Net surviving positives span: new scoped object, enum+default field, scope/reach-inherit, anti-pattern redirect, polymorphic parent, engine-owned default 422, reload gotcha, set-once, projection decision, perm_class beats-sibling \u2014 maximum facet diversity.\\n- Cut 1 negative: the oauth/auth_identities item \u2014 the most trivially off-topic (auth machinery, far from any type-registry confusion), per the 'cut too-easy negatives' rule.\\n\\nBALANCE/REALISM: Final 10 negatives skew hard toward sibling-confusable near-misses \u2014 2 rbac (404-reach, grant_owner), 2 api-conventions (unwrap/500, If-Match), 2 enforcement-gates (CI check, Rust+DB doubling), 4 adjacent (omnisearch index, sessions system table, cases_guard workflow, objects.rs refactor). The objects.rs-refactor and sessions/cases_guard cases are the sharpest traps: they name the exact files/tables the skill references but require no type/field change, so they pressure-test against naive filename matching. All survivors carry concrete numu identifiers (type_fields, build_create_data, scope_parent_id, TypeDefCache, cases_guard, auth/If-Match) and keep ~2 casual/typo-register messages (the ticket and product items)."
+}

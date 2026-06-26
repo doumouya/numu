@@ -1,0 +1,105 @@
+{
+  "final": [
+    {
+      "query": "in cases.rs I've got `let row = sqlx::query!(...).fetch_one(&pool).await.unwrap();` right in the patch handler \u2014 the debuggability-audit is flagging it red. what's the right way to write this?",
+      "should_trigger": true,
+      "rationale": "R2 no-unwrap-on-handler-path + the gate by name; `?` vs unreachable! is core api-conventions."
+    },
+    {
+      "query": "I'm adding a DELETE on /api/notes/:id and I need to figure out the error-return story \u2014 which AppError constructor for a stale version, do I need the event write, and where does If-Match go. walk me through the handler house style",
+      "should_trigger": true,
+      "rationale": "Names AppError constructor + record_event + If-Match \u2014 the exact handler triad this skill owns."
+    },
+    {
+      "query": "our API leaked a raw postgres error string to the client on a 500 last night \u2014 the response body literally had the connection-pool detail in it. how is error rendering supposed to work so this doesn't happen?",
+      "should_trigger": true,
+      "rationale": "Describes the 5xx airlock (log real cause, wire only canonical reason) without naming it \u2014 \u00a7error-airlock."
+    },
+    {
+      "query": "writing a new handler that pulls the current user from the numu_session cookie \u2014 should I parse the cookie header myself and look up the session, or is there an extractor pattern I should reuse?",
+      "should_trigger": true,
+      "rationale": "The Caller FromRequestParts extractor (\u00a74) \u2014 authentication identity wiring, api-conventions owns it (distinct from rbac access)."
+    },
+    {
+      "query": "got a 500 page-out at 3am but the on-call couldn't trace it to a log line \u2014 there was no request id on the response. how are we supposed to wire the correlation id through errors?",
+      "should_trigger": true,
+      "rationale": "R1 request-id / `instance` field + with_request_id; the 3am-debuggability framing is this skill's thesis."
+    },
+    {
+      "query": "when a client posts a bad foreign-key ref we currently page someone with a 500. shouldnt a bad client ref map to a 4xx instead? how does the sqlx error conversion handle 23503 and that NU001 thing?",
+      "should_trigger": true,
+      "rationale": "From<sqlx::Error> handler-side mapping (23503->422, NU001->422); keeps casual typo for realism."
+    },
+    {
+      "query": "I'm wiring the close-gate for cases. the cases_guard trigger raises NU001 in the DB, but on the handler side how should the response surface that \u2014 what status and which AppError, and how does it tie back to the trigger?",
+      "should_trigger": true,
+      "rationale": "Beats enforcement-gates: the ASK is the handler-side NU001->close_preconditions_unmet status mapping, not authoring the trigger/doubling."
+    },
+    {
+      "query": "is it ever ok to keep an .expect() in a handler? I have an hmac key derivation that genuinely can't fail and `?` doesn't fit because the error type is weird. what's the sanctioned escape hatch?",
+      "should_trigger": true,
+      "rationale": "The documented hmac_key gotcha -> unwrap_or_else(|_| unreachable!(...)); uncommon edge of R2."
+    },
+    {
+      "query": "code-reviewing a PR that adds a project_replace handler \u2014 what should I be checking for around errors, events, and concurrency before I approve it? give me the reviewer checklist.",
+      "should_trigger": true,
+      "rationale": "Maps to the skill's 'Reviewer reflexes' for a mutation handler (errors/events/If-Match)."
+    },
+    {
+      "query": "review my axum router setup in lib.rs \u2014 I added request_id_layer but I'm not sure it's outside TraceLayer, and I want the X-Request-Id to propagate into RequestCtx and the logs correctly",
+      "should_trigger": true,
+      "rationale": "\u00a76 wiring: request_id_layer outside TraceLayer + RequestCtx propagation \u2014 the observability plumbing this skill specifies."
+    },
+    {
+      "query": "I'm not sure whether a duplicate-key conflict should be 409 or 422 \u2014 what does RFC 9110 actually say about which one means a 'state conflict' vs 'unprocessable'? trying to pick the semantically correct code, not anything numu-specific.",
+      "should_trigger": false,
+      "rationale": "http sibling: pure RFC 9110 status semantics ('what does the RFC say', explicitly not-numu); api-conventions defers generic RFC semantics to http."
+    },
+    {
+      "query": "I need to gate the comment endpoint so only members with the right reach can read it \u2014 non-members should get a leak-free 404, not a 403. where do I put require_action and how does the scope_parent cascade decide reach?",
+      "should_trigger": false,
+      "rationale": "rbac sibling: require_action + leak-free 404 + scope_parent reach cascade = who-can-access, not handler error mechanics."
+    },
+    {
+      "query": "restricting the `email` field on actor so only owners can write it \u2014 which perm_class do I use and how does the field-perm denial return 403 with the field name?",
+      "should_trigger": false,
+      "rationale": "rbac sibling: perm_class + Plane-B field-write 403 decision; api-conventions only exposes forbidden_field as a constructor, not the who-can-write logic."
+    },
+    {
+      "query": "what's the difference between a 404 and a 403 in numu and when do I return which? I have a request where the user can technically reach the object but their rank is too low.",
+      "should_trigger": false,
+      "rationale": "rbac sibling: 404-vs-403 reach/rank DECISION logic; the constructors live in api-conventions but the choice is access-control."
+    },
+    {
+      "query": "I want to add an `invoice` object type with a `due_date` field and a ref to project \u2014 do I write a new table and CRUD handler or is there a registry row approach?",
+      "should_trigger": false,
+      "rationale": "type-registry sibling: new type as data (type_definitions + type_fields), generic handler serves it \u2014 not handler house-style."
+    },
+    {
+      "query": "add a `priority` enum field with a default to the existing case type. what's the field grammar \u2014 kind/required/editable/options \u2014 and do I need a migration?",
+      "should_trigger": false,
+      "rationale": "type-registry sibling: field grammar / enum / engine-owned default; no error/concurrency/event mechanics."
+    },
+    {
+      "query": "should the migration that adds the `sessions` table go through the type registry or a real SQL migration? it's part of the engine's own machinery, not a user object.",
+      "should_trigger": false,
+      "rationale": "type-registry sibling: system-table-vs-registry decision; nothing to do with handler conventions."
+    },
+    {
+      "query": "I keep telling reviewers 'remember every write must call record_event' and they keep forgetting. I want this to be a CI check that fails the build, not a note in the PR template. how do I author the audit?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates sibling: shares record_event/R5 keyword but the ASK is authoring a tools/*-audit/audit.sh with ci.sh auto-discovery."
+    },
+    {
+      "query": "we want an invariant that a direct DB write can't break: a case can't close while it has open children. I know the Rust handler checks it, but I want the DB trigger backstop with a tagged sqlstate too. how do I set up the doubling?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates sibling: authoring the Rust-gate + DB-backstop doubling / tagged sqlstate trigger; api-conventions only consumes NU001 on the read side."
+    },
+    {
+      "query": "the workflow engine in workflow.rs needs a new transition rule \u2014 closing a case requires all comments resolved. where do I encode the allowed state transitions and the precondition check?",
+      "should_trigger": false,
+      "rationale": "Adjacent (workflow state-machine authoring); api-conventions only owns illegal_transition as an error constructor, not the rule definition."
+    }
+  ],
+  "changes": "Read api-conventions/SKILL.md AND discovered a 5th roster skill \u2014 `http` (generic RFC 9110/9457 semantics) \u2014 which the SKILL explicitly defers to. That reshaped the audit: several positives were http-adjacent (ETag/status/envelope semantics overlap), so I culled toward the numu-implementation core.\n\nLABEL AUDIT: All 24 source labels were directionally correct (no flips needed). The source actually contained 14 positives + 10 negatives, not 12/12 (two extra true items, OPTIONS/HEAD discoverability and request_id_layer/TraceLayer wiring, were tucked at the end).\n\nCULLED 4 positives to reach 10, removing the http-adjacent / redundant ones: (a) 'two clients patched same case, lost-update' \u2014 most http-adjacent concurrency, redundant with the DELETE-triad item; (b) 'standardize on one error envelope across axum handlers' \u2014 overlaps http's problem+json envelope and the airlock/sqlx items; (c) '428 vs 412 for If-Match missing vs stale' \u2014 pure precondition status-pick that leans http; (d) 'OPTIONS/HEAD discoverability' \u2014 \u00a76 wiring already covered by the request_id_layer item and somewhat http-adjacent. Result keeps If-Match represented (via the DELETE triad) without over-weighting concurrency.\n\nCULLED 1 negative + REPLACED: dropped the 'SQLContext/group_by in the data crate' Polars item \u2014 trivially off-topic (the task says cull these), low precision value. Replaced with a new http-confusable negative ('409 vs 422 \u2014 what does RFC 9110 say, not numu-specific'), the single highest-value disambiguator since http is the real sibling sharing ETag/status/envelope with api-conventions and was otherwise unrepresented in the negatives.\n\nFINAL 10/10. Positives span every rule with no http-boundary fragility: R2 panic (unwrap + hmac gotcha), error-rendering (5xx airlock, sqlx 23503/NU001 mapping, NU001 handler-side beats-enforcement-gates), Caller extractor, request-id (R1 + \u00a76 wiring), the DELETE If-Match/event/AppError triad, and the reviewer checklist. Negatives skewed hard to sibling near-misses: rbac\u00d73 (reach 404, perm_class 403, 404-vs-403 decision), type-registry\u00d73 (invoice type, enum field grammar, system-table migration), enforcement-gates\u00d72 (authoring record_event audit, authoring DB-trigger doubling), http\u00d71 (RFC status semantics), workflow-adjacent\u00d71. Realism preserved: concrete names (cases.rs, /api/notes/:id, numu_session, cases_guard/NU001, project_replace, request_id_layer/TraceLayer/RequestCtx, hmac) and 1-2 casual/typo registers retained ('shouldnt', lowercase fragments)."
+}

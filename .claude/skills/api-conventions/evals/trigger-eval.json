@@ -1,0 +1,82 @@
+[
+  {
+    "query": "in cases.rs I've got `let row = sqlx::query!(...).fetch_one(&pool).await.unwrap();` right in the patch handler \u2014 the debuggability-audit is flagging it red. what's the right way to write this?",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm adding a DELETE on /api/notes/:id and I need to figure out the error-return story \u2014 which AppError constructor for a stale version, do I need the event write, and where does If-Match go. walk me through the handler house style",
+    "should_trigger": true
+  },
+  {
+    "query": "our API leaked a raw postgres error string to the client on a 500 last night \u2014 the response body literally had the connection-pool detail in it. how is error rendering supposed to work so this doesn't happen?",
+    "should_trigger": true
+  },
+  {
+    "query": "writing a new handler that pulls the current user from the numu_session cookie \u2014 should I parse the cookie header myself and look up the session, or is there an extractor pattern I should reuse?",
+    "should_trigger": true
+  },
+  {
+    "query": "got a 500 page-out at 3am but the on-call couldn't trace it to a log line \u2014 there was no request id on the response. how are we supposed to wire the correlation id through errors?",
+    "should_trigger": true
+  },
+  {
+    "query": "when a client posts a bad foreign-key ref we currently page someone with a 500. shouldnt a bad client ref map to a 4xx instead? how does the sqlx error conversion handle 23503 and that NU001 thing?",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm wiring the close-gate for cases. the cases_guard trigger raises NU001 in the DB, but on the handler side how should the response surface that \u2014 what status and which AppError, and how does it tie back to the trigger?",
+    "should_trigger": true
+  },
+  {
+    "query": "is it ever ok to keep an .expect() in a handler? I have an hmac key derivation that genuinely can't fail and `?` doesn't fit because the error type is weird. what's the sanctioned escape hatch?",
+    "should_trigger": true
+  },
+  {
+    "query": "code-reviewing a PR that adds a project_replace handler \u2014 what should I be checking for around errors, events, and concurrency before I approve it? give me the reviewer checklist.",
+    "should_trigger": true
+  },
+  {
+    "query": "review my axum router setup in lib.rs \u2014 I added request_id_layer but I'm not sure it's outside TraceLayer, and I want the X-Request-Id to propagate into RequestCtx and the logs correctly",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm not sure whether a duplicate-key conflict should be 409 or 422 \u2014 what does RFC 9110 actually say about which one means a 'state conflict' vs 'unprocessable'? trying to pick the semantically correct code, not anything numu-specific.",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to gate the comment endpoint so only members with the right reach can read it \u2014 non-members should get a leak-free 404, not a 403. where do I put require_action and how does the scope_parent cascade decide reach?",
+    "should_trigger": false
+  },
+  {
+    "query": "restricting the `email` field on actor so only owners can write it \u2014 which perm_class do I use and how does the field-perm denial return 403 with the field name?",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the difference between a 404 and a 403 in numu and when do I return which? I have a request where the user can technically reach the object but their rank is too low.",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to add an `invoice` object type with a `due_date` field and a ref to project \u2014 do I write a new table and CRUD handler or is there a registry row approach?",
+    "should_trigger": false
+  },
+  {
+    "query": "add a `priority` enum field with a default to the existing case type. what's the field grammar \u2014 kind/required/editable/options \u2014 and do I need a migration?",
+    "should_trigger": false
+  },
+  {
+    "query": "should the migration that adds the `sessions` table go through the type registry or a real SQL migration? it's part of the engine's own machinery, not a user object.",
+    "should_trigger": false
+  },
+  {
+    "query": "I keep telling reviewers 'remember every write must call record_event' and they keep forgetting. I want this to be a CI check that fails the build, not a note in the PR template. how do I author the audit?",
+    "should_trigger": false
+  },
+  {
+    "query": "we want an invariant that a direct DB write can't break: a case can't close while it has open children. I know the Rust handler checks it, but I want the DB trigger backstop with a tagged sqlstate too. how do I set up the doubling?",
+    "should_trigger": false
+  },
+  {
+    "query": "the workflow engine in workflow.rs needs a new transition rule \u2014 closing a case requires all comments resolved. where do I encode the allowed state transitions and the precondition check?",
+    "should_trigger": false
+  }
+]

@@ -1,0 +1,105 @@
+{
+  "final": [
+    {
+      "query": "i want to lock the `internal_notes` field on the note type so only admins can write it, but viewers can still see it. how do I express that?",
+      "should_trigger": true,
+      "rationale": "Plane B field perms \u2014 perm_class floors + a field_permissions row override; restricting a field, not declaring it."
+    },
+    {
+      "query": "a member somehow has two roles on the same project and our demote logic is freaking out. what's the right way to think about 'the role' of someone on an object?",
+      "should_trigger": true,
+      "rationale": "The memberships (object_id, member_id) PK singularity \u2014 last-owner/demote provability is rbac's keystone bug."
+    },
+    {
+      "query": "we need to add a 'lead' role between member and admin. do I have to touch any Rust or is it just a row somewhere?",
+      "should_trigger": true,
+      "rationale": "Roles-as-data \u2014 a custom role is one roles-table row at a rank, gates compare ranks, zero code."
+    },
+    {
+      "query": "when I create a scoped object like a comment under a case, who becomes its owner and where does that get set?",
+      "should_trigger": true,
+      "rationale": "grant_owner in the CREATE transaction (rbac-audit R2) \u2014 owner assignment is rbac's wiring section."
+    },
+    {
+      "query": "the cycle check in members.rs \u2014 I can never remember if it's principals_contain(object_id, member_id) or the other way round. which is it and why?",
+      "should_trigger": true,
+      "rationale": "SEV-0 cycle guard with the exact argument-order gotcha (object_id, member_id) the skill calls out."
+    },
+    {
+      "query": "if a case's scope_parent_id points at a deleted parent, can someone still reach the child by guessing its id?",
+      "should_trigger": true,
+      "rationale": "scope_parent_id as the IDOR backstop + reach-derived 404 \u2014 FK semantics, no guess-the-id hole."
+    },
+    {
+      "query": "for a top-level project with scope_parent_id NULL, does every authenticated user reach it by default? trying to figure out if our roots are accidentally world-readable",
+      "should_trigger": true,
+      "rationale": "The NULL-parent policy \u2014 NULL is reachable only via a direct membership edge, never a blanket reach."
+    },
+    {
+      "query": "review my new attachments LIST handler \u2014 it returns every attachment in the table, I think it's leaking rows the caller shouldn't reach",
+      "should_trigger": true,
+      "rationale": "Reach-filtered LIST via reachable_entity_ids \u2014 a Plane A leak the reach resolver prevents."
+    },
+    {
+      "query": "someone reported they can PATCH a field on a case they're only a viewer on. our handler loads the row, checks If-Match, writes. walk me through where the access check should actually sit",
+      "should_trigger": true,
+      "rationale": "Beats api-conventions (If-Match present): the real bug is a missing Plane B require_write \u2014 access logic wins."
+    },
+    {
+      "query": "I keep returning 403 for 'you don't have permission to view this case' but the security review flagged it. what's numu's convention here?",
+      "should_trigger": true,
+      "rationale": "Beats api-conventions (status codes): it's the leak-free 404 rule \u2014 object-level denial is indistinguishable from non-existence."
+    },
+    {
+      "query": "writing the migration to add a `context_role` display column on memberships \u2014 is it safe to read it in the demote gate to show a nicer label?",
+      "should_trigger": true,
+      "rationale": "context_role is cosmetic and MUST NOT be read in any enforcement path (rbac-audit R3) \u2014 an uncommon valid rbac gotcha."
+    },
+    {
+      "query": "I'm building an ad-hoc error JSON in my handler instead of returning AppError, and the debuggability-audit is red. how should errors be shaped?",
+      "should_trigger": false,
+      "rationale": "api-conventions: problem+json/AppError responder mechanics + debuggability-audit, not access control."
+    },
+    {
+      "query": "my handler does `.unwrap()` on a sqlx query and the gate is yelling. what's the rule about unwrap on handler paths and how do I map the sqlx error to a status?",
+      "should_trigger": false,
+      "rationale": "api-conventions: no-unwrap house-style + sqlx\u2192status mapping, not rbac."
+    },
+    {
+      "query": "I need the If-Match / ETag optimistic concurrency on PATCH to return 412 vs 428 correctly \u2014 where's that contract?",
+      "should_trigger": false,
+      "rationale": "api-conventions: rbac only references the ordering note; the If-Match/ETag contract itself lives there."
+    },
+    {
+      "query": "adding a new `invoice` object type with a `total` field and a `due_date` field \u2014 one type_definitions row plus type_fields, right? what's the field grammar?",
+      "should_trigger": false,
+      "rationale": "type-registry: declaring a new type + fields (type_definitions + type_fields) is type authoring, not access."
+    },
+    {
+      "query": "I want to set the perm_class on a brand-new `salary` field when I declare it on the actor type. what are the valid perm_class values and defaults?",
+      "should_trigger": false,
+      "rationale": "type-registry: 'perm_class' tempts rbac, but choosing the class while DECLARING a field is the type grammar."
+    },
+    {
+      "query": "the registry didn't pick up my new field until I restarted \u2014 what's the reload gotcha with type_fields?",
+      "should_trigger": false,
+      "rationale": "type-registry: registry-reload gotcha for type_fields, nothing to do with access control."
+    },
+    {
+      "query": "I want to turn 'every create path must grant an owner' into a CI check that can't regress \u2014 how do I author a new tools/*-audit script that ci.sh discovers?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates: authoring a NEW audit of the rbac-audit shape; rbac only documents the existing R2 rule."
+    },
+    {
+      "query": "I need a DB trigger that raises a tagged sqlstate when someone direct-writes a membership bypassing the handler, plus the Rust-gate to double it. how do I set up that doubling?",
+      "should_trigger": false,
+      "rationale": "enforcement-gates: the Rust-gate + DB-backstop doubling pattern, even though it touches membership."
+    },
+    {
+      "query": "how does the Caller extractor figure out who the authenticated actor is from the request? trying to understand auth.rs",
+      "should_trigger": false,
+      "rationale": "api-conventions: authentication (who you are) via the Caller extractor \u2014 explicitly OUT of rbac scope."
+    }
+  ],
+  "changes": "All 23 generator labels were CORRECT \u2014 no mislabels to flip. Audited each against SKILL.md's explicit defers: authentication/Caller + If-Match contract + problem+json/unwrap/sqlx/event-emission \u2192 api-conventions; type/field/perm_class-grammar declaration \u2192 type-registry; authoring a NEW audit + Rust-gate/DB-backstop doubling \u2192 enforcement-gates. Every positive genuinely needs rbac (grant_owner R2, context_role R3, leak-free-404 R4, reach resolver, SEV-0 guards, roles-as-data, NULL-parent, IDOR backstop); every negative correctly routes to a sibling. Culled 3 of 23 to hit exactly 10/10: (1) cut the original Q1 (\"GET /cases/:id 404 vs 403\") as a near-duplicate of the 404-vs-403 axis already covered by the stronger beats-sibling item (\"I keep returning 403 for can't-view, security flagged it\"); (2) cut the original Q2 (handler-ordering require_action/If-Match/write) \u2014 weakest-differentiated positive since the If-Match angle brushes api-conventions; the cleaner missing-require_write bug (\"PATCH a field on a case they're only a viewer on\") carries the wiring-order coverage better; (3) cut the workflow-transition negative (open\u2192closed 422) as a too-easy, trivially-off-topic negative \u2014 workflow-as-data is a different family entirely, not a sibling near-miss for access control. Surviving 10 negatives all skew to sibling-confusable: 4 api-conventions (problem+json, unwrap/sqlx-status, Caller/auth, event-emission), 3 type-registry (type+fields grammar, perm_class-on-declare, registry-reload), 2 enforcement-gates (new audit authoring, Rust-gate+DB-backstop doubling). Realism already strong (concrete file/fn names: members.rs, principals_contain, perm_class, type_fields, context_role); preserved the casual/typo register on the cycle-check and demote items."
+}

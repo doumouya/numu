@@ -1,0 +1,82 @@
+[
+  {
+    "query": "i want to lock the `internal_notes` field on the note type so only admins can write it, but viewers can still see it. how do I express that?",
+    "should_trigger": true
+  },
+  {
+    "query": "a member somehow has two roles on the same project and our demote logic is freaking out. what's the right way to think about 'the role' of someone on an object?",
+    "should_trigger": true
+  },
+  {
+    "query": "we need to add a 'lead' role between member and admin. do I have to touch any Rust or is it just a row somewhere?",
+    "should_trigger": true
+  },
+  {
+    "query": "when I create a scoped object like a comment under a case, who becomes its owner and where does that get set?",
+    "should_trigger": true
+  },
+  {
+    "query": "the cycle check in members.rs \u2014 I can never remember if it's principals_contain(object_id, member_id) or the other way round. which is it and why?",
+    "should_trigger": true
+  },
+  {
+    "query": "if a case's scope_parent_id points at a deleted parent, can someone still reach the child by guessing its id?",
+    "should_trigger": true
+  },
+  {
+    "query": "for a top-level project with scope_parent_id NULL, does every authenticated user reach it by default? trying to figure out if our roots are accidentally world-readable",
+    "should_trigger": true
+  },
+  {
+    "query": "review my new attachments LIST handler \u2014 it returns every attachment in the table, I think it's leaking rows the caller shouldn't reach",
+    "should_trigger": true
+  },
+  {
+    "query": "someone reported they can PATCH a field on a case they're only a viewer on. our handler loads the row, checks If-Match, writes. walk me through where the access check should actually sit",
+    "should_trigger": true
+  },
+  {
+    "query": "I keep returning 403 for 'you don't have permission to view this case' but the security review flagged it. what's numu's convention here?",
+    "should_trigger": true
+  },
+  {
+    "query": "writing the migration to add a `context_role` display column on memberships \u2014 is it safe to read it in the demote gate to show a nicer label?",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm building an ad-hoc error JSON in my handler instead of returning AppError, and the debuggability-audit is red. how should errors be shaped?",
+    "should_trigger": false
+  },
+  {
+    "query": "my handler does `.unwrap()` on a sqlx query and the gate is yelling. what's the rule about unwrap on handler paths and how do I map the sqlx error to a status?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need the If-Match / ETag optimistic concurrency on PATCH to return 412 vs 428 correctly \u2014 where's that contract?",
+    "should_trigger": false
+  },
+  {
+    "query": "adding a new `invoice` object type with a `total` field and a `due_date` field \u2014 one type_definitions row plus type_fields, right? what's the field grammar?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to set the perm_class on a brand-new `salary` field when I declare it on the actor type. what are the valid perm_class values and defaults?",
+    "should_trigger": false
+  },
+  {
+    "query": "the registry didn't pick up my new field until I restarted \u2014 what's the reload gotcha with type_fields?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to turn 'every create path must grant an owner' into a CI check that can't regress \u2014 how do I author a new tools/*-audit script that ci.sh discovers?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need a DB trigger that raises a tagged sqlstate when someone direct-writes a membership bypassing the handler, plus the Rust-gate to double it. how do I set up that doubling?",
+    "should_trigger": false
+  },
+  {
+    "query": "how does the Caller extractor figure out who the authenticated actor is from the request? trying to understand auth.rs",
+    "should_trigger": false
+  }
+]

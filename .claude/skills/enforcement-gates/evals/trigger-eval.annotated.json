@@ -1,0 +1,105 @@
+{
+  "final": [
+    {
+      "query": "I keep writing \"reviewers should remember that every new handler under crates/api/src needs a require_action gate\" in our PR template, and that note has bitten us twice when someone was rushing. Can we make this un-bypassable instead of a sentence people skip?",
+      "should_trigger": true,
+      "rationale": "Classic 'reviewer should remember' phrasing the skill says wants to be an audit; names rbac's require_action but the ask is to author a tools/*-audit, not the access rule itself."
+    },
+    {
+      "query": "We just fixed a bug where a closed case could be reopened by a direct SQL UPDATE that bypassed workflow.rs validate(). I want this invariant to hold no matter who writes the row, not just through the Axum handler. How do I set that up properly?",
+      "should_trigger": true,
+      "rationale": "Exact Rust-gate + DB-backstop doubling worked example (close-gate / cases_guard / NU001) in Part 2 \u2014 invariant a direct write must not break."
+    },
+    {
+      "query": "every time someone adds a mutation handler they forget to emit the audit event and it slips past review. i want CI to just fail when a write path doesnt emit an event so we stop relying on people noticing",
+      "should_trigger": true,
+      "rationale": "Encode a recurring fix as a scan audit that fails CI; implicit (never names the skill), casual/typo register."
+    },
+    {
+      "query": "Can you write a tools/perm-class-audit/audit.sh that greps type_fields usage and flags any field declared with perm_class but no governing doc reference? Use the flag()/FINDING format like the others and make sure ci.sh picks it up.",
+      "should_trigger": true,
+      "rationale": "Directly asks to author a tools/<name>-audit/audit.sh with the flag()/FINDING contract and ci.sh auto-discovery \u2014 Part 1 core."
+    },
+    {
+      "query": "I want our 'every create grants the creator an owner edge' rule to fail the build if a future handler skips grant_owner. We already check it informally in rbac-audit but I want to understand how to add a brand new gate dir from scratch and self-test it against a planted violation.",
+      "should_trigger": true,
+      "rationale": "Names rbac/grant_owner but the actual ask is the authoring+self-test mechanics for a new gate dir \u2014 enforcement-gates beats the rbac sibling."
+    },
+    {
+      "query": "Our docs keep drifting when someone changes a migration but doesn't touch docs/. I want a check that inspects the last commit and complains if crates/ or migrations/ changed without a docs/ touch \u2014 there's already docs-currency-audit but I want a sibling that does the same for the OPTIONS schema doc.",
+      "should_trigger": true,
+      "rationale": "Git-based audit on HEAD (the docs-currency-audit flavour) \u2014 authoring a new change-property gate."
+    },
+    {
+      "query": "Before we turn NUMU_CI_STRICT=1 on in real CI I want to understand what 'a skip is a hole' actually means, audit which of our gates silently skip when DATABASE_URL is unset, and make those skips fail instead of warn.",
+      "should_trigger": true,
+      "rationale": "NUMU_CI_STRICT / skip()-becomes-failure is a named mechanism unique to this skill; uncommon but squarely in-scope."
+    },
+    {
+      "query": "All four audit.sh scripts fail on ANY finding today, which is fine while the tree is clean, but we're about to merge a branch carrying some known-triaged findings. How do I make an audit diff against a committed baseline and only fail on new violations?",
+      "should_trigger": true,
+      "rationale": "The ratchet / baseline.json follow-on pattern is documented only in enforcement-gates; implicit (never names the skill)."
+    },
+    {
+      "query": "We keep promising in commit messages to 'always reference a Case when touching crates/'. Can we make that mechanical so a commit that edits crates/ but mentions no CASE NNNN just can't land? I think case-first-audit half-does this but I want to extend it.",
+      "should_trigger": true,
+      "rationale": "'always\u2026' in commit messages \u2192 wants to be a git-based audit; extending case-first-audit is core skill."
+    },
+    {
+      "query": "I'm tightening the rbac-audit R1 regex because it's false-positiving on a helper that takes &PgPool, not State<AppState>. Can you fix the awk so pool helpers are exempt but real handlers still get caught?",
+      "should_trigger": true,
+      "rationale": "Editing an existing audit's query to kill a false positive \u2014 the skill's 'refine the algo, don't work around it' authoring rule, not the rbac rule content."
+    },
+    {
+      "query": "Add a new object type 'invoice' to the registry \u2014 one type_definitions row plus the amount/due_date/status fields as type_fields. No new table or handler, just the rows.",
+      "should_trigger": false,
+      "rationale": "type-registry: pure type-as-data addition (type_definitions + type_fields, zero migration); no gate authored."
+    },
+    {
+      "query": "Why is my new comments handler returning a 403 when an unauthorized user hits it? I expected a leak-free 404. Where in rbac.rs does the reach resolver decide that, and is scope_parent_id cascade involved?",
+      "should_trigger": false,
+      "rationale": "rbac: 404-vs-403 reasoning + reach resolver is the access-control skill; explanatory, no gate being authored."
+    },
+    {
+      "query": "My handler does map_err(|_| StatusCode::INTERNAL_SERVER_ERROR) on a sqlx call and I'm getting a bare 500 with no request-id. How should I map this to a proper problem+json AppError instead?",
+      "should_trigger": false,
+      "rationale": "api-conventions: sqlx\u2192status mapping / problem+json / no-bare-500 is the handler house-style, not encoding a gate."
+    },
+    {
+      "query": "The debuggability-audit gate is red on my branch \u2014 it's flagging an .unwrap() in objects.rs. What's the right way to rewrite this handler line so it returns an AppError and the gate goes green?",
+      "should_trigger": false,
+      "rationale": "api-conventions: names a gate but the fix is the no-unwrap handler rule; user is satisfying an existing gate, not authoring one."
+    },
+    {
+      "query": "Add an If-Match / ETag optimistic concurrency check to the PATCH /cases handler so a stale update gets a 412. Where do I read the current version and compare?",
+      "should_trigger": false,
+      "rationale": "api-conventions: If-Match/ETag concurrency mechanics; no rule-encoding-as-query."
+    },
+    {
+      "query": "I need to add a scope_parent_id to the note type so notes inherit reach from their parent case. What goes in type_fields for that ref, and does the reach resolver pick it up automatically?",
+      "should_trigger": false,
+      "rationale": "type-registry: scope_parent on a type is field grammar (reach pickup is rbac); no gate authored."
+    },
+    {
+      "query": "Can you write the SQL migration 0010 that adds a covering index on entities(entity_type, scope_parent_id) so the reach query stops doing a seq scan?",
+      "should_trigger": false,
+      "rationale": "Adjacent: performance index migration, not encoding an invariant; no audit/backstop discipline."
+    },
+    {
+      "query": "Walk me through how the Caller extractor pulls the actor identity off the session cookie in auth.rs and where oauth.rs hands off to it.",
+      "should_trigger": false,
+      "rationale": "Adjacent (auth/api-conventions Caller extractor): purely explanatory, no enforcement mechanism."
+    },
+    {
+      "query": "ci.sh is failing on cargo clippy with -D warnings about an unused import in field_perms.rs. Just help me clear the clippy warning so the build is green.",
+      "should_trigger": false,
+      "rationale": "Adjacent: names ci.sh but it's a one-off clippy fix in an existing stage, not authoring an audit or backstop."
+    },
+    {
+      "query": "We added a DB trigger raising sqlstate NU001 for the cases close-gate but error.rs still maps it to a generic 500. Make error.rs translate NU001 back to the 422 close_preconditions_unmet so a raw UPDATE bypass returns the right status.",
+      "should_trigger": false,
+      "rationale": "api-conventions: the ask is sqlstate\u2192status mapping in error.rs (the 5xx airlock / problem+json house-style); the gate/backstop already exists, so this is satisfying error-mapping conventions, not authoring a gate."
+    }
+  ],
+  "changes": "LABEL AUDIT + CULL to 10/10. Started from 23 candidates (14 true-labeled, 9 false). All 9 negatives were correctly siblings/adjacent and kept. Read SKILL.md to fix the boundary: Part 1 = authoring/extending tools/*-audit (flag()/FINDING, ci.sh discovery, ratchet, NUMU_CI_STRICT); Part 2 = Rust-gate + DB-backstop doubling; rule CONTENT explicitly deferred to rbac/api-conventions.\n\nFLIPPED to negative (1): the NU001\u2192error.rs '422 close_preconditions_unmet' item. Although the skill's worked example shows the error.rs bridge, this query's phrasing is generic sqlstate\u2192HTTP-status mapping in error.rs with the trigger already in place \u2014 that is api-conventions' clearly-owned turf (the 5xx airlock / sqlstate mapping), not authoring a new gate. Flipping it both reaches a 10th sibling-confusable negative and removes a near-dup with the close-gate doubling positive. This is now the strongest near-miss in the set (names NU001 + error.rs).\n\nCULLED (3 true near-dups / over-weighted niche):\n- 'membership can't leave scope without owner, DB refuse + 422' \u2014 near-duplicate of the workflow close-gate doubling positive AND tilts toward rbac membership content; kept the cleaner close-gate version.\n- 'rbac 404-vs-403 regresses, turn into a query' \u2014 near-duplicate of the PR-template require_action 'remember to' positive (both = regressing rbac rule \u2192 make it a query); kept the require_action one as the cleanest explicit 'remember to' author trigger.\n- 'second #[cfg(test)] mid-file folklore \u2192 fail CI' \u2014 most contrived/niche of three 'uncommon mechanism' positives; kept the two skill-exclusive named mechanisms (NUMU_CI_STRICT skip-is-a-hole, the ratchet/baseline) which are more clearly enforcement-gates vocabulary and harder for a sibling to claim.\n\nNo labels among survivors were wrong-direction; the kept beats-sibling positives (grant_owner new-gate-from-scratch; rbac-audit regex/awk refine) genuinely need the AUTHORING mechanics, not the rbac rule content. Realism preserved: concrete files/functions (workflow.rs validate(), cases_guard, error.rs, rbac-audit R1, &PgPool vs State<AppState>, type_fields, OPTIONS schema doc), one casual/typo item ('doesnt'), varied register. Final: 10 true (2 explicit-author, 2 git-audit, 1 scan-implicit, 1 doubling, 2 beats-rbac-sibling incl. refine-existing-query, 2 named-mechanism) + 10 false (8 sibling-confusable: 2 type-registry, 1 rbac, 4 api-conventions incl. 2 gate-naming near-misses, + the flipped NU001; 2 adjacent: index migration, Caller extractor)."
+}
