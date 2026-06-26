@@ -1,6 +1,6 @@
 # CASE 0006 — numu Cases / workflow-as-data engine (light up G4)
 
-- **Status:** in_progress
+- **Status:** in_review
 - **Type:** feature
 - **Opened:** 2026-06-26
 - **Owner:** Torv (for Em)
@@ -20,7 +20,7 @@ it up: seed the data, validate transitions, gate the close, and unlock the two d
 | **G4.1** | default workflow + `case` type + `workflow` cache + transition validation (422) + typed `cases` mirror | **DONE (this batch)** |
 | **G4.2** | `cases_guard` trigger (close-precondition gate → 422) + a record-check endpoint | **DONE (this batch)** |
 | **G4.3** | seed `comment` + `attachment` types (reach via the case) | **DONE (this batch)** |
-| G4.4 | `case-first-audit` + `docs-currency-audit` + a `commit-ingest` (mark `docs_reconciled`) | pending |
+| **G4.4** | `case-first-audit` + `docs-currency-audit` (live, ci-wired) | **DONE (this batch)** — auto-ingest deferred |
 
 ## Delivered — G4.1
 
@@ -49,3 +49,18 @@ Migration `0007` dry-run on a scratch DB first (workflow + case seed + transitio
 - **2026-06-26 — Torv:** Built G4.1 — the workflow engine's transition validation + the typed cases mirror.
   Found + fixed the readonly-default bug (would have broken actor creates too). Pushed per the green-ci
   rule. Next: G4.2 (the close-precondition gate + the `cases_guard` trigger).
+
+- **2026-06-26 — Torv (G4.2–G4.4, the engine is live):** Powered through the rest:
+  - **G4.2** (37e24b6): the close gate — Rust check (clean 422 `close_preconditions_unmet`) + the
+    `cases_guard` trigger backstop (custom sqlstate `NU001`); a `POST /:type/:id/checks/:name` records a
+    close-check. A `done` case is now honest.
+  - **G4.3** (30b1fc0): seeded `comment` + `attachment` (off any `subject_id`); RBAC reaches them for free
+    via the project→case→comment scope cascade (test proven).
+  - **G4.4** (this commit): `case-first-audit` + `docs-currency-audit` went **live** (git-based, ci
+    auto-discovered) — the two gates the engine unblocked. **Deferred:** the auto `commit-ingest` that marks
+    `docs_reconciled` from a commit (needs a stable commit↔DB-case-id convention; the check is markable via
+    the API today). The G5 orchestrator + the remaining catalog/omnisearch/type-registration tracks remain
+    on the roadmap.
+
+  **The Cases engine (G4) is complete** — numu's headline agent-coordination feature is real: workflow-as-
+  data, validated transitions, an honest close-gate, and the activity thread. CASE 0006 → `in_review`.

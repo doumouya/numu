@@ -14,14 +14,14 @@ set it in real CI so a hole can't pass as green.
 | Gate | Status | What it checks |
 |---|---|---|
 | **debuggability** | **live** (`debuggability-audit/`) | the P-DEBUG rules of [`../docs/OBSERVABILITY.md`](../docs/OBSERVABILITY.md) §6 — no bare 500 / unwrap on handler paths, one problem+json responder, request-id wired, every mutation emits an event, OPTIONS/HEAD/healthz/readyz wired, no secrets in logs |
-| **case-first** | follow-on | a branch commit references a Case |
-| **docs-currency** | follow-on | a commit that alters a documented surface reconciles its doc (or `Docs: n/a`) |
+| **case-first** | **live** (`case-first-audit/`) | the HEAD commit, if it touches `crates/`/`migrations/`, references a Case (a `CASE NNNN`/`CAS_` mention or a `docs/cases/` file) |
+| **docs-currency** | **live** (`docs-currency-audit/`) | a HEAD commit that changes `crates/`/`migrations/` also touches `docs/`, or declares `Docs: n/a` |
 | **capability-ledger** | follow-on | no capability dropped/undocumented (the anti-amnesia ledger) |
 | **agent-refs** | follow-on | the orchestrator's role/gate references resolve |
 
-The four follow-on gates land as their substrate arrives (a Cases backend, the capability `[TYPE]`, the
-agent chain). Each is a `tools/<name>-audit/audit.sh` that `ci.sh` picks up automatically — no `ci.sh` edit
-beyond existing.
+case-first + docs-currency went **live** with the Cases engine (CASE 0006); the remaining two
+(capability-ledger · agent-refs) land as their substrate arrives (the capability `[TYPE]`, the agent
+chain). Each is a `tools/<name>-audit/audit.sh` that `ci.sh` picks up automatically — no `ci.sh` edit.
 
 **Domain audits (live).** Beyond the spine, `ci.sh` auto-discovers code-correctness audits under
 `tools/*-audit/`: **debuggability-audit** (above) and **rbac-audit** (slice B2) — every entity handler
