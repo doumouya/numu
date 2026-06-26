@@ -19,10 +19,13 @@ use crate::error::{AppError, AppResult};
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
 
-/// Set once at boot by `run()`; swaps the tracing `EnvFilter`. `None` in tests (no subscriber) → PATCH 503s.
-static LOG_RELOAD: OnceLock<Box<dyn Fn(&str) -> bool + Send + Sync>> = OnceLock::new();
+/// A closure that swaps the tracing filter to `level`, returning whether it parsed + applied.
+type LogReloader = Box<dyn Fn(&str) -> bool + Send + Sync>;
 
-pub fn set_log_reloader(f: Box<dyn Fn(&str) -> bool + Send + Sync>) {
+/// Set once at boot by `run()`; swaps the tracing `EnvFilter`. `None` in tests (no subscriber) → PATCH 503s.
+static LOG_RELOAD: OnceLock<LogReloader> = OnceLock::new();
+
+pub fn set_log_reloader(f: LogReloader) {
     let _ = LOG_RELOAD.set(f);
 }
 
