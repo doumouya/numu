@@ -26,7 +26,7 @@ docs-currency gate); until then, the doc *is* the contract.
 |---|---|---|---|
 | [`README.md`](../README.md) | The pitch + the two-layer model (SYSTEM tables vs REGISTERED TYPES) | whole repo (orientation) | living |
 | [`DOCMAP.md`](DOCMAP.md) | The doc index + read order (this file) | `docs/` | living |
-| [`OBJECTS.md`](OBJECTS.md) | The data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, the prefix registry, the seeded `default` workflow, omnisearch | `migrations/` (SYSTEM tables) · `seed/` (builtin `type_definitions` + `type_fields` rows) | design contract |
+| [`OBJECTS.md`](OBJECTS.md) | The data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, the prefix registry, the seeded `default` workflow, the `relation` edge, omnisearch | `migrations/` (SYSTEM tables) · `seed/` (builtin `type_definitions` + `type_fields` rows) | design contract |
 | [`HTTP.md`](HTTP.md) | The uniform verb surface over the registry: `/api/objects/:type`, the verb→status matrix, OPTIONS self-description, `If-Match` concurrency, two-stage leak-free RBAC, `method_policy` | `api/` (one generic Axum handler set over the registry) | design contract |
 | [`OBSERVABILITY.md`](OBSERVABILITY.md) | Debuggability (P-DEBUG): the request-id/trace-id spine, structured spans, problem+json envelope, `/healthz`·`/readyz`, the debug-echo | `api/` middleware (`request_id_layer` + `TraceLayer`) · `tools/debuggability-audit` (the 5th gate) | design contract |
 | [`.claude/skills/http/`](../.claude/skills/http/SKILL.md) | **Generic** RFC-9110 HTTP technique (method/status/header/conditional-request semantics) — what `HTTP.md` *applies* | consumed by `api/` + connectors; reusable across projects | **shipped** (committed) |

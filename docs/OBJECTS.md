@@ -103,7 +103,7 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 |---|---|---|
 | **G1 · Registry spine** | type_definitions, entities, type_fields, entity_data | `[SYSTEM]` |
 | **G2 · Access & org** | memberships, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
-| **G3 · Audit & observability** | events, audit_runs, audit_findings | `[SYSTEM]` |
+| **G3 · Audit & observability** | events, audit_runs, audit_findings, omnisearch (index + `search()`) | `[SYSTEM]` |
 | **G4 · Work tracking (coordination core)** | workflows, case_close_checks `[SYSTEM]` · case, comment, attachment `[TYPE]` |
 | **G5 · Orchestrator / feature pipeline** | feature_runs, role_handoffs | `[SYSTEM]` |
 | **G6 · Build knowledge ("bake everything")** | changeset `[SYSTEM]` · spec, acceptance_criterion, runbook, decision, capability `[TYPE]` |
@@ -112,7 +112,7 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 Prefix registry (each `id_prefix` is unique → makes `kind(id)` a pure lookup):
 `USR` actor · `TEM` team · `ORG` workspace · `PRJ` project · `CAS` case · `CMT` comment ·
 `ATT` attachment · `SPC` spec · `ACR` acceptance_criterion · `RBK` runbook · `DEC` decision ·
-`CAP` capability · `CON` connector · `SEC` secret · `SKL` skill · `MIL` milestone *(proposed)*.
+`CAP` capability · `CON` connector · `SEC` secret · `SKL` skill · `MIL` milestone.
 
 ---
 
@@ -200,7 +200,7 @@ Teams, Departments, and per-object sharing — the member end may itself be a te
 > and every other `XxxContactRole`): *one* cosmetic role label on *one* edge, on *any* object — no
 > per-type role junction.
 
-### `relation` `[SYSTEM]` — the one generic entity↔entity edge · **PROPOSED (CASE 0001)**
+### `relation` `[SYSTEM]` — the one generic entity↔entity edge
 The M:N counterpart to `memberships` (which is entity↔*principal*). A single typed edge so numu never
 grows SF-style per-pair junction objects (`CaseArticle`, related-cases, duplicate-of, blocks…): the
 *concept* lives in `relation_type`, the *shape* is always the same two ids.
@@ -212,6 +212,10 @@ grows SF-style per-pair junction objects (`CaseArticle`, related-cases, duplicat
 | `relation_type` | text | registered vocab: `relates-to · duplicates · blocks · references · article-of · parent-of` |
 | `created_by` | text → entities | `system` |
 | `created_at` | timestamptz | `system` |
+
+**Unique** `(subject_id, object_id, relation_type)` — no duplicate edges. **RBAC:** a relation is
+readable iff the caller can reach *both* endpoints, writable iff they can edit the `subject` — so an
+edge never leaks an entity the caller couldn't already see.
 
 > Why an edge, not a `ref` field: `ref` fields cover **1:N** (a case's one `project_id`). `relation`
 > covers **M:N, typed** (this runbook `references` 3 cases; this case `duplicates` that one) — the gap
@@ -324,7 +328,7 @@ ratchet fails CI only on **new** vs the committed baseline.
 | `severity` | enum | `info \| warn \| error` |
 | `detail` | json | location + message |
 
-### omnisearch — registry-native universal search `[SYSTEM]` · **PROPOSED (CASE 0001)**
+### omnisearch — registry-native universal search `[SYSTEM]`
 A starting-pack **builtin** — the *logic* baked in now, UI later. Because every object is a row in one
 registry, **one search covers every type for free** (the DB-as-a-framework payoff). Three data-driven
 parts, no per-type search code:
@@ -339,7 +343,8 @@ parts, no per-type search code:
    `(entity_id, type, snippet, rank)`. Reach-aware by construction, like every other read.
 
 So omnisearch isn't a feature bolted onto one screen; it's a property of the registry the whole app
-inherits.
+inherits. **Surface (when wired):** a reach-filtered `GET /api/search?q=<text>&type=<optional>` — a
+sibling of the `/api/objects/:type` routes, leak-free by the same reach gate ([`HTTP.md`](HTTP.md)).
 
 ---
 
@@ -571,7 +576,7 @@ Flagged so the schema/registry anticipates them, but they ship only when a proje
   `SKILL.md` — harness tooling, e.g. the `http` skill numu ships at `.claude/skills/http/`. The
   `[TYPE] skill` is a DB-registered, agent-invokable procedure; the SKILL.md is editor tooling. Both can
   coexist.)*
-- **`milestone` `[TYPE]` · `MIL`** · **PROPOSED (CASE 0001)** — a **generic time-bound obligation** off
+- **`milestone` `[TYPE]` · `MIL`** — a **generic time-bound obligation** off
   *any* `subject_id` (SF `CaseMilestone`, minus the EntitlementProcess machinery). Reusable across
   entities + a use-case numu doesn't yet cover (deadlines / SLAs for customer cases *and* the apps numu
   supports). Fields:

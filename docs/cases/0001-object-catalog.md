@@ -94,3 +94,22 @@ gates + ratchet) · `.agents/` (5 roles, project-agnostic) · `CLAUDE.md` (baked
   keep it lean as it grows are the **`relation` edge** (so we never sprout bespoke junctions) and
   **omnisearch** (so universal search is a registry property, not a per-screen feature). Both are
   `PROPOSED (CASE 0001)` — awaiting Em's bless before canonical. — Torv
+
+- **2026-06-26 — Em blessed all three primitives → promoted to canonical (Torv):** Em: *"go for
+  relation, milestone, and omnisearch primitives."* Removed the `PROPOSED (CASE 0001)` markers across
+  [`docs/OBJECTS.md`](../OBJECTS.md) — the three are now canonical builtins of the catalog:
+  - **`relation` `[SYSTEM]`** (G2) — the M:N typed entity↔entity edge. Finalized for build: **unique**
+    `(subject_id, object_id, relation_type)`; readable iff the caller reaches *both* endpoints, writable
+    iff they can edit the `subject` (leak-free).
+  - **omnisearch `[SYSTEM]`** (G3) — registry-native reach-filtered search: `type_fields.searchable` +
+    a `tsvector` index over each entity's searchable slice + `search(query, caller)`, surfaced as a
+    reach-filtered `GET /api/search?q=`. Baked into the starting pack (logic now, UI later) per Em's
+    standing ask. Added to the G3 at-a-glance.
+  - **`milestone` `[TYPE]` · `MIL`** (G7) — generic time-bound obligation off any `subject_id`; now
+    canonical (dropped the *(proposed)* prefix tag) but **kept designed-for-not-v1**: a customer-SLA type
+    the engine seeds when SLAs are needed, not core-engine infra.
+
+  **Implementation** rides the `migrations/` + `seed/` slice (now underway, another Torv): `relation` is
+  a SYSTEM table; omnisearch is the `type_fields.searchable` column + the `tsvector` index + the
+  `search()` function (+ a `GET /api/search` row HTTP.md should grow); `milestone` is pure type rows
+  (zero migrations, seeded on demand). — Torv
