@@ -11,6 +11,9 @@ in a registry, not migrations you hand-write.
 > debuggability spine ([`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md)) — plus the first runnable
 > artifact, the reusable [`http` skill](.claude/skills/http/SKILL.md). Backend code (migrations, seed,
 > tools, agent roles) lands in follow-on slices.
+>
+> **Lost?** [`docs/DOCMAP.md`](docs/DOCMAP.md) is the map — every doc, what it governs, the code area
+> it's the contract for, and the order to read them in.
 
 ## The one idea: two layers
 
@@ -30,7 +33,7 @@ RBAC, audit, the close-gate, and the agent chain all apply to them for free.
 |---|---|
 | **Work tracking** | Cases with **workflow-as-data** (a workflow is a row, illegal transition → 422) |
 | **Agent coordination** | the Case = the handoff bus; a 5-role orchestrator (architect→tester→coder→reviewer→ops) with a **circuit breaker that is a DB query**, not agent discipline |
-| **Enforcement gates** | case-first · docs-currency (no `done` until docs reconciled) · capability-ledger (anti-amnesia) · agent-refs (orchestrator-reference audit) — all harness-agnostic, ratcheted in `ci.sh` |
+| **Enforcement gates** | case-first · docs-currency (no `done` until docs reconciled) · capability-ledger (anti-amnesia) · agent-refs (orchestrator-reference audit) · debuggability (no bare 500 / dropped request-id) — all harness-agnostic, ratcheted in `ci.sh` |
 | **Audit everything** | every meaningful action is an `events` row; audit runs/findings are queryable + diffable |
 | **Self-documenting** | specs, acceptance criteria, runbooks, decisions (ADRs), and the capability ledger are **first-class registered objects** — queryable knowledge, not buried in commit messages |
 | **Security by construction** | the `scope_parent_id` FK as an IDOR backstop; ownership is a membership edge ("no object without an owner"); leak-free 404 |
@@ -43,6 +46,7 @@ RBAC, audit, the close-gate, and the agent chain all apply to them for free.
 numu/
 ├── README.md              ← this file
 ├── docs/
+│   ├── DOCMAP.md          ← the map: docs ⇄ code-area + read order (scan first)
 │   ├── OBJECTS.md         ← the object catalog (the enrichment surface) — START HERE
 │   ├── HTTP.md            ← the uniform HTTP verb surface over the registry (locked decision)
 │   ├── OBSERVABILITY.md   ← debuggable-by-construction: request-id, problem+json, the 5th CI gate

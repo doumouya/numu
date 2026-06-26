@@ -25,8 +25,8 @@ numu has exactly **two layers**. Holding the distinction is the whole model:
 The payoff — and the reason numu is "pull-and-go": **a customer project adds its own domain objects
 (`invoice`, `patient`, `listing`, whatever) the exact same way numu's built-in types were added — a
 type row + field rows, zero migrations.** numu ships the *build-coordination* types seeded; your
-project stacks its *domain* types on top. The four enforcement gates
-(case-first · docs-currency · capability-ledger · agent-refs) ride along for free, because they're
+project stacks its *domain* types on top. The five enforcement gates
+(case-first · docs-currency · capability-ledger · agent-refs · debuggability) ride along for free, because they're
 defined over the system tables, not over any particular type.
 
 ### The field shape — the enrichment unit
@@ -227,7 +227,7 @@ ENRICH: this is the identity record; add whatever a project needs to attribute w
 | `handle` | Handle | text | yes | yes | standard | unique-ish; validate `^[a-z0-9_-]+$` |
 | `email` | Email | text | no | yes | owner_grade | validate email |
 | `kind` | Kind | enum | yes | no | readonly | `human` · `agent` · `service` |
-| `role` | Platform role | enum | yes | yes | owner_grade | `member` · `admin` (platform-admin gate) |
+| `platform_role` | Platform role | enum | yes | yes | owner_grade | `member` · `admin` (the platform-admin gate; **distinct from `memberships.role`**, the per-object reach tier — two different "role" concepts, two different names) |
 | `status` | Status | enum | yes | yes | standard | `active` · `invited` · `disabled` |
 | `avatar_url` | Avatar | text | no | yes | standard | |
 | `created_at` | Created | date | — | no | system | |
@@ -360,6 +360,20 @@ preconditions the terminal entry requires.
 | `transitions` | json | `{ "<from>": ["<to>", …] }` (permissive) |
 | `initial` | text | starting state |
 | `close_checks` | json | ordered named close preconditions (e.g. `["docs_reconciled"]`) |
+
+**numu seeds one `default` workflow** (every project inherits it; a new workflow is added the same way — a row, no recompile):
+
+| field | value |
+|---|---|
+| `workflow_id` | `default` |
+| `states` | `["backlog","todo","in_progress","in_review","done"]` — terminal = `done` |
+| `transitions` | permissive: forward one step · one step back · reopen from `done`; an illegal *skip* (e.g. `backlog → done`) → **422** |
+| `initial` | `backlog` |
+| `close_checks` | `["docs_reconciled"]` — the docs-currency gate, so a `done` Case is *honest* |
+
+This is the workflow `case.workflow_id` defaults to, and the source of `case.status`'s enum
+(`status` ∈ these `states`). A project that wants a different lifecycle seeds its own workflow row and
+points its type at it — the engine never changes.
 
 ### `case_close_checks` `[SYSTEM]` — per-case state of each close precondition
 The engine flips `passed=true` as each gate clears; the `cases_guard` trigger refuses terminal entry

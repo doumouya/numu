@@ -19,8 +19,8 @@ fields)** so Em and other sessions can **enrich the fields**.
 
 Two layers: **SYSTEM tables** (engine machinery; migrations) vs **REGISTERED TYPES** (objects-as-data
 — a `type_definitions` row + `type_fields` rows + `entity_data`). A customer project adds its own
-domain objects the same way numu's builtins were added → **zero migrations**. The four enforcement
-gates (case-first · docs-currency · capability-ledger · agent-refs) ride on the system tables, so they
+domain objects the same way numu's builtins were added → **zero migrations**. The five enforcement
+gates (case-first · docs-currency · capability-ledger · agent-refs · debuggability) ride on the system tables, so they
 apply to every type for free.
 
 ## Delivered this batch

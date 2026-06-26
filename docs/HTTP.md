@@ -89,14 +89,14 @@ JSON body:
       "editable":true,"perm_class":"standard","can_read":true,"can_write":true },
     { "field":"status","label":"Status","kind":"enum","required":true,"editable":true,
       "perm_class":"standard","can_read":true,"can_write":true,
-      "options":["todo","doing","review","done"] }
+      "options":["backlog","todo","in_progress","in_review","done"] }
     /* fields the caller cannot read are omitted entirely (leak-free) */
   ],
   "validation": { "required":["title","type","status","priority","project_id"],
                   "refs": {"project_id":"PRJ","assignee_id":"USR"} },
   "concurrency": { "etag": "W/\"7\"" },         // item only; current validator
-  "workflow": { "workflow_id":"default","initial":"todo",
-                "transitions": {"doing":["todo","review"]} }   // present iff the type has a workflow
+  "workflow": { "workflow_id":"default","initial":"backlog",
+                "transitions": {"in_progress":["todo","in_review"]} }   // present iff the type has a workflow (states/transitions per OBJECTS.md G4 'default')
 }
 ```
 
