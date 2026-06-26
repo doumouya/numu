@@ -117,6 +117,39 @@ fn entity_json(id: &str, type_id: &str, data: Value, version: i32) -> Value {
     json!({ "id": id, "type": type_id, "data": data, "version": version, "etag": etag(version) })
 }
 
+/// G4 — validate a case status change on UPDATE: a legal transition (else `422 illegal_transition`) and,
+/// if it enters the terminal state, every workflow `close_check` must have passed (else
+/// `422 close_preconditions_unmet`). The `cases_guard` trigger is the DB backstop.
+async fn validate_case_change(
+    st: &AppState,
+    id: &str,
+    data: &Value,
+    old_status: Option<&str>,
+    ctx: &RequestCtx,
+) -> AppResult<()> {
+    let wf_id = data
+        .get("workflow_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let new_status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    st.workflows
+        .validate(wf_id, old_status, new_status)
+        .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+    if let Some(wf) = st.workflows.get(wf_id) {
+        if wf.is_terminal(new_status) && old_status != Some(new_status) {
+            let unmet = db::unmet_close_checks(&st.pool, id, &wf.close_checks).await?;
+            if !unmet.is_empty() {
+                return Err(AppError::close_preconditions_unmet(format!(
+                    "close preconditions not met: {}",
+                    unmet.join(", ")
+                ))
+                .with_request_id(ctx.request_id.clone()));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Every key in the input must be a known field, and acceptable for this operation: on CREATE it must be
 /// `settable` (set-once fields allowed); on UPDATE it must be `writable` (editable after create).
 fn check_input(td: &TypeDef, payload: &Value, on_create: bool) -> AppResult<()> {
@@ -590,14 +623,7 @@ async fn item_put(
         .unwrap_or_default();
     field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
     if td.type_id == "case" {
-        let wf = data
-            .get("workflow_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("default");
-        let new_status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        st.workflows
-            .validate(wf, old_status.as_deref(), new_status)
-            .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+        validate_case_change(&st, &id, &data, old_status.as_deref(), &ctx).await?;
     }
     let sp = scope_parent(td, &data);
 
@@ -672,14 +698,7 @@ async fn item_patch(
         .unwrap_or_default();
     field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
     if td.type_id == "case" {
-        let wf = data
-            .get("workflow_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("default");
-        let new_status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        st.workflows
-            .validate(wf, old_status.as_deref(), new_status)
-            .map_err(|e| e.with_request_id(ctx.request_id.clone()))?;
+        validate_case_change(&st, &id, &data, old_status.as_deref(), &ctx).await?;
     }
     let sp = scope_parent(td, &data);
 

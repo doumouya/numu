@@ -21,6 +21,10 @@ impl Workflow {
     fn is_state(&self, s: &str) -> bool {
         self.states.iter().any(|x| x == s)
     }
+    /// The terminal state is the last in the ordered `states`.
+    pub fn is_terminal(&self, s: &str) -> bool {
+        self.states.last().is_some_and(|t| t == s)
+    }
 }
 
 pub struct WorkflowCache {

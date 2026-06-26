@@ -10,7 +10,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{get, patch, post};
 use axum::{Extension, Json, Router};
 use serde_json::{json, Value};
 use sqlx::{PgPool, Row};
@@ -32,6 +32,51 @@ pub fn router() -> Router<AppState> {
             "/:type/:id/members/:member_id",
             patch(set_member).delete(remove_member),
         )
+        .route("/:type/:id/checks/:name", post(record_check))
+}
+
+/// POST /:type/:id/checks/:name {passed, note?} — record a case close-precondition (G4.2). Manage
+/// authority (admin+); only cases have close-checks.
+async fn record_check(
+    State(st): State<AppState>,
+    Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
+    Path((type_id, id, name)): Path<(String, String, String)>,
+    headers: axum::http::HeaderMap,
+    body: axum::body::Bytes,
+) -> AppResult<Response> {
+    if type_id != "case" {
+        return Err(deny_404(&ctx)); // close-checks only apply to cases
+    }
+    ensure_object(&st.pool, &id, &type_id, &ctx).await?;
+    require_rank(&st.pool, &caller, &id, MANAGE_RANK, &ctx).await?;
+    let v = crate::objects::read_json(&headers, &body, false)?;
+    let passed = v.get("passed").and_then(|x| x.as_bool()).unwrap_or(false);
+    let note = v.get("note").and_then(|x| x.as_str());
+    sqlx::query(
+        "insert into case_close_checks (case_id, check_name, passed, note) values ($1, $2, $3, $4) \
+         on conflict (case_id, check_name) do update set passed = excluded.passed, note = excluded.note, at = now()",
+    )
+    .bind(&id)
+    .bind(&name)
+    .bind(passed)
+    .bind(note)
+    .execute(&st.pool)
+    .await?;
+    crate::db::record_event(
+        &st.pool,
+        &ctx,
+        &caller.actor_id,
+        Some(&id),
+        &format!("case.check_{name}"),
+        serde_json::json!({ "check": name, "passed": passed }),
+    )
+    .await;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({ "check": name, "passed": passed })),
+    )
+        .into_response())
 }
 
 fn deny_404(ctx: &RequestCtx) -> AppError {

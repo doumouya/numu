@@ -81,3 +81,26 @@ pub async fn upsert_case_mirror<'e, E: sqlx::PgExecutor<'e>>(
     .await?;
     Ok(())
 }
+
+/// The close-gate query: of a workflow's `close_checks`, the names that DON'T yet have a `passed=true`
+/// `case_close_checks` row for this case. Empty ⇒ the terminal move is allowed.
+pub async fn unmet_close_checks(
+    pool: &PgPool,
+    case_id: &str,
+    close_checks: &[String],
+) -> sqlx::Result<Vec<String>> {
+    let mut unmet = Vec::new();
+    for name in close_checks {
+        let passed: Option<bool> = sqlx::query_scalar(
+            "select passed from case_close_checks where case_id = $1 and check_name = $2",
+        )
+        .bind(case_id)
+        .bind(name)
+        .fetch_optional(pool)
+        .await?;
+        if passed != Some(true) {
+            unmet.push(name.clone());
+        }
+    }
+    Ok(unmet)
+}

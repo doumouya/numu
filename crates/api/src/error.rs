@@ -73,6 +73,14 @@ impl AppError {
     pub fn illegal_transition(d: impl Into<String>) -> Self {
         Self::new(StatusCode::UNPROCESSABLE_ENTITY, "illegal_transition", d)
     }
+    /// A terminal workflow move blocked because a close precondition isn't met. 422.
+    pub fn close_preconditions_unmet(d: impl Into<String>) -> Self {
+        Self::new(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "close_preconditions_unmet",
+            d,
+        )
+    }
     /// Unique / sole-owner / dependency conflict. Wired by the membership + workflow slices. Staged seam.
     #[allow(dead_code)]
     pub fn conflict(d: impl Into<String>) -> Self {
@@ -142,6 +150,10 @@ impl From<sqlx::Error> for AppError {
             // a foreign-key / check violation on a write is a client problem (bad ref / bad enum), not a 500
             sqlx::Error::Database(ref db) if db.code().as_deref() == Some("23503") => {
                 AppError::unprocessable("a referenced entity does not exist")
+            }
+            // the cases_guard trigger's custom sqlstate — the DB backstop for the close-gate.
+            sqlx::Error::Database(ref db) if db.code().as_deref() == Some("NU001") => {
+                AppError::close_preconditions_unmet("close preconditions not met")
             }
             other => {
                 tracing::error!(error = %other, "unmapped db error");

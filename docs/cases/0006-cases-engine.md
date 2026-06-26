@@ -18,7 +18,7 @@ it up: seed the data, validate transitions, gate the close, and unlock the two d
 | Slice | Delivers | Status |
 |---|---|---|
 | **G4.1** | default workflow + `case` type + `workflow` cache + transition validation (422) + typed `cases` mirror | **DONE (this batch)** |
-| G4.2 | `cases_guard` trigger (close-precondition gate → 422) + a record-check endpoint | next |
+| **G4.2** | `cases_guard` trigger (close-precondition gate → 422) + a record-check endpoint | **DONE (this batch)** |
 | G4.3 | seed `comment` + `attachment` types (reach via the case) | pending |
 | G4.4 | `case-first-audit` + `docs-currency-audit` + a `commit-ingest` (mark `docs_reconciled`) | pending |
 

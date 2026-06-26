@@ -98,6 +98,76 @@ async fn make_project(app: &Router, admin: &str) -> String {
     prj["id"].as_str().unwrap().to_string()
 }
 
+async fn patch_status(
+    app: &Router,
+    cid: &str,
+    admin: &str,
+    etag: Option<&str>,
+    status: &str,
+) -> (StatusCode, Option<String>) {
+    let body = format!(r#"{{"status":"{status}"}}"#);
+    let (st, e, _) = req(
+        app,
+        "PATCH",
+        &format!("/case/{cid}"),
+        admin,
+        etag,
+        Some(&body),
+    )
+    .await;
+    (st, e)
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn close_gate_blocks_done_until_checks_pass(
+    pool: PgPool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
+    let pid = make_project(&app, &admin).await;
+    let body = format!(r#"{{"title":"T","type":"task","project_id":"{pid}"}}"#);
+    let (_, etag, c) = req(&app, "POST", "/case", &admin, None, Some(&body)).await;
+    let cid = c["id"].as_str().unwrap().to_string();
+
+    // walk backlog -> todo -> in_progress -> in_review
+    let (st, e) = patch_status(&app, &cid, &admin, etag.as_deref(), "todo").await;
+    assert_eq!(st, StatusCode::OK);
+    let (st, e) = patch_status(&app, &cid, &admin, e.as_deref(), "in_progress").await;
+    assert_eq!(st, StatusCode::OK);
+    let (st, review_etag) = patch_status(&app, &cid, &admin, e.as_deref(), "in_review").await;
+    assert_eq!(st, StatusCode::OK);
+
+    // in_review -> done WITHOUT docs_reconciled: blocked by the close gate
+    let (st, _, err) = req(
+        &app,
+        "PATCH",
+        &format!("/case/{cid}"),
+        &admin,
+        review_etag.as_deref(),
+        Some(r#"{"status":"done"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(err["kind"].as_str(), Some("close_preconditions_unmet"));
+
+    // record the close-check passed (the failed move didn't bump the version, so the etag still holds)
+    let (st, _, _) = req(
+        &app,
+        "POST",
+        &format!("/case/{cid}/checks/docs_reconciled"),
+        &admin,
+        None,
+        Some(r#"{"passed":true}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+
+    // now the terminal move is allowed
+    let (st, _) = patch_status(&app, &cid, &admin, review_etag.as_deref(), "done").await;
+    assert_eq!(st, StatusCode::OK);
+    Ok(())
+}
+
 #[sqlx::test(migrations = "../../migrations")]
 async fn case_workflow_transitions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let app = build_app(&pool).await;
