@@ -6,9 +6,11 @@ coordination, an audit/enforcement spine, and a self-documenting knowledge layer
 consult any other repo's docs**. numu is "database-as-a-framework": your project's objects are *data*
 in a registry, not migrations you hand-write.
 
-> **Status: design phase, non-UI first.** This repo currently holds the *design contract*. The first
-> concrete artifact is the **object catalog** → [`docs/OBJECTS.md`](docs/OBJECTS.md). Code
-> (migrations, seed, tools, agent roles) lands in follow-on slices.
+> **Status: design phase, non-UI first.** This repo holds the *design contract* — the object catalog
+> ([`docs/OBJECTS.md`](docs/OBJECTS.md)), the HTTP surface ([`docs/HTTP.md`](docs/HTTP.md)), and the
+> debuggability spine ([`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md)) — plus the first runnable
+> artifact, the reusable [`http` skill](.claude/skills/http/SKILL.md). Backend code (migrations, seed,
+> tools, agent roles) lands in follow-on slices.
 
 ## The one idea: two layers
 
@@ -32,6 +34,8 @@ RBAC, audit, the close-gate, and the agent chain all apply to them for free.
 | **Audit everything** | every meaningful action is an `events` row; audit runs/findings are queryable + diffable |
 | **Self-documenting** | specs, acceptance criteria, runbooks, decisions (ADRs), and the capability ledger are **first-class registered objects** — queryable knowledge, not buried in commit messages |
 | **Security by construction** | the `scope_parent_id` FK as an IDOR backstop; ownership is a membership edge ("no object without an owner"); leak-free 404 |
+| **Uniform HTTP surface** | every object inherits the full safe verb set (GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS) from the registry — **OPTIONS self-describes** (fields + your RBAC verdict); one generic handler, zero per-type code ([`docs/HTTP.md`](docs/HTTP.md)) |
+| **Debuggable by construction** | a request-id from edge → log → `events` → error body; problem+json everywhere; `OPTIONS`/`HEAD`/`/healthz`/`/readyz`; a CI gate that fails a bare 500 ([`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md)) |
 
 ## Layout (planned)
 
@@ -40,11 +44,15 @@ numu/
 ├── README.md              ← this file
 ├── docs/
 │   ├── OBJECTS.md         ← the object catalog (the enrichment surface) — START HERE
+│   ├── HTTP.md            ← the uniform HTTP verb surface over the registry (locked decision)
+│   ├── OBSERVABILITY.md   ← debuggable-by-construction: request-id, problem+json, the 5th CI gate
 │   └── cases/             ← on-disk Case stubs (coordination fallback when no Cases backend)
+├── .claude/
+│   ├── skills/http/       ← the reusable RFC-9110 HTTP skill (SKILL.md + references/ + scripts/)
+│   └── agents/            ← (next slice) the 5 role definitions (project-agnostic)
 ├── migrations/            ← (next slice) the SYSTEM tables
 ├── seed/                  ← (next slice) builtin type_definitions + type_fields rows
-├── tools/                 ← (next slice) ci.sh + the 4 gate audits + the ratchet
-├── .agents/               ← (next slice) the 5 role definitions (project-agnostic)
+├── tools/                 ← (next slice) ci.sh + the gate audits (incl. debuggability-audit) + the ratchet
 └── CLAUDE.md              ← (next slice) the baked-in conventions
 ```
 
@@ -53,8 +61,9 @@ numu/
 numu is the **full-fledged reusable** build-engine. Its leaner sibling is the *portfolio* build-engine
 (stripped to the minimum to ship demo apps); numu is the superset you reach for to **start a real
 customer project**. The two share the same registry-model DNA; numu adds the richer object model
-(the G6 build-knowledge types), the deferred connector/secret/skill design, and a generalized
-comment/attachment that hang off any object.
+(the G6 build-knowledge types), the deferred connector/secret/skill design, a generalized
+comment/attachment that hang off any object, and a **uniform HTTP surface + a reusable `http` skill**
+with debuggability baked in.
 
 ## Contributing
 

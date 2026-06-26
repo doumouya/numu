@@ -1,0 +1,45 @@
+# ssrf-vectors.txt — canonical SSRF bypass vectors for the outbound gate's regression suite.
+# Each line MUST be classified as BLOCKED by the SSRF/TLS gate (references/ssrf-gate.md).
+# Format: <vector-url>  # <why it must be blocked>
+# Turn each into a unit test asserting the gate refuses it. Add a few PUBLIC hosts that MUST pass, too.
+#
+# --- cloud metadata (the crown-jewel target: 169.254.169.254) ---
+http://169.254.169.254/latest/meta-data/                  # direct link-local metadata IP
+http://[::ffff:169.254.169.254]/latest/meta-data/         # IPv4-mapped IPv6 wrapper (dotted)
+http://[::ffff:a9fe:a9fe]/latest/meta-data/               # IPv4-mapped IPv6 wrapper (hex)
+http://metadata.google.internal/computeMetadata/v1/       # name that resolves to a link-local IP
+#
+# --- numeric / alternate IP encodings of 169.254.169.254 ---
+http://2852039166/                                        # decimal integer IP
+http://0xA9.0xFE.0xA9.0xFE/                                # hex octets
+http://0251.0376.0251.0376/                                # octal octets
+http://0xA9FEA9FE/                                         # single hex dword
+#
+# --- DNS that resolves inward ---
+http://169.254.169.254.nip.io/                             # public name resolving to the metadata IP
+http://spoofed.burpcollaborator.net/                       # attacker name rebinding to a blocked IP (TOCTOU)
+#
+# --- loopback / unspecified / private spellings ---
+http://127.0.0.1/                                          # loopback
+http://127.1/                                              # short-form loopback (= 127.0.0.1)
+http://0.0.0.0/                                            # unspecified -> often loopback
+http://[::1]/                                              # IPv6 loopback
+http://localhost./                                         # trailing-dot FQDN (defeats == "localhost")
+http://LocalHost/                                          # mixed case
+http://10.0.0.1/  http://172.16.0.1/  http://192.168.1.1/  # RFC1918 private
+http://[fe80::1%25eth0]/                                   # IPv6 zone id (%eth0, percent-encoded) — strip zone, then classify
+http://[fc00::1]/                                          # IPv6 unique-local (private)
+http://100.64.0.1/                                         # CGNAT
+#
+# --- scheme pivots (reject non-http/https) ---
+file:///etc/passwd                                         # local file scheme
+gopher://127.0.0.1:6379/_INFO                              # gopher -> redis SSRF
+dict://127.0.0.1:11211/stats                               # dict -> memcached
+#
+# --- redirect (must re-gate every hop) ---
+# A 30x from an ALLOWED public host to http://169.254.169.254/ MUST be refused at the hop, not followed.
+# (Express this as a test: allowed host -> Location: metadata IP -> gate refuses the redirect target.)
+#
+# --- POSITIVE controls (these MUST pass the gate) ---
+# https://example.com/
+# https://api.github.com/
