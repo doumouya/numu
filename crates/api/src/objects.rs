@@ -441,12 +441,13 @@ async fn item_get(
     if !caller::require_action(&Caller::dev(), td, Some(&id), Action::View) {
         return Err(deny_404(&ctx));
     }
-    let row = sqlx::query("select data, version from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?
-        .ok_or_else(|| deny_404(&ctx))?;
+    let row =
+        sqlx::query("select data, version from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?
+            .ok_or_else(|| deny_404(&ctx))?;
     let data: Value = row.try_get("data")?;
     let version: i32 = row.try_get("version")?;
 
@@ -470,13 +471,14 @@ async fn item_head(
     if !caller::require_action(&Caller::dev(), td, Some(&id), Action::View) {
         return Err(deny_404(&ctx));
     }
-    let version: i32 = sqlx::query("select version from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?
-        .ok_or_else(|| deny_404(&ctx))?
-        .try_get("version")?;
+    let version: i32 =
+        sqlx::query("select version from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?
+            .ok_or_else(|| deny_404(&ctx))?
+            .try_get("version")?;
     Ok((StatusCode::OK, [(header::ETAG, etag(version))]).into_response())
 }
 
@@ -491,13 +493,14 @@ async fn item_put(
     if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Edit) {
         return Err(deny_404(&ctx));
     }
-    let existing: Value = sqlx::query("select data from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?
-        .ok_or_else(|| deny_404(&ctx))?
-        .try_get("data")?;
+    let existing: Value =
+        sqlx::query("select data from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?
+            .ok_or_else(|| deny_404(&ctx))?
+            .try_get("data")?;
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, false)?;
@@ -548,13 +551,14 @@ async fn item_patch(
     if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Edit) {
         return Err(deny_404(&ctx));
     }
-    let existing: Value = sqlx::query("select data from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?
-        .ok_or_else(|| deny_404(&ctx))?
-        .try_get("data")?;
+    let existing: Value =
+        sqlx::query("select data from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?
+            .ok_or_else(|| deny_404(&ctx))?
+            .try_get("data")?;
 
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, true)?;
@@ -605,11 +609,12 @@ async fn item_delete(
     if !caller::require_action(&Caller::dev(), td, Some(&id), Action::Delete) {
         return Err(deny_404(&ctx));
     }
-    let exists = sqlx::query("select 1 as one from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?;
+    let exists =
+        sqlx::query("select 1 as one from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?;
     if exists.is_none() {
         return Err(deny_404(&ctx));
     }
@@ -649,13 +654,14 @@ async fn item_options(
     if !caller::require_action(&caller, td, Some(&id), Action::View) {
         return Err(deny_404(&ctx));
     }
-    let version: i32 = sqlx::query("select version from entity_data where entity_id = $1 and type_id = $2")
-        .bind(id.as_str())
-        .bind(type_id.as_str())
-        .fetch_optional(&st.pool)
-        .await?
-        .ok_or_else(|| deny_404(&ctx))?
-        .try_get("version")?;
+    let version: i32 =
+        sqlx::query("select version from entity_data where entity_id = $1 and type_id = $2")
+            .bind(id.as_str())
+            .bind(type_id.as_str())
+            .fetch_optional(&st.pool)
+            .await?
+            .ok_or_else(|| deny_404(&ctx))?
+            .try_get("version")?;
     let allow = caller::permitted_verbs(&caller, td, true).join(", ");
     let body = options_body(td, &caller, true, Some(version));
     Ok((StatusCode::OK, [(header::ALLOW, allow)], Json(body)).into_response())

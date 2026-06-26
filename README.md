@@ -40,7 +40,7 @@ RBAC, audit, the close-gate, and the agent chain all apply to them for free.
 | **Uniform HTTP surface** | every object inherits the full safe verb set (GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS) from the registry — **OPTIONS self-describes** (fields + your RBAC verdict); one generic handler, zero per-type code ([`docs/HTTP.md`](docs/HTTP.md)) |
 | **Debuggable by construction** | a request-id from edge → log → `events` → error body; problem+json everywhere; `OPTIONS`/`HEAD`/`/healthz`/`/readyz`; a CI gate that fails a bare 500 ([`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md)) |
 
-## Layout (planned)
+## Layout
 
 ```
 numu/
@@ -54,9 +54,9 @@ numu/
 ├── .claude/
 │   ├── skills/http/       ← the reusable RFC-9110 HTTP skill (SKILL.md + references/ + scripts/)
 │   └── agents/            ← (next slice) the 5 role definitions (project-agnostic)
-├── migrations/            ← (next slice) the SYSTEM tables
-├── seed/                  ← (next slice) builtin type_definitions + type_fields rows
-├── tools/                 ← (next slice) ci.sh + the gate audits (incl. debuggability-audit) + the ratchet
+├── crates/api/            ← LIVE — the HTTP edge (Rust): the generic object handler + middleware
+├── migrations/            ← LIVE — the SYSTEM tables + builtin-type seed (0001_init, 0002_seed)
+├── tools/                 ← LIVE — ci.sh (the gate) + debuggability-audit; 4 more gates follow-on
 └── CLAUDE.md              ← (next slice) the baked-in conventions
 ```
 

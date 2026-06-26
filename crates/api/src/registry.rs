@@ -99,7 +99,11 @@ impl TypeDefCache {
                 display_name_plural: r.try_get("display_name_plural")?,
                 scope_parents: scope_parents
                     .as_array()
-                    .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect()
+                    })
                     .unwrap_or_default(),
                 is_builtin: r.try_get("is_builtin")?,
                 method_policy: r.try_get("method_policy")?,

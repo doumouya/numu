@@ -16,7 +16,10 @@ pub struct Caller {
 impl Caller {
     /// The dev single-user principal (until auth lands).
     pub fn dev() -> Self {
-        Self { actor_id: "USR_dev".to_string(), is_platform_admin: true }
+        Self {
+            actor_id: "USR_dev".to_string(),
+            is_platform_admin: true,
+        }
     }
 }
 

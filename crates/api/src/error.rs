@@ -19,7 +19,13 @@ pub type AppResult<T> = Result<T, AppError>;
 
 impl AppError {
     pub fn new(status: StatusCode, kind: &'static str, detail: impl Into<String>) -> Self {
-        Self { status, kind, detail: detail.into(), request_id: None, allow: None }
+        Self {
+            status,
+            kind,
+            detail: detail.into(),
+            request_id: None,
+            allow: None,
+        }
     }
     pub fn with_request_id(mut self, id: impl Into<String>) -> Self {
         self.request_id = Some(id.into());
@@ -31,29 +37,78 @@ impl AppError {
     }
 
     // Denials — GENERIC detail so existence/fields can't be probed.
-    pub fn not_found() -> Self { Self::new(StatusCode::NOT_FOUND, "not_found", "Not found") }
+    pub fn not_found() -> Self {
+        Self::new(StatusCode::NOT_FOUND, "not_found", "Not found")
+    }
     /// The field-perm gate (after existence is admitted). Wired by the RBAC slice. Staged seam.
     #[allow(dead_code)]
-    pub fn forbidden() -> Self { Self::new(StatusCode::FORBIDDEN, "forbidden", "Forbidden") }
+    pub fn forbidden() -> Self {
+        Self::new(StatusCode::FORBIDDEN, "forbidden", "Forbidden")
+    }
     // Client errors — specific, actionable detail is fine (the request is the problem, not a secret).
-    pub fn bad_request(d: impl Into<String>) -> Self { Self::new(StatusCode::BAD_REQUEST, "bad_request", d) }
-    pub fn unprocessable(d: impl Into<String>) -> Self { Self::new(StatusCode::UNPROCESSABLE_ENTITY, "unprocessable_entity", d) }
+    pub fn bad_request(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, "bad_request", d)
+    }
+    pub fn unprocessable(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::UNPROCESSABLE_ENTITY, "unprocessable_entity", d)
+    }
     /// Unique / sole-owner / dependency conflict. Wired by the membership + workflow slices. Staged seam.
     #[allow(dead_code)]
-    pub fn conflict(d: impl Into<String>) -> Self { Self::new(StatusCode::CONFLICT, "conflict", d) }
-    pub fn unsupported_media_type() -> Self { Self::new(StatusCode::UNSUPPORTED_MEDIA_TYPE, "unsupported_media_type", "Expected application/json") }
-    pub fn precondition_required() -> Self { Self::new(StatusCode::PRECONDITION_REQUIRED, "precondition_required", "If-Match is required for this mutation") }
-    pub fn precondition_failed() -> Self { Self::new(StatusCode::PRECONDITION_FAILED, "precondition_failed", "If-Match did not match the current version") }
-    pub fn method_not_allowed(allow: Vec<String>) -> Self { Self::new(StatusCode::METHOD_NOT_ALLOWED, "method_not_allowed", "Method not allowed").with_allow(allow) }
-    pub fn internal(d: impl Into<String>) -> Self { Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", d) }
+    pub fn conflict(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::CONFLICT, "conflict", d)
+    }
+    pub fn unsupported_media_type() -> Self {
+        Self::new(
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "unsupported_media_type",
+            "Expected application/json",
+        )
+    }
+    pub fn precondition_required() -> Self {
+        Self::new(
+            StatusCode::PRECONDITION_REQUIRED,
+            "precondition_required",
+            "If-Match is required for this mutation",
+        )
+    }
+    pub fn precondition_failed() -> Self {
+        Self::new(
+            StatusCode::PRECONDITION_FAILED,
+            "precondition_failed",
+            "If-Match did not match the current version",
+        )
+    }
+    pub fn method_not_allowed(allow: Vec<String>) -> Self {
+        Self::new(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            "Method not allowed",
+        )
+        .with_allow(allow)
+    }
+    pub fn internal(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", d)
+    }
     /// Dependency down. `/readyz` already returns 503 directly; kept for handler use. Staged seam.
     #[allow(dead_code)]
-    pub fn unavailable() -> Self { Self::new(StatusCode::SERVICE_UNAVAILABLE, "service_unavailable", "Service unavailable") }
+    pub fn unavailable() -> Self {
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "service_unavailable",
+            "Service unavailable",
+        )
+    }
 }
 
 impl std::fmt::Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({}): {}", self.status.as_u16(), self.kind, self.detail)
+        write!(
+            f,
+            "{} ({}): {}",
+            self.status.as_u16(),
+            self.kind,
+            self.detail
+        )
     }
 }
 
@@ -81,7 +136,10 @@ impl IntoResponse for AppError {
         // 5xx: log the real detail, wire only the canonical reason (airlock).
         let wire_detail = if self.status.is_server_error() {
             tracing::error!(kind = self.kind, request_id = %instance, detail = %self.detail, "server error");
-            self.status.canonical_reason().unwrap_or("Internal Server Error").to_string()
+            self.status
+                .canonical_reason()
+                .unwrap_or("Internal Server Error")
+                .to_string()
         } else {
             self.detail.clone()
         };
