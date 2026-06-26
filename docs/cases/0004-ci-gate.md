@@ -28,7 +28,7 @@ Em asked "is `ci.sh` implemented?" — it wasn't. Build the gate (proactive tool
 
 ## Verification
 
-- `sh tools/ci.sh` → **green**: fmt ✓, clippy ✓ (`-D warnings`), test 5/5 ✓, debuggability-audit clean ✓.
+- `bash tools/ci.sh` → **green**: fmt ✓, clippy ✓ (`-D warnings`), test 5/5 ✓, db (skipped — no `DATABASE_URL`) ✓, debuggability-audit clean ✓.
 - Adversarial: confirmed the audit's test-exclusion is meaningful — `objects.rs` has 2 `unwrap()` in its
   test module, **0** in production code; the auditor would flag a real prod panic.
 
@@ -44,3 +44,14 @@ follow-on; v0 = zero findings is green.
 - **2026-06-26 — Torv:** Built `tools/ci.sh` + `debuggability-audit` + `tools/README.md`; formatted the
   crate (`cargo fmt`) and confirmed clippy `-D warnings` clean so the gate is green from day one. Updated
   the README layout (crates/migrations/tools now LIVE). Committed on numu/main; held for Em's push.
+
+- **2026-06-26 — Torv (ci.sh review → hardening):** Em reviewed `ci.sh`; applied the high-value findings:
+  **S1a** a conditional `db` gate + a `db-tests` feature + `crates/api/tests/db_smoke.rs` (a `#[sqlx::test]`
+  asserting migrations + seed apply and a query runs — closes the gap that CI never executed the schema;
+  skips cleanly with no `DATABASE_URL`). **S2** made `debuggability-audit`'s test-exclusion sound (new R0
+  flags any file with >1 `#[cfg(test)]`; `prod()` can no longer silently under-scan past a mid-file
+  cfg(test)). **S3** docs now invoke `bash tools/ci.sh` (the script is bash; `/bin/sh`=dash aborted the old
+  `sh` command on `set -o pipefail`). **S4** `--locked` on clippy/test/build. **S5** `NUMU_CI_STRICT=1`
+  turns a skip into a failure. **S6** R2 now scans every module except `main.rs`. **S8** "audit gate"
+  (the baseline ratchet is still a follow-on). Follow-on: S1b (CRUD/RBAC integration tests), S7
+  (shellcheck self-gate), S9 (per-verb event check via the `syn` analyzer).

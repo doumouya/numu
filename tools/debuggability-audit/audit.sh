@@ -9,11 +9,31 @@ SRC=crates/api/src
 findings=0
 flag() { echo "  FINDING [$1] $2"; findings=$((findings + 1)); }
 
-# emit production (non-test) lines of the given files as FILE:LINE:text
-prod() { awk 'FNR==1{p=1} /#\[cfg\(test\)\]/{p=0} p{print FILENAME":"FNR":"$0}' "$@"; }
+# emit production (non-test) lines as FILE:LINE:text. Assumes at most ONE trailing `#[cfg(test)]` module
+# per file (enforced by R0 below) so it can never silently under-scan past a mid-file cfg(test).
+prod() {
+  local f
+  for f in "$@"; do
+    awk -v FN="$f" '
+      /#\[cfg\(test\)\]/ && !cut { cut = FNR }
+      { buf[FNR] = $0; n = FNR }
+      END { end = (cut ? cut - 1 : n); for (i = 1; i <= end; i++) print FN ":" i ":" buf[i] }
+    ' "$f"
+  done
+}
 
-# R2 — no bare panic on a request path (handlers must return AppError, not unwrap/expect).
-if prod "$SRC"/objects.rs "$SRC"/health.rs | grep -nE '\.unwrap\(\)|\.expect\('; then
+# R0 — structural assumption: at most one `#[cfg(test)]` per file (the trailing test module). More than
+# one means prod() could exclude real handler code past the first; fail loudly rather than miss a panic.
+for f in "$SRC"/*.rs; do
+  c=$(grep -c '#\[cfg(test)\]' "$f")
+  [ "$c" -le 1 ] || flag test-module-shape "$f has $c #[cfg(test)] blocks; auditor assumes one trailing test module (refactor, or upgrade to the syn analyzer)"
+done
+
+# R2 — no bare panic on a request path (handlers must return AppError, not unwrap/expect). Scans every
+# module except the bootstrap (main.rs may fail-fast at boot); new handler files are covered by default.
+mods=()
+for f in "$SRC"/*.rs; do case "$f" in */main.rs) ;; *) mods+=("$f") ;; esac; done
+if prod "${mods[@]}" | grep -nE '\.unwrap\(\)|\.expect\('; then
   flag no-bare-panic "unwrap()/expect() on a handler path (return an AppError instead)"
 fi
 

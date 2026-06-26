@@ -21,3 +21,9 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid.workspace = true
 thiserror.workspace = true
+
+[features]
+# db-tests: opt-in DB-backed integration tests (need a live Postgres via DATABASE_URL). ci.sh's `db`
+# gate runs `cargo test --features db-tests --test db_smoke` only when DATABASE_URL is set; the bare
+# `test` gate stays DB-free and green on a fresh clone.
+db-tests = []

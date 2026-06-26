@@ -1,9 +1,13 @@
 # tools/ — the numu immune system
 
-`sh tools/ci.sh` is the gate; run it before every commit. It runs, in order: **fmt** (`cargo fmt --check`)
-· **clippy** (`cargo clippy --all-targets -- -D warnings`) · **test** (`cargo test`) · the **audit
-ratchet** — every `tools/*-audit/audit.sh` must exit 0. Adding a gate = appending a `gate` line in
-`ci.sh` (and, for an auditor, a `tools/<name>-audit/`); `ci.sh` auto-discovers the audits.
+`bash tools/ci.sh` is the gate; run it before every commit (the script is bash — `set -o pipefail` /
+`local` — so don't invoke it with a POSIX `sh`). It runs, in order: **fmt** (`cargo fmt --check`) ·
+**clippy** (`cargo clippy --locked --all-targets -- -D warnings`) · **test** (`cargo test --locked`) ·
+**db** (conditional — a DB-backed smoke when `DATABASE_URL` is set, else skipped, keeping a fresh clone
+green) · the **audit gate** — every `tools/*-audit/audit.sh` must exit 0. Adding a gate = appending a
+`gate` line in `ci.sh` (and, for an auditor, a `tools/<name>-audit/`); `ci.sh` auto-discovers the audits.
+`NUMU_CI_STRICT=1` turns any **skip** (missing fmt/clippy, or an absent `DATABASE_URL`) into a failure —
+set it in real CI so a hole can't pass as green.
 
 ## The five gates (numu's enforcement spine)
 
