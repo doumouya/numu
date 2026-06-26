@@ -227,3 +227,38 @@ async fn case_must_start_at_initial(pool: PgPool) -> Result<(), Box<dyn std::err
     assert_eq!(err["kind"].as_str(), Some("illegal_transition"));
     Ok(())
 }
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn comment_reaches_via_case_cascade(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    // alice owns P1; case C1 is under P1; comment CMT1 is on C1 — the project -> case -> comment cascade.
+    sqlx::query(
+        "insert into entities(id,type,created_by) values \
+         ('USR_alice','actor','USR_dev'),('USR_bob','actor','USR_dev'),('PRJ_1','project','USR_dev'),\
+         ('CAS_1','case','USR_dev'),('CMT_1','comment','USR_dev')",
+    )
+    .execute(&pool)
+    .await?;
+    sqlx::query(
+        "insert into entity_data(entity_id,type_id,data,scope_parent_id) values \
+         ('USR_alice','actor','{}',null),('USR_bob','actor','{}',null),('PRJ_1','project','{}',null),\
+         ('CAS_1','case','{}','PRJ_1'),('CMT_1','comment','{}','CAS_1')",
+    )
+    .execute(&pool)
+    .await?;
+    sqlx::query(
+        "insert into memberships(object_id,member_id,role) values ('PRJ_1','USR_alice','owner')",
+    )
+    .execute(&pool)
+    .await?;
+
+    // alice reaches the comment two hops up (she owns the project); bob reaches nothing.
+    assert_eq!(
+        numu_api::rbac::effective_rank(&pool, "USR_alice", "CMT_1").await?,
+        Some(4)
+    );
+    assert_eq!(
+        numu_api::rbac::effective_rank(&pool, "USR_bob", "CMT_1").await?,
+        None
+    );
+    Ok(())
+}
