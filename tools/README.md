@@ -23,6 +23,11 @@ The four follow-on gates land as their substrate arrives (a Cases backend, the c
 agent chain). Each is a `tools/<name>-audit/audit.sh` that `ci.sh` picks up automatically — no `ci.sh` edit
 beyond existing.
 
+**Domain audits (live).** Beyond the spine, `ci.sh` auto-discovers code-correctness audits under
+`tools/*-audit/`: **debuggability-audit** (above) and **rbac-audit** (slice B2) — every entity handler
+gates via `require_action`, every create grants an owner edge, `context_role` stays cosmetic, and an
+object-gate denial is a leak-free 404 (not a 403). Both fail on any finding today; both ride the ratchet.
+
 ## Ratchet (follow-on)
 
 The audits currently fail on **any** finding (the tree starts clean). When a real codebase accumulates

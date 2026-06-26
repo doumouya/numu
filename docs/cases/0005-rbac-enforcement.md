@@ -19,9 +19,9 @@ gate, committed and **held for Em's push**. RBAC core first: **A0 → B0 → B1 
 | Slice | Delivers | Status |
 |---|---|---|
 | **A0** | Data foundation: `roles` registry + memberships PK narrow + role FK + `actor`/`USR_dev` seed + `grant_owner` helper | **DONE (this batch)** |
-| B0 | Async-ify the `require_action` seam (mechanical; body still `Ok(true)`) | next |
-| B1 | Reach resolver + Plane A + reach-scoped LIST + `grant_owner` wiring + scope-required-on-create | pending |
-| B2 | `tools/rbac-audit` gate (require_action parity, grant_owner, context_role, deny_404) | pending |
+| **B0** | Async-ify the `require_action` seam (mechanical; body still `Ok(true)`) | **DONE** (58e593b) |
+| **B1** | Reach resolver + Plane A + reach-scoped LIST + `grant_owner` wiring + scope-required-on-create | **DONE** (e7344c7) |
+| **B2** | `tools/rbac-audit` gate (require_action parity, grant_owner, context_role, deny_404) | **DONE** (this commit) |
 | C | Object sharing `/:id/members` + the SEV-0 membership guards | pending |
 | D | Field perms Plane B (rank-driven) + OPTIONS per-object verdict | pending |
 
@@ -56,3 +56,22 @@ confirmed every A0 assertion before the Rust tests.
   — without it every membership WRITE invariant (last-owner, only-owner-grants-owner, demote) is unprovable.
   All A0 assertions pass on the ephemeral PG. Committed on numu/main; held for Em's push. Next: B0 (async-ify
   the seam) → B1 (the reach resolver — where enforcement actually flips on).
+
+- **2026-06-26 — Torv (B0+B1+B2, the object plane is live):** Em: proceed with the direct-edge-only NULL
+  policy + "if ci is green always push without asking." Powered through the object-RBAC plane:
+  - **B0** (58e593b): async-ified `require_action`/`permitted_verbs`/`rbac_verdict` + `options_body` and the
+    10 call sites — pure churn, behavior unchanged.
+  - **B1** (e7344c7): the reach resolver (`rbac::effective_rank` + `reachable_entity_ids`, recursive CTEs
+    over team principals + the `scope_parent_id` cascade, depth-capped, cycle-safe); `require_action` now
+    does admin-bypass → rank floor → reach; `coll_get` reach-filters the LIST; `coll_create` gates
+    Create-reach on the scope parent, requires it (422), and `grant_owner`s the creator in-txn. Split a lib
+    target so integration tests link the crate. `tests/rbac_reach.rs` (5 tests) proves cascade,
+    cross-tenant→404, tier floors, team-inherited reach, list-scoping, admin bypass — all green.
+  - **B2** (this commit): `tools/rbac-audit` (R1 require_action parity · R2 grant_owner · R3 context_role
+    cosmetic · R4 leak-free deny_404), auto-discovered by ci.sh; self-tested to flag a gateless handler and
+    a non-404 denial.
+
+  **Enforcement is real for non-admin callers** at the resolver level (proven by `rbac_reach`); the handlers
+  still pass `Caller::dev()` (admin) until **A2** wires the real `Caller` extractor — that's the next slice
+  and is where the full HTTP-level matrix (a non-admin request → 404) becomes end-to-end testable. ci green
+  with `DATABASE_URL` (fmt/clippy/test + db 10 + debuggability + rbac audits); pushed per the green-ci rule.
