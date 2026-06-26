@@ -28,7 +28,7 @@ gate test cargo test --locked
 
 # ── db smoke (conditional): migrations + seed apply and a real query runs; needs a live Postgres.
 #    Skips on a bare clone (keeps fresh-clone-green); NUMU_CI_STRICT makes it mandatory. ──
-if [ -n "${DATABASE_URL:-}" ]; then gate db cargo test --locked --features db-tests --test db_smoke
+if [ -n "${DATABASE_URL:-}" ]; then gate db cargo test --locked --features db-tests
 else skip db "DATABASE_URL not set"; fi
 
 # ── audit gate: every tools/*-audit/audit.sh must exit 0 (per-audit baseline ratchet is a follow-on) ──

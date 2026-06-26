@@ -102,7 +102,7 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 | Group | Objects | Layer |
 |---|---|---|
 | **G1 · Registry spine** | type_definitions, entities, type_fields, entity_data | `[SYSTEM]` |
-| **G2 · Access & org** | memberships, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
+| **G2 · Access & org** | memberships, roles, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
 | **G3 · Audit & observability** | events, audit_runs, audit_findings, omnisearch (index + `search()`) | `[SYSTEM]` |
 | **G4 · Work tracking (coordination core)** | workflows, case_close_checks `[SYSTEM]` · case, comment, attachment `[TYPE]` |
 | **G5 · Orchestrator / feature pipeline** | feature_runs, role_handoffs | `[SYSTEM]` |
@@ -188,7 +188,7 @@ Teams, Departments, and per-object sharing — the member end may itself be a te
 |---|---|---|
 | `object_id` | text → entities | what is shared |
 | `member_id` | text → entities | who gets access (an actor **or a team**) |
-| `role` | enum | `viewer < member < admin < owner` |
+| `role` | text → roles | the tier; **FK to the `roles` registry** (so a custom role grants). **One role per `(object_id, member_id)`** — the PK; a role change is a single-row update, never a stacked second row |
 | `context_role` | text | cosmetic label (job title, "reporter") — **never read by enforcement** |
 | `created_at` | timestamptz | `system` |
 
@@ -199,6 +199,20 @@ Teams, Departments, and per-object sharing — the member end may itself be a te
 > **`context_role`** is also numu's whole answer to SF `CaseContactRole` (and `OpportunityContactRole`,
 > and every other `XxxContactRole`): *one* cosmetic role label on *one* edge, on *any* object — no
 > per-type role junction.
+
+### `roles` `[SYSTEM]` — the tier registry (roles-as-data)
+A role is a **row**, not a Rust enum, so a project adds a custom role with zero code. The **effective**
+role on an object is `max(rank)` over the caller's edges; an `Action` floor (View/Edit/Delete) is a rank
+threshold. Seeded **contiguous** so the resolver never sees a gap.
+
+| column | kind | notes |
+|---|---|---|
+| `role` | text PK | `viewer` · `member` · `admin` · `owner` (builtins) + any custom role |
+| `rank` | int unique | higher = more authority; builtins `1·2·3·4` |
+| `is_builtin` | bool | the 4 above; a custom role is a row with its own rank |
+
+`memberships.role` is an FK into this table, so a non-registered role is a mapped FK violation (→ `422`),
+never a silent grant.
 
 ### `relation` `[SYSTEM]` — the one generic entity↔entity edge
 The M:N counterpart to `memberships` (which is entity↔*principal*). A single typed edge so numu never
