@@ -109,7 +109,7 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 | Group | Objects | Layer |
 |---|---|---|
 | **G1 · Registry spine** | type_definitions, entities, type_fields, entity_data | `[SYSTEM]` |
-| **G2 · Access & org** | memberships, roles, field_permissions, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
+| **G2 · Access & org** | memberships, roles, field_permissions, sessions, relation `[SYSTEM]` · actor, team, workspace, project `[TYPE]` |
 | **G3 · Audit & observability** | events, audit_runs, audit_findings, omnisearch (index + `search()`) | `[SYSTEM]` |
 | **G4 · Work tracking (coordination core)** | workflows, case_close_checks `[SYSTEM]` · case, comment, attachment `[TYPE]` |
 | **G5 · Orchestrator / feature pipeline** | feature_runs, role_handoffs | `[SYSTEM]` |

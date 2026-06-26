@@ -312,11 +312,11 @@ struct ListParams {
 async fn coll_get(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path(type_id): Path<String>,
     Query(q): Query<ListParams>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let caller = Caller::dev();
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -364,10 +364,11 @@ async fn coll_get(
 async fn coll_head(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, None, Action::View).await? {
+    if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
     Ok(StatusCode::OK.into_response())
@@ -376,12 +377,12 @@ async fn coll_head(
 async fn coll_create(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path(type_id): Path<String>,
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let caller = Caller::dev();
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, true)?;
     let data = build_create_data(td, &payload);
@@ -455,10 +456,10 @@ async fn coll_create(
 async fn coll_options(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let caller = Caller::dev();
     if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -472,10 +473,11 @@ async fn coll_options(
 async fn m405_coll(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path(type_id): Path<String>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, None, false).await?;
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, None, false).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 
@@ -484,11 +486,12 @@ async fn m405_coll(
 async fn item_get(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::View).await? {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let row =
@@ -500,7 +503,7 @@ async fn item_get(
             .ok_or_else(|| deny_404(&ctx))?;
     let data: Value = row.try_get("data")?;
     let version: i32 = row.try_get("version")?;
-    let data = field_perms::filter_readable(&st.pool, &Caller::dev(), td, &id, data).await?;
+    let data = field_perms::filter_readable(&st.pool, &caller, td, &id, data).await?;
 
     if if_none_match_hit(&headers, version) {
         return Ok((StatusCode::NOT_MODIFIED, [(header::ETAG, etag(version))]).into_response());
@@ -516,10 +519,11 @@ async fn item_get(
 async fn item_head(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::View).await? {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
     let version: i32 =
@@ -536,12 +540,13 @@ async fn item_head(
 async fn item_put(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Edit).await? {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
     let existing: Value =
@@ -561,7 +566,7 @@ async fn item_put(
         .as_object()
         .map(|o| o.keys().cloned().collect())
         .unwrap_or_default();
-    field_perms::require_write(&st.pool, &Caller::dev(), td, &id, &written, &ctx).await?;
+    field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -582,7 +587,7 @@ async fn item_put(
     db::record_event(
         &st.pool,
         &ctx,
-        "USR_dev",
+        &caller.actor_id,
         Some(&id),
         &format!("{type_id}.replaced"),
         data.clone(),
@@ -599,12 +604,13 @@ async fn item_put(
 async fn item_patch(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Edit).await? {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Edit).await? {
         return Err(deny_404(&ctx));
     }
     let existing: Value =
@@ -625,7 +631,7 @@ async fn item_patch(
         .as_object()
         .map(|o| o.keys().cloned().collect())
         .unwrap_or_default();
-    field_perms::require_write(&st.pool, &Caller::dev(), td, &id, &written, &ctx).await?;
+    field_perms::require_write(&st.pool, &caller, td, &id, &written, &ctx).await?;
     let sp = scope_parent(td, &data);
 
     let res = sqlx::query(
@@ -646,7 +652,7 @@ async fn item_patch(
     db::record_event(
         &st.pool,
         &ctx,
-        "USR_dev",
+        &caller.actor_id,
         Some(&id),
         &format!("{type_id}.patched"),
         data.clone(),
@@ -663,11 +669,12 @@ async fn item_patch(
 async fn item_delete(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &Caller::dev(), td, Some(&id), Action::Delete).await? {
+    if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Delete).await? {
         return Err(deny_404(&ctx));
     }
     let exists =
@@ -696,7 +703,7 @@ async fn item_delete(
     db::record_event(
         &st.pool,
         &ctx,
-        "USR_dev",
+        &caller.actor_id,
         Some(&id),
         &format!("{type_id}.deleted"),
         json!({}),
@@ -708,10 +715,10 @@ async fn item_delete(
 async fn item_options(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let caller = Caller::dev();
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::View).await? {
         return Err(deny_404(&ctx));
     }
@@ -733,10 +740,11 @@ async fn item_options(
 async fn m405_item(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, _id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
-    let allow = caller::permitted_verbs(&st.pool, &Caller::dev(), td, None, true).await?;
+    let allow = caller::permitted_verbs(&st.pool, &caller, td, None, true).await?;
     Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id))
 }
 

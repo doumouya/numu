@@ -40,6 +40,15 @@ impl AppError {
     pub fn not_found() -> Self {
         Self::new(StatusCode::NOT_FOUND, "not_found", "Not found")
     }
+    /// No (or an invalid/expired) session — authentication required. Distinct from 404 (it leaks nothing
+    /// about a resource; it's about the *caller*, not an object).
+    pub fn unauthorized() -> Self {
+        Self::new(
+            StatusCode::UNAUTHORIZED,
+            "unauthorized",
+            "Authentication required",
+        )
+    }
     /// Authority denial AFTER existence is admitted (manage-authority on a roster, etc.) — leak-free
     /// because the caller already proved they can see the object.
     pub fn forbidden() -> Self {

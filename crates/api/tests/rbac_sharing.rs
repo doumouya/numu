@@ -1,9 +1,7 @@
-//! C — object-sharing / membership-management tests (slice C). Drives the real /:type/:id/members handlers
-//! over HTTP (tower oneshot) to prove the DATA-invariant guards: grant/list round-trip + audit event,
-//! last-owner (409 on demote AND remove), member-not-found (404), unknown-role (422), and the team-nesting
-//! cycle (409). The caller is Caller::dev() (admin) until A2, so the caller-authority guards (require_rank
-//! 404/403, no-escalation) are covered at the resolver level by rbac_reach; here we prove the invariants
-//! that hold regardless of caller. See docs/cases/0005-rbac-enforcement.md.
+//! C + A2 — object-sharing handlers over real auth. Each request carries a `numu_session` cookie minted
+//! by dev-login (A2); the existing tests log in as the seeded admin USR_dev, and `non_admin_is_enforced`
+//! proves the FULL HTTP matrix now that the real Caller extractor is wired: unauth→401, no-reach→404,
+//! viewer-can-view-but-not-manage→200/403. See docs/cases/0005-rbac-enforcement.md.
 #![cfg(feature = "db-tests")]
 
 use std::sync::Arc;
@@ -13,7 +11,7 @@ use axum::http::{Request, StatusCode};
 use axum::{middleware, Router};
 use numu_api::registry::TypeDefCache;
 use numu_api::state::AppState;
-use numu_api::{members, objects, request_id};
+use numu_api::{auth, members, objects, request_id};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
@@ -26,6 +24,7 @@ async fn build_app(pool: &PgPool) -> Router {
     };
     objects::router()
         .merge(members::router())
+        .merge(auth::router())
         .layer(middleware::from_fn(request_id::request_id_layer))
         .with_state(state)
 }
@@ -65,8 +64,32 @@ async fn ensure_team_type(pool: &PgPool) {
     .unwrap();
 }
 
-async fn send(app: &Router, method: &str, uri: &str, body: Option<&str>) -> (StatusCode, Value) {
-    let builder = Request::builder().method(method).uri(uri);
+/// dev-login an existing actor → the `numu_session=...` cookie value.
+async fn login(app: &Router, actor_id: &str) -> String {
+    let body = format!(r#"{{"actor_id":"{actor_id}"}}"#);
+    let req = Request::builder()
+        .method("POST")
+        .uri("/auth/dev-login")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK, "dev-login for {actor_id}");
+    let set = resp.headers().get("set-cookie").unwrap().to_str().unwrap();
+    set.split(';').next().unwrap().to_string()
+}
+
+async fn send(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    cookie: Option<&str>,
+    body: Option<&str>,
+) -> (StatusCode, Value) {
+    let mut builder = Request::builder().method(method).uri(uri);
+    if let Some(c) = cookie {
+        builder = builder.header("cookie", c);
+    }
     let req = match body {
         Some(j) => builder
             .header("content-type", "application/json")
@@ -90,6 +113,7 @@ async fn send(app: &Router, method: &str, uri: &str, body: Option<&str>) -> (Sta
 #[sqlx::test(migrations = "../../migrations")]
 async fn grant_and_list_roundtrip(pool: PgPool) -> sqlx::Result<()> {
     let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
     entity(&pool, "USR_alice", "actor").await;
     entity(&pool, "USR_bob", "actor").await;
     entity(&pool, "PRJ_1", "project").await;
@@ -99,17 +123,16 @@ async fn grant_and_list_roundtrip(pool: PgPool) -> sqlx::Result<()> {
         &app,
         "POST",
         "/project/PRJ_1/members",
+        Some(&admin),
         Some(r#"{"member_id":"USR_bob","role":"member","context_role":"reviewer"}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED);
 
-    let (st, body) = send(&app, "GET", "/project/PRJ_1/members", None).await;
+    let (st, body) = send(&app, "GET", "/project/PRJ_1/members", Some(&admin), None).await;
     assert_eq!(st, StatusCode::OK);
-    let roster = body["members"].as_array().unwrap();
-    assert_eq!(roster.len(), 2, "alice (owner) + bob (member)");
+    assert_eq!(body["members"].as_array().unwrap().len(), 2);
 
-    // the grant emitted an audit event
     let n: i64 = sqlx::query_scalar(
         "select count(*) from events where entity_id = 'PRJ_1' and kind = 'project.member_granted'",
     )
@@ -122,22 +145,28 @@ async fn grant_and_list_roundtrip(pool: PgPool) -> sqlx::Result<()> {
 #[sqlx::test(migrations = "../../migrations")]
 async fn last_owner_guard(pool: PgPool) -> sqlx::Result<()> {
     let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
     entity(&pool, "USR_alice", "actor").await;
     entity(&pool, "PRJ_1", "project").await;
     grant(&pool, "PRJ_1", "USR_alice", "owner").await;
 
-    // can't demote the sole owner
     let (st, _) = send(
         &app,
         "PATCH",
         "/project/PRJ_1/members/USR_alice",
+        Some(&admin),
         Some(r#"{"role":"viewer"}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CONFLICT);
-
-    // can't remove the sole owner
-    let (st, _) = send(&app, "DELETE", "/project/PRJ_1/members/USR_alice", None).await;
+    let (st, _) = send(
+        &app,
+        "DELETE",
+        "/project/PRJ_1/members/USR_alice",
+        Some(&admin),
+        None,
+    )
+    .await;
     assert_eq!(st, StatusCode::CONFLICT);
     Ok(())
 }
@@ -145,18 +174,25 @@ async fn last_owner_guard(pool: PgPool) -> sqlx::Result<()> {
 #[sqlx::test(migrations = "../../migrations")]
 async fn not_found_and_unknown_role(pool: PgPool) -> sqlx::Result<()> {
     let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
     entity(&pool, "USR_bob", "actor").await;
     entity(&pool, "PRJ_1", "project").await;
 
-    // revoke a non-member → 404
-    let (st, _) = send(&app, "DELETE", "/project/PRJ_1/members/USR_ghost", None).await;
+    let (st, _) = send(
+        &app,
+        "DELETE",
+        "/project/PRJ_1/members/USR_ghost",
+        Some(&admin),
+        None,
+    )
+    .await;
     assert_eq!(st, StatusCode::NOT_FOUND);
 
-    // grant an unregistered role → 422
     let (st, _) = send(
         &app,
         "POST",
         "/project/PRJ_1/members",
+        Some(&admin),
         Some(r#"{"member_id":"USR_bob","role":"wizard"}"#),
     )
     .await;
@@ -167,20 +203,54 @@ async fn not_found_and_unknown_role(pool: PgPool) -> sqlx::Result<()> {
 #[sqlx::test(migrations = "../../migrations")]
 async fn team_nesting_cycle_guard(pool: PgPool) -> sqlx::Result<()> {
     let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
     ensure_team_type(&pool).await;
     entity(&pool, "TEM_1", "team").await;
     entity(&pool, "TEM_2", "team").await;
-    // TEM_2 is a member of TEM_1
     grant(&pool, "TEM_1", "TEM_2", "member").await;
 
-    // making TEM_1 a member of TEM_2 would close the cycle → 409
     let (st, _) = send(
         &app,
         "POST",
         "/team/TEM_2/members",
+        Some(&admin),
         Some(r#"{"member_id":"TEM_1","role":"member"}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CONFLICT);
+    Ok(())
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn non_admin_is_enforced(pool: PgPool) -> sqlx::Result<()> {
+    let app = build_app(&pool).await;
+    entity(&pool, "USR_alice", "actor").await; // platform_role absent → not platform-admin
+    entity(&pool, "USR_bob", "actor").await;
+    entity(&pool, "PRJ_1", "project").await;
+    grant(&pool, "PRJ_1", "USR_alice", "viewer").await; // alice: viewer reach only
+
+    // unauthenticated → 401
+    let (st, _) = send(&app, "GET", "/project/PRJ_1/members", None, None).await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED);
+
+    // alice (viewer) CAN see the roster...
+    let alice = login(&app, "USR_alice").await;
+    let (st, _) = send(&app, "GET", "/project/PRJ_1/members", Some(&alice), None).await;
+    assert_eq!(st, StatusCode::OK);
+    // ...but CANNOT manage it (viewer < admin) → 403 (existence admitted)
+    let (st, _) = send(
+        &app,
+        "POST",
+        "/project/PRJ_1/members",
+        Some(&alice),
+        Some(r#"{"member_id":"USR_bob","role":"member"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::FORBIDDEN);
+
+    // bob has NO reach → even the roster is a leak-free 404
+    let bob = login(&app, "USR_bob").await;
+    let (st, _) = send(&app, "GET", "/project/PRJ_1/members", Some(&bob), None).await;
+    assert_eq!(st, StatusCode::NOT_FOUND);
     Ok(())
 }

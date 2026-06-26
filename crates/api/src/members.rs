@@ -107,10 +107,10 @@ fn str_field<'a>(v: &'a Value, key: &str, ctx: &RequestCtx) -> AppResult<&'a str
 async fn list_members(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
 ) -> AppResult<Response> {
     ensure_object(&st.pool, &id, &type_id, &ctx).await?;
-    let caller = Caller::dev();
     require_rank(&st.pool, &caller, &id, 1, &ctx).await?;
     let rows = sqlx::query(
         "select member_id, role, context_role from memberships where object_id = $1 order by role desc, member_id",
@@ -135,12 +135,12 @@ async fn list_members(
 async fn add_member(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id)): Path<(String, String)>,
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
     ensure_object(&st.pool, &id, &type_id, &ctx).await?;
-    let caller = Caller::dev();
     let caller_rank = require_rank(&st.pool, &caller, &id, MANAGE_RANK, &ctx).await?;
 
     let v = objects::read_json(&headers, &body, false)?;
@@ -195,12 +195,12 @@ async fn add_member(
 async fn set_member(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id, member_id)): Path<(String, String, String)>,
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Response> {
     ensure_object(&st.pool, &id, &type_id, &ctx).await?;
-    let caller = Caller::dev();
     let caller_rank = require_rank(&st.pool, &caller, &id, MANAGE_RANK, &ctx).await?;
 
     let v = objects::read_json(&headers, &body, false)?;
@@ -249,10 +249,10 @@ async fn set_member(
 async fn remove_member(
     State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
     Path((type_id, id, member_id)): Path<(String, String, String)>,
 ) -> AppResult<Response> {
     ensure_object(&st.pool, &id, &type_id, &ctx).await?;
-    let caller = Caller::dev();
     let current = current_role(&st.pool, &id, &member_id)
         .await?
         .ok_or_else(|| deny_404(&ctx))?;

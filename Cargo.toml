@@ -25,6 +25,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1", features = ["v4", "v7"] }
 time = { version = "0.3", features = ["formatting"] }
 thiserror = "2"
+sha2 = "0.10"
 
 [profile.release]
 opt-level = 2
