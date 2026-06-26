@@ -34,17 +34,39 @@ pub enum Action {
     Delete,
 }
 
-/// The object-level gate. FOLLOW-ON (B1): resolve reach via memberships + the `scope_parents` cascade and
-/// a rank floor; a denial returns `Ok(false)` and the caller maps it to a leak-free 404. B0 async-ifies the
-/// seam (threads the pool) with no behavior change — still allows all.
+/// The object-level gate (Plane A). Resolves the caller's effective rank on the object via the reach
+/// resolver and compares it to the Action's rank floor. `Ok(false)` → the handler maps it to a leak-free
+/// 404. Platform-admin bypasses first. A `None` object_id (collection GET/HEAD/OPTIONS, or a root-type
+/// create) is admitted here — collection data is reach-filtered separately, and a scoped create re-checks
+/// reach on its parent (the handler passes `Some(parent)`).
 pub async fn require_action(
-    _pool: &PgPool,
-    _caller: &Caller,
-    _td: &TypeDef,
-    _object_id: Option<&str>,
-    _action: Action,
+    pool: &PgPool,
+    caller: &Caller,
+    td: &TypeDef,
+    object_id: Option<&str>,
+    action: Action,
 ) -> AppResult<bool> {
-    Ok(true)
+    if caller.is_platform_admin {
+        return Ok(true);
+    }
+    let Some(object_id) = object_id else {
+        return Ok(true);
+    };
+    // Rank floors (policy, not data): View→viewer, Create/Edit→member, Delete→admin (raisable to owner
+    // per type via method_policy.delete_min_role).
+    let min_rank = match action {
+        Action::View => 1,
+        Action::Create | Action::Edit => 2,
+        Action::Delete => {
+            if td.delete_min_role() == "owner" {
+                4
+            } else {
+                3
+            }
+        }
+    };
+    let rank = crate::rbac::effective_rank(pool, &caller.actor_id, object_id).await?;
+    Ok(rank.is_some_and(|r| r >= min_rank))
 }
 
 /// (verb, Action) for a resource — the locked map. OPTIONS is a View-gated capability listing.

@@ -17,6 +17,7 @@ use crate::caller::{self, Action, Caller};
 use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::ids;
+use crate::rbac;
 use crate::registry::{FieldDef, TypeDef};
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
@@ -318,15 +319,31 @@ async fn coll_get(
     }
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let offset = q.offset.unwrap_or(0).max(0);
-    let rows = sqlx::query(
-        "select entity_id, data, version from entity_data \
-         where type_id = $1 order by updated_at desc limit $2 offset $3",
-    )
-    .bind(type_id.as_str())
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&st.pool)
-    .await?;
+    // Reach-scoped LIST (read-side leak guard): a non-admin caller sees only entities they reach.
+    let rows = if caller.is_platform_admin {
+        sqlx::query(
+            "select entity_id, data, version from entity_data \
+             where type_id = $1 order by updated_at desc limit $2 offset $3",
+        )
+        .bind(type_id.as_str())
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&st.pool)
+        .await?
+    } else {
+        let ids = rbac::reachable_entity_ids(&st.pool, &caller.actor_id, &type_id).await?;
+        sqlx::query(
+            "select entity_id, data, version from entity_data \
+             where type_id = $1 and entity_id = any($2) \
+             order by updated_at desc limit $3 offset $4",
+        )
+        .bind(type_id.as_str())
+        .bind(&ids)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&st.pool)
+        .await?
+    };
 
     let items = rows
         .iter()
@@ -362,16 +379,36 @@ async fn coll_create(
 ) -> AppResult<Response> {
     let td = resolve(&st, &type_id, &ctx)?;
     let caller = Caller::dev();
-    if !caller::require_action(&st.pool, &caller, td, None, Action::Create).await? {
-        return Err(deny_404(&ctx));
-    }
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, true)?;
     let data = build_create_data(td, &payload);
     validate_final(td, &data)?;
     let sp = scope_parent(td, &data);
-    let id = ids::mint(&td.id_prefix);
 
+    // Plane A on CREATE. A root type (no scope_parents) is open to any authenticated caller, who becomes
+    // its owner. A scoped type MUST name its parent (422), and the caller needs Create reach on that parent
+    // (you can only file under a container you reach; otherwise a leak-free 404).
+    if td.scope_parents.is_empty() {
+        if !caller::require_action(&st.pool, &caller, td, None, Action::Create).await? {
+            return Err(deny_404(&ctx));
+        }
+    } else {
+        let parent = sp.as_deref().ok_or_else(|| {
+            AppError::unprocessable(format!(
+                "this type requires a scope parent: {}",
+                td.scope_parents
+                    .first()
+                    .map(String::as_str)
+                    .unwrap_or("parent")
+            ))
+            .with_request_id(ctx.request_id.clone())
+        })?;
+        if !caller::require_action(&st.pool, &caller, td, Some(parent), Action::Create).await? {
+            return Err(deny_404(&ctx));
+        }
+    }
+
+    let id = ids::mint(&td.id_prefix);
     let mut tx = st.pool.begin().await?;
     sqlx::query("insert into entities (id, type, created_by) values ($1, $2, $3)")
         .bind(id.as_str())
@@ -388,6 +425,8 @@ async fn coll_create(
     .bind(sp.as_deref())
     .execute(&mut *tx)
     .await?;
+    // "no object without an owner" — the creator gets an owner edge in the same txn.
+    db::grant_owner(&mut tx, &id, &caller.actor_id).await?;
     tx.commit().await?;
 
     db::record_event(

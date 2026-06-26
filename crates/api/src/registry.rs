@@ -60,8 +60,7 @@ impl TypeDef {
             .unwrap_or_default()
     }
 
-    /// The DELETE floor from `method_policy` (default `admin`). Read by the RBAC slice's gate. Staged seam.
-    #[allow(dead_code)]
+    /// The DELETE floor from `method_policy` (default `admin`) — read by the RBAC gate (`require_action`).
     pub fn delete_min_role(&self) -> &str {
         self.method_policy
             .get("delete_min_role")

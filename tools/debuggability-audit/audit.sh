@@ -46,7 +46,7 @@ if [ "$(grep -rl 'impl IntoResponse for AppError' "$SRC" | wc -l)" != "1" ]; the
 fi
 
 # R1 — the request-id layer wraps the router.
-grep -q 'request_id_layer' "$SRC"/main.rs || flag request-id "request_id_layer not wired in main.rs"
+grep -q 'request_id_layer' "$SRC"/lib.rs || flag request-id "request_id_layer not wired in lib.rs"
 
 # R5 — every mutation handler records an event (create/put/patch/delete = 4 call sites).
 n=$(grep -c 'record_event' "$SRC"/objects.rs)
@@ -55,8 +55,8 @@ n=$(grep -c 'record_event' "$SRC"/objects.rs)
 # R7 — discoverability verbs + health endpoints wired.
 grep -q '\.options(' "$SRC"/objects.rs || flag discoverability "OPTIONS not wired on the object router"
 grep -q '\.head('    "$SRC"/objects.rs || flag discoverability "HEAD not wired on the object router"
-grep -q '/healthz'   "$SRC"/main.rs    || flag discoverability "/healthz route missing"
-grep -q '/readyz'    "$SRC"/main.rs    || flag discoverability "/readyz route missing"
+grep -q '/healthz'   "$SRC"/lib.rs     || flag discoverability "/healthz route missing"
+grep -q '/readyz'    "$SRC"/lib.rs     || flag discoverability "/readyz route missing"
 
 # R6 — no secret/credential value in a log line or span.
 if prod "$SRC"/*.rs | grep -iE 'tracing::(info|debug|warn|error)!|_span!' | grep -iE 'password|secret|cookie|bearer|authorization|api[_-]?key'; then

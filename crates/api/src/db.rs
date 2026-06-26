@@ -35,9 +35,7 @@ pub async fn record_event(
 
 /// "No object without an owner" — stamp the creator as `owner` in the SAME txn as create. UPSERT on the
 /// `(object_id, member_id)` key (narrowed in migration 0003) so a re-grant replaces rather than stacking a
-/// second role row. Wired into `coll_create` in slice B1; staged here so the owner write is FK- and
-/// stack-safe before any handler calls it.
-#[allow(dead_code)]
+/// second role row. Called by `coll_create` in the same txn as the entity insert.
 pub async fn grant_owner(
     tx: &mut sqlx::PgConnection,
     object_id: &str,
