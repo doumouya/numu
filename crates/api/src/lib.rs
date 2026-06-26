@@ -15,6 +15,7 @@ pub mod oauth;
 pub mod objects;
 pub mod rbac;
 pub mod registry;
+pub mod relations;
 pub mod request_id;
 pub mod state;
 pub mod types;
@@ -51,6 +52,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))
         .merge(types::router())
+        .merge(relations::router())
         .merge(auth::router())
         .merge(oauth::router())
         .route("/healthz", get(health::healthz))

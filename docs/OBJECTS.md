@@ -243,6 +243,11 @@ grows SF-style per-pair junction objects (`CaseArticle`, related-cases, duplicat
 readable iff the caller can reach *both* endpoints, writable iff they can edit the `subject` — so an
 edge never leaks an entity the caller couldn't already see.
 
+> **LIVE (CASE 0008).** `crates/api/src/relations.rs`: `POST /api/relations` (write = edit subject) ·
+> `GET /api/relations?entity=<id>[&type=<rel>]` (each edge returned only if the caller also reaches the
+> other end) · `DELETE /api/relations/:id`. `relation_type` is the registered vocab above (unknown → 422);
+> the unique triple is the 409 backstop. `migrations/0010_relations.sql`.
+
 > Why an edge, not a `ref` field: `ref` fields cover **1:N** (a case's one `project_id`). `relation`
 > covers **M:N, typed** (this runbook `references` 3 cases; this case `duplicates` that one) — the gap
 > that, left unfilled, becomes a pile of bespoke junctions. This is SF `CaseArticle` generalized: link

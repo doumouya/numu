@@ -26,6 +26,12 @@ writes the `type_definitions` + `type_fields` rows and **hot-reloads the registr
 capability, no object to leak) · **409** (taken `type_id`/`id_prefix`, DB-backstopped) · **422** (malformed
 spec). A seed migration is the other path (loads at boot). (docs/OBJECTS.md G1; CASE 0007.)
 
+**Relations (`/api/relations`).** The generic typed entity↔entity edge: `POST /api/relations`
+`{subject_id, object_id, relation_type}` (write-gated on *edit subject*) · `GET /api/relations?entity=<id>`
+(read-gated — an edge is returned only if the caller reaches *both* ends) · `DELETE /api/relations/:id`.
+**201/204** · **403/404** (no edit/view reach) · **409** (duplicate triple) · **422** (unknown
+`relation_type`). (docs/OBJECTS.md G2; CASE 0008.)
+
 ## 1. Verb → status matrix
 
 All error bodies are problem+json (§6). `<PREFIX>_<hex>` ids; `:type` is validated once against the
