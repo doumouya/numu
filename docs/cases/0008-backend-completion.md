@@ -20,7 +20,7 @@ items: graceful shutdown, config, `_debug/echo`, dynamic log-level, `/auth` rate
 |---|---|---|
 | **B1 · relation** | `relations` SYSTEM table + `/api/relations` (create/list/delete), reach-gated (read=reach both ends, write=edit subject) | **DONE** (0010 + relations.rs, 2 tests) |
 | **B2 · catalog** | seed `workspace` + `team` (G2) + the G6 knowledge types (`spec`/`acceptance_criterion`/`runbook`/`decision`/`capability`) | **DONE** (0011 + optional-scope_parent support, 1 test) |
-| **B3 · omnisearch** | `entity_data.search_vector` (GIN tsvector) + reach-filtered `GET /api/search` | pending |
+| **B3 · omnisearch** | `entity_data.search_vector` (GIN tsvector) + reach-filtered `GET /api/search` | **DONE** (0012 + search.rs, 1 test) |
 | **B4 · ops** | graceful shutdown · `Config` struct · `POST /api/_debug/echo` (admin+`NUMU_DEBUG`) · dynamic log-level · `/auth` rate-limit | pending |
 
 ## Log

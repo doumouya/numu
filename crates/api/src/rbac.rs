@@ -87,6 +87,36 @@ pub async fn reachable_entity_ids(
     Ok(ids)
 }
 
+/// Every entity id the caller can reach, across ALL types — the cross-type reach set that filters
+/// omnisearch (a result never leaks an entity the caller couldn't already reach). The same anchors→reach
+/// cascade as `reachable_entity_ids`, minus the type filter.
+pub async fn reachable_entity_ids_any(pool: &PgPool, actor_id: &str) -> AppResult<Vec<String>> {
+    let ids: Vec<String> = sqlx::query_scalar(
+        "with recursive principals(id) as ( \
+            select $1::text \
+            union \
+            select m.object_id from memberships m \
+              join principals p on m.member_id = p.id \
+              join entities e on e.id = m.object_id and e.type = 'team' \
+         ), \
+         anchors(id) as ( \
+            select distinct m.object_id from memberships m \
+              where m.member_id in (select id from principals) \
+         ), \
+         reach(entity_id) as ( \
+            select id from anchors \
+            union \
+            select d.entity_id from entity_data d \
+              join reach rr on d.scope_parent_id = rr.entity_id \
+         ) \
+         select entity_id from reach",
+    )
+    .bind(actor_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(ids)
+}
+
 /// The rank of a registered role, or `None` if the role is not registered. Used by the membership guards
 /// to reject privilege escalation (you cannot grant a role above your own).
 pub async fn rank_of(pool: &PgPool, role: &str) -> AppResult<Option<i32>> {

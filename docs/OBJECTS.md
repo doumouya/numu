@@ -380,8 +380,13 @@ parts, no per-type search code:
    `(entity_id, type, snippet, rank)`. Reach-aware by construction, like every other read.
 
 So omnisearch isn't a feature bolted onto one screen; it's a property of the registry the whole app
-inherits. **Surface (when wired):** a reach-filtered `GET /api/search?q=<text>&type=<optional>` — a
-sibling of the `/api/objects/:type` routes, leak-free by the same reach gate ([`HTTP.md`](HTTP.md)).
+inherits.
+
+> **LIVE (CASE 0008 B3).** `crates/api/src/search.rs`: a reach-filtered
+> `GET /api/search?q=<text>[&type=<type>][&limit=N]` — a sibling of `/api/objects/:type`, leak-free by the
+> same reach gate. The index is `entity_data.search_vector`, a **generated** GIN tsvector over the string
+> values of `data` (`migrations/0012_omnisearch.sql`), so it refreshes on every write with no app code; v1
+> indexes all string values (the `searchable`-flag refinement is a follow-on).
 
 ---
 

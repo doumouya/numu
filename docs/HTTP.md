@@ -32,6 +32,10 @@ spec). A seed migration is the other path (loads at boot). (docs/OBJECTS.md G1; 
 **201/204** · **403/404** (no edit/view reach) · **409** (duplicate triple) · **422** (unknown
 `relation_type`). (docs/OBJECTS.md G2; CASE 0008.)
 
+**Search (`/api/search`).** `GET /api/search?q=<text>[&type=<type>][&limit=N]` — reach-filtered full-text
+over *every* type at once (the `entity_data.search_vector` GIN tsvector); ranked by `ts_rank`; a blank `q`
+→ **400**. Leak-free by the same reach gate as the object reads. (docs/OBJECTS.md G3; CASE 0008.)
+
 ## 1. Verb → status matrix
 
 All error bodies are problem+json (§6). `<PREFIX>_<hex>` ids; `:type` is validated once against the
