@@ -148,3 +148,39 @@ async fn non_editor_cannot_create_relation(pool: PgPool) -> Result<(), Box<dyn s
     assert_eq!(st, StatusCode::NOT_FOUND);
     Ok(())
 }
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn object_must_be_reachable_and_no_self_loop(
+    pool: PgPool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    sqlx::query("insert into entities(id,type,created_by) values ('USR_bob','actor','USR_dev')")
+        .execute(&pool)
+        .await?;
+    sqlx::query(
+        r#"insert into entity_data(entity_id,type_id,data) values ('USR_bob','actor','{"display_name":"Bob","handle":"bob","kind":"human","platform_role":"member","status":"active"}')"#,
+    )
+    .execute(&pool)
+    .await?;
+    let app = build_app(&pool).await;
+    let admin = login(&app, "USR_dev").await;
+    let p1 = project(&app, &admin, "a").await;
+    let p2 = project(&app, &admin, "b").await;
+    // bob OWNS p1 (can edit it) but has no reach to p2.
+    sqlx::query("insert into memberships(object_id,member_id,role) values ($1,'USR_bob','owner')")
+        .bind(&p1)
+        .execute(&pool)
+        .await?;
+    let bob = login(&app, "USR_bob").await;
+
+    // bob can edit p1 but can't reach p2 → the object gate denies → leak-free 404 (NOT a 201/422 oracle).
+    let body = format!(r#"{{"subject_id":"{p1}","object_id":"{p2}","relation_type":"blocks"}}"#);
+    let (st, _) = req(&app, "POST", "/api/relations", &bob, Some(&body)).await;
+    assert_eq!(st, StatusCode::NOT_FOUND);
+
+    // a self-loop is rejected up front, before any reach gate (admin reaches p1).
+    let loop_body =
+        format!(r#"{{"subject_id":"{p1}","object_id":"{p1}","relation_type":"blocks"}}"#);
+    let (st, _) = req(&app, "POST", "/api/relations", &admin, Some(&loop_body)).await;
+    assert_eq!(st, StatusCode::UNPROCESSABLE_ENTITY);
+    Ok(())
+}

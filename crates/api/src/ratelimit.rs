@@ -1,18 +1,20 @@
 //! A small per-client fixed-window rate limiter for the `/auth` routes — a brute-force backstop. The client
-//! key is the proxy-forwarded IP (`X-Forwarded-For` / `X-Real-IP`), so it works behind a reverse proxy;
-//! with no such header all callers share the `"global"` bucket. v1 keeps counters in memory (a reaper for
-//! idle keys is a follow-on). Applied via `route_layer` on the auth router in `run()` — not on the object
-//! surface, and not in the test harness. (docs/cases/0008-backend-completion.md B4.)
+//! key is the real TCP peer (`ConnectInfo`), which a client can't forge; only when `NUMU_TRUST_PROXY=1` (a
+//! reverse-proxy deployment) is the forwarded client IP (`X-Forwarded-For`) honored instead. Counters live
+//! in memory with a size cap that evicts expired buckets, so a spoofed-key flood can't exhaust memory.
+//! Applied via `route_layer` on the auth router in `run()` — not the object surface, not the test harness.
+//! (docs/cases/0008-backend-completion.md B4; CASE 0008 review.)
 
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use axum::extract::Request;
-use axum::http::HeaderMap;
+use axum::extract::{ConnectInfo, Request};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
+use crate::config;
 use crate::error::AppError;
 use crate::request_id::RequestCtx;
 
@@ -37,6 +39,10 @@ impl RateLimiter {
     pub fn allow(&self, key: &str) -> bool {
         let now = Instant::now();
         let mut map = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        // bound memory: under a spoofed-key flood, evict expired buckets before admitting a new key.
+        if map.len() > 100_000 {
+            map.retain(|_, (start, _)| now.duration_since(*start) <= self.window);
+        }
         let entry = map.entry(key.to_string()).or_insert((now, 0));
         if now.duration_since(entry.0) > self.window {
             *entry = (now, 0);
@@ -46,25 +52,31 @@ impl RateLimiter {
     }
 }
 
-fn client_key(headers: &HeaderMap) -> String {
-    headers
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.split(',').next())
-        .map(|s| s.trim().to_string())
-        .or_else(|| {
-            headers
-                .get("x-real-ip")
-                .and_then(|v| v.to_str().ok())
-                .map(str::to_string)
-        })
-        .filter(|s| !s.is_empty())
+fn client_key(req: &Request) -> String {
+    // Behind a trusted reverse proxy the TCP peer is the proxy, so honor the forwarded client IP — but ONLY
+    // when explicitly enabled, so a direct (unproxied) deployment can't be spoofed by a client-set header.
+    if config::env_flag("NUMU_TRUST_PROXY") {
+        if let Some(ip) = req
+            .headers()
+            .get("x-forwarded-for")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.split(',').next())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+        {
+            return ip;
+        }
+    }
+    // Default: the real socket peer, which a client cannot forge.
+    req.extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|c| c.0.ip().to_string())
         .unwrap_or_else(|| "global".to_string())
 }
 
 /// axum middleware: enforce the limiter, returning a leak-free 429 (carrying the request-id) when over.
 pub async fn enforce(limiter: RateLimiter, req: Request, next: Next) -> Response {
-    if limiter.allow(&client_key(req.headers())) {
+    if limiter.allow(&client_key(&req)) {
         return next.run(req).await;
     }
     let rid = req

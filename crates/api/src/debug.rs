@@ -6,6 +6,7 @@
 use std::sync::OnceLock;
 
 use axum::body::Bytes;
+use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{patch, post};
@@ -15,6 +16,7 @@ use serde_json::{json, Value};
 
 use crate::caller::Caller;
 use crate::config;
+use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
@@ -35,7 +37,13 @@ pub fn router() -> Router<AppState> {
         .route("/api/_debug/log-level", patch(set_log_level))
 }
 
-const REDACT: &[&str] = &["cookie", "set-cookie", "authorization", "x-api-key"];
+const REDACT: &[&str] = &[
+    "cookie",
+    "set-cookie",
+    "authorization",
+    "proxy-authorization",
+    "x-api-key",
+];
 
 async fn echo(
     Extension(ctx): Extension<RequestCtx>,
@@ -76,6 +84,7 @@ struct LevelInput {
 }
 
 async fn set_log_level(
+    State(st): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
     caller: Caller,
     body: Bytes,
@@ -89,6 +98,16 @@ async fn set_log_level(
     })?;
     match LOG_RELOAD.get() {
         Some(reload) if reload(&input.level) => {
+            // a privileged mutation of server-wide state — audit it (audit-everything).
+            db::record_event(
+                &st.pool,
+                &ctx,
+                &caller.actor_id,
+                None,
+                "debug.log_level_changed",
+                json!({ "level": input.level }),
+            )
+            .await;
             Ok(Json(json!({ "level": input.level })).into_response())
         }
         Some(_) => Err(

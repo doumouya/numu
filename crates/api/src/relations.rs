@@ -19,6 +19,7 @@ use crate::caller::{self, Action, Caller};
 use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::ids;
+use crate::rbac;
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
 
@@ -110,9 +111,18 @@ async fn create_relation(
         ))
         .with_request_id(ctx.request_id.clone()));
     }
-    // write = edit the subject. (Linking to an object the caller can't see is fine — they supplied its id;
-    // it's the READ side that's reach-gated, so nothing leaks.)
-    if !caller_can(&st, &caller, &input.subject_id, Action::Edit).await? {
+    if input.subject_id == input.object_id {
+        return Err(
+            AppError::unprocessable("a relation cannot link an entity to itself")
+                .with_request_id(ctx.request_id.clone()),
+        );
+    }
+    // write = edit the subject AND at least VIEW the object. The object gate is load-bearing: without it the
+    // create's status codes (201/409 on a real id vs the FK's 422 on a missing one) would be an existence
+    // oracle over entities the caller can't reach. Both denials collapse to the same leak-free 404.
+    if !caller_can(&st, &caller, &input.subject_id, Action::Edit).await?
+        || !caller_can(&st, &caller, &input.object_id, Action::View).await?
+    {
         return Err(deny_404(&ctx));
     }
 
@@ -173,13 +183,30 @@ async fn list_relations(
     .fetch_all(&st.pool)
     .await?;
 
-    // leak guard: only return an edge whose OTHER endpoint the caller can also reach.
+    // leak guard: only return an edge whose OTHER endpoint the caller can also reach. Resolve the caller's
+    // cross-type reach set ONCE (a single recursive CTE) rather than one per row, then test each opposite
+    // endpoint with a set lookup — `reachable_entity_ids_any` is the down-cascade dual of the per-object
+    // `effective_rank` up-climb, so membership is equivalent to View reach.
+    let reachable: Option<std::collections::HashSet<String>> = if caller.is_platform_admin {
+        None
+    } else {
+        Some(
+            rbac::reachable_entity_ids_any(&st.pool, &caller.actor_id)
+                .await?
+                .into_iter()
+                .collect(),
+        )
+    };
     let mut out = Vec::new();
     for r in &rows {
         let subject: String = r.try_get("subject_id")?;
         let object: String = r.try_get("object_id")?;
         let other = if subject == entity { &object } else { &subject };
-        if caller.is_platform_admin || caller_can(&st, &caller, other, Action::View).await? {
+        let visible = match &reachable {
+            None => true,
+            Some(set) => set.contains(other),
+        };
+        if visible {
             out.push(relation_json(r)?);
         }
     }
