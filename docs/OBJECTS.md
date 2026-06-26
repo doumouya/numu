@@ -614,10 +614,16 @@ capability. "No capability lives only in memory."
 
 ---
 
-## G7 · Deferred — designed-for, NOT built in v1
+## G7 · Integration — the TYPES are LIVE, the deep runtimes are external-decision-gated
 
-Flagged so the schema/registry anticipates them, but they ship only when a project needs them
-(disposability: don't build scale/transport infra early).
+> **LIVE (CASE 0011).** `connector`·`secret`·`skill`·`milestone` are seeded
+> (`migrations/0014_g7_catalog.sql`) — full CRUD/OPTIONS/search/relations via the generic handler.
+> `secret` is **metadata-only** (an `external_ref`, never the plaintext). `connector` gains
+> `POST /api/connectors/:id/run` (`crates/api/src/connectors.rs`) — an SSRF-gated `http_json` fetch.
+> **Still external-decision-gated** (a behavior behind a live type, not a loose end): secret
+> envelope-encryption + a chosen KMS, a skill execution runtime, and non-`http_json` connector sources.
+
+Originally flagged as "ship when a project needs them" (disposability: don't build transport infra early).
 
 - **`connector` `[TYPE]` · `CON`** — an external-source conduit `(caller, target, bytes) → pipeline`.
   Carries the SSRF/TLS gate, async job rows, and a saved data-contract. Connectors call the framework

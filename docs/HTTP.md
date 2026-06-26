@@ -42,6 +42,11 @@ over *every* type at once (the `entity_data.search_vector` GIN tsvector); ranked
 is a `SELECT` (≤3 retries/gate, ≤8 hops/run → `escalated`). **403/404** (no reach on the run's Case) · **422**
 (unknown outcome · wrong role for the phase · a closed run). (docs/OBJECTS.md G5; CASE 0010.)
 
+**Connector run (`/api/connectors/:id/run`).** `POST` — fetch the connector's `target` through the SSRF
+gate and return the JSON. `http_json` kind in v1 (others → **422**); reach-gated (Edit on the connector,
+leak-free **404**). The connector/secret/skill/milestone *objects* themselves are the generic
+`/api/objects/:type` surface. (docs/OBJECTS.md G7; CASE 0011.) Full map: [`CONTRACT.md`](CONTRACT.md).
+
 ## 1. Verb → status matrix
 
 All error bodies are problem+json (§6). `<PREFIX>_<hex>` ids; `:type` is validated once against the

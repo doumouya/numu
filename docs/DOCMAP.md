@@ -13,6 +13,8 @@
 2. **DOCMAP.md** (this) — where everything lives.
 3. [`OBJECTS.md`](OBJECTS.md) — the object catalog. **The active enrichment surface** + the data contract.
 4. [`HTTP.md`](HTTP.md) — how every registered type is exposed over HTTP (the uniform verb surface).
+   - ⭐ [`CONTRACT.md`](CONTRACT.md) — **the one-page frozen surface for the frontend** (every type + endpoint + rule).
+   - [`RUNNING.md`](RUNNING.md) — boot the binary + connect a frontend (CORS / proxy).
 5. [`OBSERVABILITY.md`](OBSERVABILITY.md) — debuggable-by-construction: request-id spine, problem+json, the 5th gate.
 6. [`cases/0001-object-catalog.md`](cases/0001-object-catalog.md) — the live coordination thread for the catalog work.
 
