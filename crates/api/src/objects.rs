@@ -438,27 +438,25 @@ async fn coll_create(
     }
     let sp = scope_parent(td, &data);
 
-    // Plane A on CREATE. A root type (no scope_parents) is open to any authenticated caller, who becomes
-    // its owner. A scoped type MUST name its parent (422), and the caller needs Create reach on that parent
-    // (you can only file under a container you reach; otherwise a leak-free 404).
-    if td.scope_parents.is_empty() {
-        if !caller::require_action(&st.pool, &caller, td, None, Action::Create).await? {
-            return Err(deny_404(&ctx));
-        }
-    } else {
-        let parent = sp.as_deref().ok_or_else(|| {
-            AppError::unprocessable(format!(
+    // Plane A on CREATE. With a parent supplied, the caller needs Create reach on it (else a leak-free
+    // 404). With no parent: a root type, or a type whose scope_parent is OPTIONAL, creates at root (open to
+    // any authenticated caller, who becomes the owner); a REQUIRED scope_parent that's missing is a 422.
+    let parent = match sp.as_deref() {
+        Some(p) => Some(p),
+        None if td.scope_parents.is_empty() || !td.scope_parent_required() => None,
+        None => {
+            return Err(AppError::unprocessable(format!(
                 "this type requires a scope parent: {}",
                 td.scope_parents
                     .first()
                     .map(String::as_str)
                     .unwrap_or("parent")
             ))
-            .with_request_id(ctx.request_id.clone())
-        })?;
-        if !caller::require_action(&st.pool, &caller, td, Some(parent), Action::Create).await? {
-            return Err(deny_404(&ctx));
+            .with_request_id(ctx.request_id.clone()));
         }
+    };
+    if !caller::require_action(&st.pool, &caller, td, parent, Action::Create).await? {
+        return Err(deny_404(&ctx));
     }
 
     let id = ids::mint(&td.id_prefix);

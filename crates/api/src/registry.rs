@@ -73,6 +73,16 @@ impl TypeDef {
     pub fn field(&self, name: &str) -> Option<&FieldDef> {
         self.fields.iter().find(|f| f.field == name)
     }
+
+    /// Is this type's primary scope_parent field `required`? An optional scope_parent may be absent on
+    /// create — the object lands at root (reachable only via a direct edge) instead of 422-ing. (e.g. an
+    /// unscoped `runbook`/`capability`.)
+    pub fn scope_parent_required(&self) -> bool {
+        self.scope_parents
+            .first()
+            .and_then(|name| self.field(name))
+            .is_some_and(|f| f.required)
+    }
 }
 
 pub struct TypeDefCache {

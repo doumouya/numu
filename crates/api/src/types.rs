@@ -222,9 +222,11 @@ fn validate_spec(spec: &TypeSpec, current: &TypeDefCache) -> AppResult<()> {
                     "scope_parent '{sp}' is not a field of this type"
                 )))
             }
-            Some(f) if f.kind != "ref" || !f.required || f.editable => {
+            // a scope_parent is a set-once ref; it MAY be optional (an unset parent = a root-level object,
+            // e.g. an unscoped runbook/capability), so `required` is the author's choice, not enforced here.
+            Some(f) if f.kind != "ref" || f.editable => {
                 return Err(bad(format!(
-                    "scope_parent '{sp}' must be a required, set-once (editable=false) ref field"
+                    "scope_parent '{sp}' must be a set-once (editable=false) ref field"
                 )))
             }
             Some(_) => {}

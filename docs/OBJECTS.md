@@ -126,6 +126,12 @@ Prefix registry (each `id_prefix` is unique → makes `kind(id)` a pure lookup):
 `ATT` attachment · `SPC` spec · `ACR` acceptance_criterion · `RBK` runbook · `DEC` decision ·
 `CAP` capability · `CON` connector · `SEC` secret · `SKL` skill · `MIL` milestone.
 
+> **Seeded LIVE (CASE 0008 B2).** `workspace`·`team` (G2) + `spec`·`acceptance_criterion`·`runbook`·
+> `decision`·`capability` (G6) ship as registry rows (`migrations/0011_catalog.sql`), auto-wired through the
+> generic handler — no engine code. An **optional** scope_parent (`runbook.case_id`, `capability.project_id`)
+> may be absent → the object creates at root; a **required** one missing is a `422`. *(Still deferred per
+> G5/G7: the orchestrator tables + `changeset`, and `connector`/`secret`/`skill`/`milestone`.)*
+
 ---
 
 ## G1 · Registry spine `[SYSTEM]`
