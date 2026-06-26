@@ -8,6 +8,7 @@ pub mod db;
 pub mod error;
 pub mod field_perms;
 pub mod health;
+pub mod http_client;
 pub mod ids;
 pub mod members;
 pub mod objects;
