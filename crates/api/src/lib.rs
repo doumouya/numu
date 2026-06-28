@@ -6,6 +6,7 @@ pub mod auth;
 pub mod caller;
 pub mod config;
 pub mod connectors;
+pub mod conversations;
 pub mod db;
 pub mod debug;
 pub mod error;
@@ -118,6 +119,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .merge(orchestrator::router())
         .merge(connectors::router())
         .merge(files::router())
+        .merge(conversations::router())
         .merge(auth_routes)
         .merge(oauth::router())
         .merge(debug::router())
