@@ -17,6 +17,7 @@
    - [`RUNNING.md`](RUNNING.md) — boot the binary + connect a frontend (CORS / proxy).
 5. [`OBSERVABILITY.md`](OBSERVABILITY.md) — debuggable-by-construction: request-id spine, problem+json, the 5th gate.
 6. [`cases/0001-object-catalog.md`](cases/0001-object-catalog.md) — the live coordination thread for the catalog work.
+7. **Foundation / planning docs** — the [object model](numu-objects-schema.md), [data plane](numu-gluesql-postgres.md) + [CSV datatypes](numu-csv-flow-and-datatypes.md), [RBAC + operator access](numu-rbac-membership-design.md), and [legal/privacy](numu-legal-privacy-data-compliance.md) for the numu frontend + customer data. *Forward-looking.*
 
 ## The map — doc ⇄ code-area
 
@@ -39,6 +40,22 @@ docs-currency gate); until then, the doc *is* the contract.
 | [`.claude/skills/api-conventions/`](../.claude/skills/api-conventions/SKILL.md) | How-to: the handler house-style (one `AppError`→problem+json, no-unwrap, mutation events, `Caller`, `If-Match`) — *applies* `OBSERVABILITY.md` + `HTTP.md` | `crates/api/src/{error,auth,objects,db}.rs` · `tools/debuggability-audit` | **shipped** |
 | [`.claude/skills/enforcement-gates/`](../.claude/skills/enforcement-gates/SKILL.md) | How-to: author a `tools/*-audit` gate (`ci.sh` auto-discovery, the ratchet) + the Rust-gate/DB-backstop doubling — *applies* `tools/README.md` | `tools/ci.sh` · `tools/*-audit/` · `migrations/0008` | **shipped** |
 | [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
+
+## Foundation / planning docs (the numu frontend + customer data)
+
+Forward-looking planning for numu as a **backend-office** (a frontend + client websites built on numu): the
+**reconciled numu+redpash object model**, the data plane it inherits, and the RBAC + legal/privacy work for
+**processing customer data**. Grounded in live introspection of both DBs (`numu_dev`, `redpash_prerelease`) +
+redpash source; the operator-access and legal artifacts are **design/roadmap**, not yet built. Each gets a
+real contract status as its slice lands.
+
+| Doc | Governs | Code area it's the contract for | Status |
+|---|---|---|---|
+| [`numu-objects-schema.md`](numu-objects-schema.md) | The reconciled numu (17) + redpash (12) object catalog — every type, field, metadata — grouped by a forward context taxonomy + the naming-reconciliation matrix | `migrations/`·`seed/` (numu) + the redpash app catalog being reused | planning |
+| [`numu-gluesql-postgres.md`](numu-gluesql-postgres.md) | The data plane numu inherits: GlueSQL (browser, ephemeral, per-user) vs Postgres (registry/metadata) + the immutable blob + step-replay | redpash `data` crate + `pipeline.rs` (to port) | planning |
+| [`numu-csv-flow-and-datatypes.md`](numu-csv-flow-and-datatypes.md) | CSV ingest (upload + connector) + the storage/semantic datatype catalog + sentinels + `ColumnMeta` | redpash `crates/{data,shared}` (to port) | planning |
+| [`numu-rbac-membership-design.md`](numu-rbac-membership-design.md) | RBAC/membership **today** (the two planes, reach resolver, roles-as-data, SEV-0 guards) + the **operator/customer-data** access design (`operator_access`, `access_audit`, purpose-limit) | `crates/api/src/{rbac,caller,members,field_perms}.rs` (Part 1 LIVE) + proposed tables (Parts 2–4) | Part 1 LIVE · Parts 2–4 design |
+| [`numu-legal-privacy-data-compliance.md`](numu-legal-privacy-data-compliance.md) | Legal/privacy/GDPR posture: controller/processor, the privacy-audit ratchet, data-subject rights, the Article control-map + roadmap (claude-for-legal) | redpash privacy machinery (`tools/privacy-audit`, `me.rs`, `crypto.rs`) to port + legal artifacts | planning |
 
 ## Not-yet-written (planned slices, each its own Case)
 
