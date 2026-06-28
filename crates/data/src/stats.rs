@@ -65,7 +65,9 @@ pub fn find_sentinels(df: &DataFrame, extras: &[String]) -> Vec<SentinelOccurren
             if !matches_vocab(&canon, &base, &extras_lower) {
                 continue;
             }
-            let entry = buckets.entry(raw.clone()).or_insert_with(|| (canon, 0u64, HashMap::new()));
+            let entry = buckets
+                .entry(raw.clone())
+                .or_insert_with(|| (canon, 0u64, HashMap::new()));
             entry.1 += 1;
             *entry.2.entry(cname.clone()).or_insert(0u64) += 1;
         }
@@ -75,7 +77,12 @@ pub fn find_sentinels(df: &DataFrame, extras: &[String]) -> Vec<SentinelOccurren
         .map(|(value, (canonical, total, cols_map))| {
             let mut cols: Vec<(String, u64)> = cols_map.into_iter().collect();
             cols.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-            SentinelOccurrence { value, canonical, total, columns: cols }
+            SentinelOccurrence {
+                value,
+                canonical,
+                total,
+                columns: cols,
+            }
         })
         .collect();
     out.sort_by(|a, b| b.total.cmp(&a.total).then_with(|| a.value.cmp(&b.value)));
@@ -114,8 +121,10 @@ pub fn cleanness_report(
     let type_consistency = type_consistency_score(df, columns);
     let value_hygiene = value_hygiene_score(df, extras);
     let row_uniqueness = row_uniqueness_score(df);
-    let value_quality =
-        0.35 * completeness + 0.25 * type_consistency + 0.25 * value_hygiene + 0.15 * row_uniqueness;
+    let value_quality = 0.35 * completeness
+        + 0.25 * type_consistency
+        + 0.25 * value_hygiene
+        + 0.15 * row_uniqueness;
 
     let shape = shape_integrity(df);
     let encoding = encoding_integrity(df);
@@ -184,7 +193,11 @@ fn type_consistency_score(df: &DataFrame, columns: &[ColumnMeta]) -> f32 {
                 clean += 1;
             }
         }
-        sum += if total == 0 { 100.0 } else { 100.0 * clean as f32 / total as f32 };
+        sum += if total == 0 {
+            100.0
+        } else {
+            100.0 * clean as f32 / total as f32
+        };
     }
     sum / columns.len() as f32
 }
@@ -244,7 +257,10 @@ fn row_uniqueness_score(df: &DataFrame) -> f32 {
     let cols = df.columns();
     let mut seen: HashSet<Vec<Option<String>>> = HashSet::with_capacity(rows);
     for i in 0..rows {
-        let key: Vec<Option<String>> = cols.iter().map(|c| c.get(i).ok().and_then(av_to_owned)).collect();
+        let key: Vec<Option<String>> = cols
+            .iter()
+            .map(|c| c.get(i).ok().and_then(av_to_owned))
+            .collect();
         seen.insert(key);
     }
     100.0 * seen.len() as f32 / rows as f32
@@ -415,7 +431,11 @@ mod tests {
     #[test]
     fn sentinels_dock_value_hygiene_including_fr() {
         let r = report("id,city\n1,Paris\n2,inconnu\n3,Lyon\n4,N/A\n");
-        assert!(r.value_hygiene < 100.0, "sentinels ignored: {}", r.value_hygiene);
+        assert!(
+            r.value_hygiene < 100.0,
+            "sentinels ignored: {}",
+            r.value_hygiene
+        );
     }
 
     #[test]
@@ -428,7 +448,11 @@ mod tests {
         .unwrap();
         let cols = dtype::summarize(&one).unwrap();
         let r = cleanness_report(&one, &cols, &[]).unwrap();
-        assert!(r.shape_integrity < 0.5, "shape gate didn't fire: {}", r.shape_integrity);
+        assert!(
+            r.shape_integrity < 0.5,
+            "shape gate didn't fire: {}",
+            r.shape_integrity
+        );
     }
 
     #[test]

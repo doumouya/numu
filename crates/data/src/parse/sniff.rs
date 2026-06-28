@@ -45,7 +45,11 @@ pub fn parse_text_with_diag(text: String) -> Result<(DataFrame, RescueDiag)> {
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if trimmed.get(..4).map(|p| p.eq_ignore_ascii_case("sep=")).unwrap_or(false) {
+        if trimmed
+            .get(..4)
+            .map(|p| p.eq_ignore_ascii_case("sep="))
+            .unwrap_or(false)
+        {
             continue;
         }
         let (best_d, best_n) = DELIMS
@@ -80,12 +84,21 @@ pub fn parse_text_with_diag(text: String) -> Result<(DataFrame, RescueDiag)> {
         let wrapped = sample.len() >= 2 && {
             let rich = sample
                 .iter()
-                .filter(|l| DELIMS.iter().any(|&d| l.bytes().filter(|&b| b == d).count() >= 2))
+                .filter(|l| {
+                    DELIMS
+                        .iter()
+                        .any(|&d| l.bytes().filter(|&b| b == d).count() >= 2)
+                })
                 .count();
             rich * 2 >= sample.len()
         };
         if wrapped {
-            return Ok((line_literal_frame(&text, skip_rows)?, RescueDiag::WrapDetected { preview_width: None }));
+            return Ok((
+                line_literal_frame(&text, skip_rows)?,
+                RescueDiag::WrapDetected {
+                    preview_width: None,
+                },
+            ));
         }
     }
 
@@ -110,16 +123,26 @@ pub fn parse_text_with_diag(text: String) -> Result<(DataFrame, RescueDiag)> {
     // quote even with ignore_errors. Either way, if the input HAD data lines,
     // preserve them line-literally (the user can still `unwrap_csv`) rather than
     // silently dropping them or surfacing a parse error.
-    let has_data = text.lines().skip(skip_rows).skip(1).any(|l| !l.trim().is_empty());
+    let has_data = text
+        .lines()
+        .skip(skip_rows)
+        .skip(1)
+        .any(|l| !l.trim().is_empty());
     match parsed {
         Ok(df) if df.height() > 0 => Ok((df, RescueDiag::NotAttempted)),
-        Ok(_) if has_data => {
-            Ok((line_literal_frame(&text, skip_rows)?, RescueDiag::WrapDetected { preview_width: None }))
-        }
+        Ok(_) if has_data => Ok((
+            line_literal_frame(&text, skip_rows)?,
+            RescueDiag::WrapDetected {
+                preview_width: None,
+            },
+        )),
         Ok(df) => Ok((df, RescueDiag::NotAttempted)), // genuinely empty input
-        Err(_) if has_data => {
-            Ok((line_literal_frame(&text, skip_rows)?, RescueDiag::WrapDetected { preview_width: None }))
-        }
+        Err(_) if has_data => Ok((
+            line_literal_frame(&text, skip_rows)?,
+            RescueDiag::WrapDetected {
+                preview_width: None,
+            },
+        )),
         Err(e) => Err(DataError::from(e)),
     }
 }
@@ -132,7 +155,7 @@ fn line_literal_frame(text: &str, skip_rows: usize) -> Result<DataFrame> {
     let header = rows.next().unwrap_or("column_1");
     let values: Vec<&str> = rows.collect();
     DataFrame::new_infer_height(vec![
-        Series::new(header.into(), values.as_slice()).into_column(),
+        Series::new(header.into(), values.as_slice()).into_column()
     ])
     .map_err(DataError::from)
 }
@@ -227,8 +250,17 @@ mod tests {
                      \"3,\"\"Carl\"\",\"\"Rennes\"\"\"\n"
             .to_string();
         let (df, diag) = parse_text_with_diag(input).unwrap();
-        assert!(df.height() >= 3, "wrapped rows were dropped: height={}", df.height());
-        assert_eq!(diag, RescueDiag::WrapDetected { preview_width: None });
+        assert!(
+            df.height() >= 3,
+            "wrapped rows were dropped: height={}",
+            df.height()
+        );
+        assert_eq!(
+            diag,
+            RescueDiag::WrapDetected {
+                preview_width: None
+            }
+        );
     }
 
     #[test]
@@ -236,7 +268,8 @@ mod tests {
         // A real header (commas → found_multi) but a data row with an
         // unterminated quote. Whatever polars yields, the loader must NEVER hand
         // back an empty frame when the input had data rows.
-        let input = "id,name,note\n1,Alice,\"oops unterminated\n2,Bob,ok\n3,Carl,fine\n".to_string();
+        let input =
+            "id,name,note\n1,Alice,\"oops unterminated\n2,Bob,ok\n3,Carl,fine\n".to_string();
         let (df, _) = parse_text_with_diag(input).unwrap();
         assert!(df.height() > 0, "zero-row gap: rows were silently dropped");
     }

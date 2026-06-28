@@ -18,7 +18,10 @@ pub fn from_csv_bytes(bytes: &[u8], tld: Option<&str>) -> Result<(DataFrame, Res
 }
 
 /// Decode with a user-chosen codec (the cleaner sidebar override), then parse.
-pub fn from_csv_bytes_with_encoding(bytes: &[u8], enc_name: &str) -> Result<(DataFrame, RescueDiag, String)> {
+pub fn from_csv_bytes_with_encoding(
+    bytes: &[u8],
+    enc_name: &str,
+) -> Result<(DataFrame, RescueDiag, String)> {
     let (text, used) = encoding::decode_as(bytes, enc_name);
     let (df, diag) = parse_text_with_diag(text)?;
     Ok((df, diag, used))

@@ -95,9 +95,13 @@ fn sniff_semantic_type(c: &Series) -> &'static str {
     }
     let n = samples.len() as f32;
 
-    let bool_hits = samples.iter().filter(|s| BOOL_WORDS_ANY.contains(&s.as_str())).count();
-    let has_non_numeric_bool =
-        samples.iter().any(|s| BOOL_WORDS_NON_NUMERIC.contains(&s.as_str()));
+    let bool_hits = samples
+        .iter()
+        .filter(|s| BOOL_WORDS_ANY.contains(&s.as_str()))
+        .count();
+    let has_non_numeric_bool = samples
+        .iter()
+        .any(|s| BOOL_WORDS_NON_NUMERIC.contains(&s.as_str()));
     if has_non_numeric_bool && bool_hits as f32 / n >= 0.8 {
         return "bool";
     }
@@ -121,8 +125,27 @@ fn sniff_semantic_type(c: &Series) -> &'static str {
 }
 
 const ID_NAME_TOKENS: &[&str] = &[
-    "postcode", "postal", "zip", "zipcode", "siren", "siret", "tva", "phone", "telephone",
-    "mobile", "fax", "iban", "bic", "swift", "id", "uid", "guid", "uuid", "ssn", "code", "ref",
+    "postcode",
+    "postal",
+    "zip",
+    "zipcode",
+    "siren",
+    "siret",
+    "tva",
+    "phone",
+    "telephone",
+    "mobile",
+    "fax",
+    "iban",
+    "bic",
+    "swift",
+    "id",
+    "uid",
+    "guid",
+    "uuid",
+    "ssn",
+    "code",
+    "ref",
 ];
 
 fn name_looks_id(name: &str) -> bool {
@@ -346,10 +369,16 @@ mod tests {
     fn semantic_sniff_vetoes_id_numerics() {
         // leading-zero postal codes stay string, not float
         let df = df1("code_postal", &["07920", "01000", "13001", "75008"]);
-        assert_eq!(sniff_semantic_type(df.columns()[0].as_materialized_series()), "string");
+        assert_eq!(
+            sniff_semantic_type(df.columns()[0].as_materialized_series()),
+            "string"
+        );
         // clean prices sniff float
         let df = df1("prix", &["10.5", "20.0", "33.9", "8.25"]);
-        assert_eq!(sniff_semantic_type(df.columns()[0].as_materialized_series()), "float");
+        assert_eq!(
+            sniff_semantic_type(df.columns()[0].as_materialized_series()),
+            "float"
+        );
     }
 
     #[test]
@@ -362,11 +391,23 @@ mod tests {
 
     #[test]
     fn date_drift_flags_mixed_formats_and_contradiction() {
-        let df = df1("date", &["2026-01-13", "13/01/2026", "01/13/2026", "2026/01/13", "2026-01-14"]);
+        let df = df1(
+            "date",
+            &[
+                "2026-01-13",
+                "13/01/2026",
+                "01/13/2026",
+                "2026/01/13",
+                "2026-01-14",
+            ],
+        );
         let (col, shapes, contradiction) = worst_date_drift(&df).expect("mixed formats drift");
         assert_eq!(col, "date");
         assert!(shapes >= 2 && contradiction);
-        let clean = df1("date", &["2026-01-13", "2026-01-14", "2026-02-01", "2026-03-09"]);
+        let clean = df1(
+            "date",
+            &["2026-01-13", "2026-01-14", "2026-02-01", "2026-03-09"],
+        );
         assert!(worst_date_drift(&clean).is_none());
     }
 }

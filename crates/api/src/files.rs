@@ -51,10 +51,18 @@ async fn upload(
                 );
             }
             Some("project") => {
-                project = Some(field.text().await.map_err(|e| bad(format!("bad project part: {e}")))?);
+                project = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| bad(format!("bad project part: {e}")))?,
+                );
             }
             Some("tld") => {
-                let t = field.text().await.map_err(|e| bad(format!("bad tld part: {e}")))?;
+                let t = field
+                    .text()
+                    .await
+                    .map_err(|e| bad(format!("bad tld part: {e}")))?;
                 if !t.trim().is_empty() {
                     tld = Some(t.trim().to_string());
                 }

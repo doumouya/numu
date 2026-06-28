@@ -70,13 +70,13 @@ pub async fn upload_csv(
     let storage_rel = format!("files/{rid}.bin");
     let abs_path = st.data_dir.join("files").join(format!("{rid}.bin"));
     if let Some(parent) = abs_path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| AppError::internal(format!("mkdir: {e}")).with_request_id(ctx.request_id.clone()))?;
+        tokio::fs::create_dir_all(parent).await.map_err(|e| {
+            AppError::internal(format!("mkdir: {e}")).with_request_id(ctx.request_id.clone())
+        })?;
     }
-    tokio::fs::write(&abs_path, &bytes)
-        .await
-        .map_err(|e| AppError::internal(format!("write: {e}")).with_request_id(ctx.request_id.clone()))?;
+    tokio::fs::write(&abs_path, &bytes).await.map_err(|e| {
+        AppError::internal(format!("write: {e}")).with_request_id(ctx.request_id.clone())
+    })?;
     let mut guard = BlobGuard::arm(abs_path);
 
     // parse + summarize + score OFF the async runtime (polars is blocking/CPU-bound).
@@ -86,18 +86,27 @@ pub async fn upload_csv(
         let cols = data::dtype::summarize(&df)?;
         let cleanness = data::stats::cleanness(&df, &cols, &[]);
         let fully = data::stats::count_fully_null_rows(&df);
-        Ok((enc, df.height() as i64, df.width() as i32, cols, cleanness, fully))
+        Ok((
+            enc,
+            df.height() as i64,
+            df.width() as i32,
+            cols,
+            cleanness,
+            fully,
+        ))
     })
     .await
     .map_err(|e| AppError::internal(format!("join: {e}")).with_request_id(ctx.request_id.clone()))?
     .map_err(|e| {
-        AppError::unprocessable(format!("could not parse CSV: {e}")).with_request_id(ctx.request_id.clone())
+        AppError::unprocessable(format!("could not parse CSV: {e}"))
+            .with_request_id(ctx.request_id.clone())
     })?;
     let (encoding, rows, cols_n, columns, cleanness, fully_null_rows) = parsed;
 
     let filename = strip_upload_ext(original_filename).to_string();
-    let columns_json = serde_json::to_value(&columns)
-        .map_err(|e| AppError::internal(format!("serialize: {e}")).with_request_id(ctx.request_id.clone()))?;
+    let columns_json = serde_json::to_value(&columns).map_err(|e| {
+        AppError::internal(format!("serialize: {e}")).with_request_id(ctx.request_id.clone())
+    })?;
     // entity_data.data — the CANONICAL `file` record (the generic CRUD/OPTIONS surface reads this).
     let data = json!({
         "project_id": project,
@@ -164,7 +173,15 @@ pub async fn upload_csv(
     )
     .await;
 
-    Ok(UploadOutcome { rid, filename, encoding, columns, cleanness, size_bytes, fully_null_rows })
+    Ok(UploadOutcome {
+        rid,
+        filename,
+        encoding,
+        columns,
+        cleanness,
+        size_bytes,
+        fully_null_rows,
+    })
 }
 
 /// Strip a known upload extension from a filename for the display name.

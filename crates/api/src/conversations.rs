@@ -41,7 +41,10 @@ async fn feed(
     }
     let lens = match q.lens.as_deref().unwrap_or("all") {
         l @ ("all" | "customer" | "mine") => l,
-        _ => return Err(AppError::bad_request("lens must be all|customer|mine").with_request_id(ctx.request_id.clone())),
+        _ => {
+            return Err(AppError::bad_request("lens must be all|customer|mine")
+                .with_request_id(ctx.request_id.clone()))
+        }
     };
     let limit = q.limit.unwrap_or(100).clamp(1, 500);
     let offset = q.offset.unwrap_or(0).max(0);
