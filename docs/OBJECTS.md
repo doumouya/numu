@@ -8,6 +8,12 @@
 >
 > Status: **DRAFT v0** — non-UI design first (no UI in scope yet). Storage/migrations land in a
 > follow-on slice; this doc is the contract they implement.
+>
+> **Data-app catalog (LIVE).** The numu-Console data plane added `file`·`chart`·`dashboard`·`message`
+> + `project.origin`/`case_id` + the `context_view`/`role` presentation layer + `data_class`
+> (`migration 0016`), the upload pipeline + `project_files`/`project_steps` (`0017`,
+> `crates/{data,shared}`), and the conversation feed. Catalog + decisions:
+> [`numu-objects-schema.md`](numu-objects-schema.md) · [`decisions/0001-data-app-catalog.md`](decisions/0001-data-app-catalog.md).
 
 ---
 

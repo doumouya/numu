@@ -40,6 +40,20 @@ docs-currency gate); until then, the doc *is* the contract.
 | [`.claude/skills/api-conventions/`](../.claude/skills/api-conventions/SKILL.md) | How-to: the handler house-style (one `AppError`→problem+json, no-unwrap, mutation events, `Caller`, `If-Match`) — *applies* `OBSERVABILITY.md` + `HTTP.md` | `crates/api/src/{error,auth,objects,db}.rs` · `tools/debuggability-audit` | **shipped** |
 | [`.claude/skills/enforcement-gates/`](../.claude/skills/enforcement-gates/SKILL.md) | How-to: author a `tools/*-audit` gate (`ci.sh` auto-discovery, the ratchet) + the Rust-gate/DB-backstop doubling — *applies* `tools/README.md` | `tools/ci.sh` · `tools/*-audit/` · `migrations/0008` | **shipped** |
 | [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
+| [`decisions/0001-data-app-catalog.md`](decisions/0001-data-app-catalog.md) | The reconciliation ADR: D-CNV, file-as-typed-table, canonical names, note/report, the presentation layer, data_class-with-the-plane | the data-app plane below | accepted |
+
+## Data-app plane (LIVE — README §3 Buckets 1–2, the numu-Console data layer)
+
+The redpash data plane, merged into numu so the Console binds real data. Catalog + presentation + the CSV
+upload pipeline + the conversation feed are **live**; the client-compute ops + wasm surface stay the
+frontend's job (deferred). Rationale: [`decisions/0001-data-app-catalog.md`](decisions/0001-data-app-catalog.md).
+
+| Doc | Governs | Code area it's the contract for | Status |
+|---|---|---|---|
+| [`numu-objects-schema.md`](numu-objects-schema.md) | the file/chart/dashboard/message catalog + `project` origin/case_id + the `context_view`/`role` presentation layer + `data_class` | `migrations/0016_data_app_catalog.sql` | **LIVE** |
+| [`numu-csv-flow-and-datatypes.md`](numu-csv-flow-and-datatypes.md) | the CSV typing engine + `pipeline::upload_csv` + `POST /api/files` (`UploadOutcome`) | `crates/{data,shared}` · `crates/api/src/{pipeline,files}.rs` · `migrations/0017_project_files.sql` | **LIVE** (upload; connectors deferred) |
+| [`numu-gluesql-postgres.md`](numu-gluesql-postgres.md) | the Postgres side of the split (registry + `project_files` projection + `project_steps` recipe + the on-disk blob); GlueSQL stays client | `crates/api/src/pipeline.rs` · `migrations/0017` | **LIVE** (server side) |
+| feed + seed | `GET /api/conversations/:id/feed?lens=` + the demo R0 seed | `crates/api/src/conversations.rs` · `tools/seed-demo.sh` | **LIVE** |
 
 ## Foundation / planning docs (the numu frontend + customer data)
 

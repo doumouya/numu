@@ -1,5 +1,10 @@
 # numu — CSV ingest flow & datatypes
 
+> **STATUS (2026-06-28): the upload path is LIVE in numu.** The typing engine ported to `crates/{data,shared}`
+> (stock polars 0.54), `pipeline::upload_csv` + `POST /api/files` (`UploadOutcome`) shipped, `project_files`/
+> `project_steps` in `migration 0017`. The `csv-loader-zero-row-gap` bug is fixed (both `Ok(0 rows)` and the
+> unbalanced-quote parse-`Err`). Connector ingest is still deferred. See [ADR 0001](decisions/0001-data-app-catalog.md).
+
 > **Purpose.** What happens when tabular data enters the system (an upload button or a connector) and the
 > **exact set of datatypes** a column can receive. Written so the front + new objects can plan against the
 > real type vocabulary. This is redpash-rust-pwa's shipped pipeline, documented as numu's go-forward data

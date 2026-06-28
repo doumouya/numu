@@ -1,5 +1,10 @@
 # numu — data organization: GlueSQL vs Postgres
 
+> **STATUS (2026-06-28): the Postgres/server side is LIVE in numu.** The registry metadata + the
+> `project_files` typed projection + the `project_steps` recipe + the immutable on-disk blob all ship
+> (`migration 0017`, `pipeline::upload_csv`). GlueSQL (the in-browser, ephemeral client store) stays the
+> frontend's job. See [ADR 0001](decisions/0001-data-app-catalog.md).
+
 > **Purpose.** How tabular data is split between **Postgres** (server-side metadata + registry) and
 > **GlueSQL** (in-browser, on-device data). This is redpash-rust-pwa's shipped data plane, documented as the
 > model **numu inherits** when it takes on data objects (`file`/`chart`/`dashboard`). numu has no

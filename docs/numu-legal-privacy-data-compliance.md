@@ -67,8 +67,10 @@ working rows stay client-side** (Polars/GlueSQL) — see
 ### 3.1 Field-level data classification — `data_class` ✅→port
 `type_fields.data_class ∈ {none, personal, sensitive}` (redpash `backend/migrations/20260617000002_data_class.sql`),
 orthogonal to `perm_class` (access control). Tagged today: `user.{email,display_name,username}`,
-`case.{title,description}`. Drives export scoping (§3.3) and (intended) log redaction. **numu's `type_fields`
-has no `data_class` column yet — porting it is step 1** (and it powers the operator read-audit in the RBAC doc §3.4–3.5).
+`case.{title,description}`. Drives export scoping (§3.3) and (intended) log redaction. **`data_class` is now
+LIVE in numu** (migration `0016`, landed with the data plane — [ADR 0001](decisions/0001-data-app-catalog.md));
+it tags message.body, file.columns_meta, actor.email, case.title/description, comment.body, note.body, and
+powers the proposed operator read-audit (RBAC doc §3.4–3.5).
 
 ### 3.2 The privacy-audit CI gate (the ratchet) ✅→port
 `tools/privacy-audit/audit.js` encodes the 2026-06-16 independent assessment as **static checks**, one per
