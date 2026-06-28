@@ -26,6 +26,9 @@ hmac.workspace = true
 jsonwebtoken.workspace = true
 reqwest.workspace = true
 arc-swap.workspace = true
+# the data plane: the pure-compute CSV typing engine + its wire DTOs (README §3 Bucket 1).
+data = { package = "numu-data", path = "../data" }
+shared = { package = "numu-shared", path = "../shared" }
 
 [features]
 # db-tests: opt-in DB-backed integration tests (need a live Postgres via DATABASE_URL). ci.sh's `db`
