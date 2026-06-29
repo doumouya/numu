@@ -83,4 +83,39 @@ CORS for a truly cross-site deploy (moot while same-origin).
   (parity)". (c) resolved → AC1 now also covers `OPTIONS /api/objects/:type`. Orchestrator correction:
   `makeClient("auto")` and `AutoClient.isLive()` ALREADY exist (numu-data-client.js:320,322-326 — the
   architect read only the earlier def at :296); AC8's `makeClient("auto")` is a **confirm**, not a fix —
-  the coder must not "repair" the working override. → tester starts (Step 2).
+  the coder must not "repair" the working override.
+- **2026-06-29 — tester:** RED tests landed (AC1 compile-red in registry.rs; AC4–AC7 node-red + AC8 guard
+  in web/tests/shapes.test.mjs; AC2/AC3/AC1-app in tools/e2e-0013.sh, documented-red). 
+- **2026-06-29 — coder:** GREEN (node 5/5; cargo check clean). Slices 440b215/4ad2c73/b6a46d2/e37b312/5e05f30.
+  Orchestrator re-verified node 5/5 + cargo check.
+- **2026-06-29 — review (3 specialists, read-only) findings + triage:**
+  - **FIX-NOW (fold into a coder/tester round):**
+    1. `conversations()` (numu-data-client.js): guard `it.data` (throws on null) + `channel: d.channel_group
+       || "Clients"` — live `project` has NO `channel_group`, so today every live conversation groups under
+       `undefined` in the rail (breaks the first killer-flow step). Spec G6 + the AC7 test updated to match.
+    2. Wire `node web/tests/shapes.test.mjs` into `tools/ci.sh` (AC4–AC8 currently gate nothing in CI).
+    3. `context_view` default is `'record'` not `'none'` (0016 CHECK has no `'none'`) — fix registry.rs
+       comment + spec wording for accuracy.
+    4. ServeDir: warn-log at boot if `web_dir` is missing (else silent blanket 404s — debuggability).
+  - **DEFER (follow-up Case / known limitations — NOT blocking bind-live):**
+    - AutoClient probe hits unauthed/no-DB `/api/health` → can mask 401/500 as "offline" and serve fixtures
+      indistinguishably; R3 Shell read paths lack `.catch`; offline shown only by a dot. (Pre-existing rewrite
+      seam degradation design + production hardening — belongs to the Console-cutover effort.)
+    - `list ?q=` no-ops live (no server-side filter); `isLive()` returns a Promise (manual-E2E must `await`);
+      a state-free `oneshot` router test for AC2/AC3 (live E2E is this milestone's stand-in per spec).
+- **2026-06-29 — tester (fix): AC7** updated to expect `channel: "Clients"` fallback + a `data:null` no-throw
+  case (RED → coder). **coder (fix): commit `4ce195c`** — `conversations()` guard + "Clients" fallback;
+  `node web/tests/shapes.test.mjs` wired into `tools/ci.sh`; `context_view` doc `'none'`→`'record'`;
+  `web_dir`-missing boot warn. node 5/5, cargo check + clippy + fmt clean.
+- **2026-06-29 — reviewer (Checkpoint 2): SHIP.** `sh tools/ci.sh` (DATABASE_URL unset → db gate skipped per
+  the OOM constraint): fmt ✓, clippy -D warnings ✓, cargo test 9/9 api + 18/18 data ✓, js shape gate 5/5
+  (AC4–AC8) ✓, all 11 embedded audits clean/baselined (rbac 0, ssrf-parity 0, mask-unenforced 4-baselined
+  held — that's CASE 0015's debt, docs-currency 0, case-first 0, debuggability 0). No `tools/ci-audit/check.sh`
+  in numu — audits embed in ci.sh. Verified the 4 FIX-NOW items landed (4ce195c); DEFER items documented.
+  Security pass clean: ServeDir (tower-http 0.6.11 `fs`) confines to root + no symlink follow; fallback mounted
+  after all routes so the API wins (AC3); `/api/health` no-auth/no-DB liveness acceptable; `context_view` is
+  static schema metadata behind an authenticated `Caller` (no PII/IDOR). AC coverage: AC4–AC8-unit + AC1-serde
+  gate-covered; **AC2/AC3/AC1-catalog+OPTIONS/AC8-killer-flow are live-E2E-only** (`tools/e2e-0013.sh` vs a
+  seeded live server) per the OOM design — that E2E is the remaining proof for ops. ONE new LOW/non-blocking
+  flag: the AC1 default test still names/asserts `'none'` (should be `'record'`); it still passes (proves
+  key-present only) → cleanup on next touch / fold into 0015. → Checkpoint 2 (Em). → tester starts (Step 2).

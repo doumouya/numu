@@ -14,7 +14,9 @@
 //   AC4 list      FAIL  (HttpClient.list returns raw {items,limit,offset})
 //   AC5 item      FAIL  (get/create/update return raw {id,type,data,version,etag})
 //   AC6 types/opt FAIL  (returns raw snake_case, not camelCase)
-//   AC7 convos    FAIL  (returns raw {items:[…]} envelope, not the projection)
+//   AC7 convos    FAIL  (channel is raw data.channel_group ⇒ undefined when absent,
+//                        not the "Clients" fallback; and it.data.title throws on data:null
+//                        — no `it.data || {}` guard yet)
 //   AC8 unit      PASS  (makeClient("auto") already returns AutoClient — GUARD, not red)
 // Coder makes AC4–AC7 green by adding a shared flatten() + per-method mapping.
 // =============================================================================
@@ -218,12 +220,22 @@ await ac("AC6 types/options — snake_case ⇒ camelCase, fields passthrough", a
 
 // ── AC7 (G6 — conversations mapping) ──────────────────────────────────────────
 // project envelope {items:[{id,type,data:{name,origin,status,…},version,etag}]}
-//   ⇒ [{id, title:data.name, origin, channel, status}]   (title = data.title||data.name)
+//   ⇒ [{id, title:data.title||data.name, origin, channel, status}]
+// CONTRACT (orchestrator review): (1) `channel` falls back to "Clients" when the
+// item's data has NO `channel_group` — the LIVE project type has no such field, so
+// without the fallback every live conversation groups under `undefined`. A present
+// `channel_group` still passes through. (2) `conversations()` must guard a missing
+// `data` (live can't produce it, but the test proves robustness): `const d=it.data||{}`
+// so a `data:null` item yields a sane row instead of throwing.
 await ac("AC7 conversations — project envelope ⇒ [{id,title,origin,channel,status}]", async () => {
   const projectBackend = {
     items: [
+      // (a) live-shaped: NO channel_group ⇒ channel falls back to "Clients".
       { id: "PRJ_3f21", type: "project", data: { name: "Client cleanup — Maison Rets", origin: "email", status: "active" }, version: 1, etag: 'W/"1"' },
+      // (b) HAS channel_group ⇒ that value passes through; data.title wins over data.name.
       { id: "PRJ_0c14", type: "project", data: { title: "Internal — fleet health", name: "ignored-name", origin: "manual", status: "active", channel_group: "Internal" }, version: 2, etag: 'W/"2"' },
+      // (c) robustness: data is null ⇒ must NOT throw; sane defaults (channel "Clients", title undefined).
+      { id: "PRJ_null", type: "project", data: null, version: 3, etag: 'W/"3"' },
     ],
     limit: 50,
     offset: 0,
@@ -233,19 +245,24 @@ await ac("AC7 conversations — project envelope ⇒ [{id,title,origin,channel,s
   const convos = await c.conversations();
 
   assert.ok(Array.isArray(convos), "conversations() returns an array");
-  assert.equal(convos.length, 2, "one projection per project item");
+  assert.equal(convos.length, 3, "one projection per project item");
+  // (a) no channel_group ⇒ channel falls back to "Clients" (fixture default for the live project type).
   assert.deepEqual(convos[0], {
     id: "PRJ_3f21",
     title: "Client cleanup — Maison Rets",
     origin: "email",
-    channel: undefined,
+    channel: "Clients",
     status: "active",
-  }, "convos[0]: title falls back to data.name when no data.title");
-  // second: data.title wins over data.name; channel from data.channel_group
+  }, "convos[0]: title falls back to data.name; channel falls back to \"Clients\" when no channel_group");
+  // (b) data.title wins over data.name; a present channel_group passes through unchanged.
   assert.equal(convos[1].title, "Internal — fleet health", "title = data.title || data.name (title wins)");
   assert.equal(convos[1].origin, "manual", "origin = data.origin");
-  assert.equal(convos[1].channel, "Internal", "channel = data.channel_group");
+  assert.equal(convos[1].channel, "Internal", "channel = data.channel_group when present (passthrough)");
   assert.equal(convos[1].status, "active", "status = data.status");
+  // (c) data:null robustness — does not throw; channel defaults to "Clients", title undefined.
+  assert.equal(convos[2].id, "PRJ_null", "convos[2]: id still maps from the envelope when data is null");
+  assert.equal(convos[2].title, undefined, "convos[2]: title is undefined when data is null (no name/title)");
+  assert.equal(convos[2].channel, "Clients", "convos[2]: channel falls back to \"Clients\" when data is null");
   // must NOT leak the raw envelope
   assert.equal(convos[0].items, undefined, "no raw `items` leaks through");
   assert.equal(convos[0].data, undefined, "no nested `data` leaks through");
