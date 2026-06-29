@@ -280,9 +280,6 @@
                     <span style="font-size:var(--text-md); font-weight:var(--weight-semibold)">{{ m.subject }}</span>
                     <span style="font-size:var(--text-md); color:var(--text-muted); line-height:1.5">{{ m.body }}</span>
                   </div>
-                  <sc-if value="{{ m.onOpenAsProject }}">
-                    <button onClick="{{ m.onOpenAsProject }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.45rem; border:none; border-top:1px solid var(--border-subtle); background:var(--surface-subtle); color:var(--accent); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-right-circle" hint-size="0.8rem,0.8rem"></x-import>Open as project</button>
-                  </sc-if>
                 </div>
               </sc-if>
               <sc-if value="{{ m.isNote }}">
@@ -444,9 +441,6 @@
                     <span style="flex:1"></span>
                     <span style="display:inline-flex; color:{{ m.accentColor }}; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="box-arrow-up-right" hint-size="0.9rem,0.9rem"></x-import></span>
                   </button>
-                  <sc-if value="{{ m.onOpenAsProject }}">
-                    <button onClick="{{ m.onOpenAsProject }}" style="align-self:flex-start; display:flex; align-items:center; gap:0.4rem; padding:0.28rem 0.6rem; border:1px solid var(--border); border-radius:999px; background:var(--surface-subtle); color:var(--accent); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-medium)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-right-circle" hint-size="0.78rem,0.78rem"></x-import>Open as project</button>
-                  </sc-if>
                 </div>
               </sc-if>
               <sc-if value="{{ m.isBubble }}">
@@ -1973,58 +1967,9 @@ class Component extends DCLogic {
     ]
   };
 
-  THREADS = {
-    platform: [
-      { kind: "divider", label: "Today · all clients" },
-      { kind: "system", icon: "box-arrow-up", text: "Deploy ✓ · maison-rets · api v1.8.0 · p95 142 ms", time: "08:30", canvas: { type: "dashboard", id: "health" } },
-      { kind: "object", objType: "case", client: "studio", icon: "life-preserver", title: "Mix not exporting", meta: "ORVCLE · #204 · high", time: "09:17", canvas: { type: "case", id: "204" } },
-      { kind: "text", dir: "in", author: "Kestrel", client: "social", text: "the IG token thing is back — scheduler paused again. can you look today?", time: "09:40" },
-      { kind: "nacl", verb: "read", rest: " cases where status = open across all apps", count: "3 open cases", time: "09:41",
-        preview: [ { title: "Mix not exporting", meta: "ORVCLE · #204" }, { title: "Wrong VAT at checkout", meta: "Maison Réts · #88" }, { title: "Instagram token expired", meta: "Kestrel · #91" } ],
-        canvas: { type: "query", id: "cases" } },
-      { kind: "email", dir: "in", addr: "ops@maisonrets.com", client: "commerce", subject: "EU VAT on checkout looks wrong", body: "A few DE customers were charged 25% instead of 19%. Can you check the tax rule?", time: "10:02" },
-      { kind: "note", text: "kestrel token = Meta app-review pending. Ship the refresh-token patch first, then reconnect. Don't promise a time until review clears.", time: "10:05", canvas: { type: "case", id: "token" } },
-      { kind: "system", icon: "plus-lg", text: "New client app scaffolded · kestrel-social · 9 types", time: "10:12" }
-    ],
-    studio: [
-      { kind: "divider", label: "Today" },
-      { kind: "system", icon: "pin-angle", text: "Thread opened · artist Aria Vex", time: "09:02" },
-      { kind: "email", dir: "in", addr: "aria@vexmusic.com", subject: "Master for Midnight Run?", body: "Hey — is the final master ready? I need it for the Spotify editorial pitch on Friday.", time: "09:14" },
-      { kind: "text", dir: "out", text: "On it — exporting the final master now. Two minutes.", time: "09:16" },
-      { kind: "nacl", verb: "read", rest: ' tracks where artist = "Aria Vex"', count: "3 tracks", time: "09:16",
-        preview: [ { title: "Midnight Run", meta: "128 BPM · F#m" }, { title: "Afterglow", meta: "92 BPM · Cmaj" }, { title: "Static", meta: "140 BPM · Am" } ],
-        canvas: { type: "query", id: "aria-tracks" } },
-      { kind: "object", objType: "track", icon: "music-note-beamed", title: "Midnight Run", meta: "3:42 · released 2024 · 412k plays", time: "09:17", canvas: { type: "track", id: "midnight-run" } },
-      { kind: "note", text: "Aria flagged the export bug last week — Case #204 is still open. Don't promise her a delivery date yet.", time: "09:17", canvas: { type: "case", id: "204" } },
-      { kind: "sms", dir: "out", text: "Master is in your inbox. Let me know if the loudness sits right.", time: "09:21", react: true },
-      { kind: "call", dir: "out", text: "Call with Aria", dur: "4:12", time: "09:30" },
-      { kind: "system", icon: "cash-stack", text: "Royalty statement sent · €1,240 · Neon EP", time: "09:34", canvas: { type: "dashboard", id: "royalties" } }
-    ],
-    commerce: [
-      { kind: "divider", label: "Today" },
-      { kind: "system", icon: "lightning-charge", text: "Drop live · \u201cAtelier FW25\u201d · 24 SKUs published", time: "08:15" },
-      { kind: "object", objType: "product", icon: "bag", title: "Wool Overcoat — Charcoal", meta: "€420 · 8 in stock · 142 sold", time: "09:05", canvas: { type: "product", id: "overcoat" } },
-      { kind: "nacl", verb: "read", rest: " orders where status = unfulfilled order created", count: "12 orders", time: "09:06",
-        preview: [ { title: "#1043 · L. Moreau", meta: "€512 · paid" }, { title: "#1042 · A. Bianchi", meta: "€118 · paid" }, { title: "#1040 · J. Okafor", meta: "€296 · paid" } ],
-        canvas: { type: "query", id: "orders" } },
-      { kind: "email", dir: "in", addr: "returns@maisonrets.com", subject: "Return request — Linen Shirt, size up", body: "Customer L. Moreau wants to exchange the Linen Shirt for a size L. Prepaid label ok?", time: "09:30" },
-      { kind: "note", text: "Charcoal Overcoat down to 8 — it's the FW25 hero. Raise a restock PO before the weekend or we sell out.", time: "09:33" },
-      { kind: "object", objType: "case", icon: "life-preserver", title: "Wrong VAT at checkout (DE)", meta: "#88 · open · billing", time: "09:40", canvas: { type: "case", id: "vat" } },
-      { kind: "system", icon: "cash-stack", text: "Payout €8,420 · Stripe · settled", time: "11:00" }
-    ],
-    social: [
-      { kind: "divider", label: "Today" },
-      { kind: "object", objType: "post", icon: "camera-reels", title: "Spring haul reel", meta: "Instagram · scheduled Fri 19:00 · proj. 240k reach", time: "08:50", canvas: { type: "post", id: "haul" } },
-      { kind: "nacl", verb: "read", rest: " posts where status = scheduled order when", count: "5 scheduled posts", time: "08:51",
-        preview: [ { title: "Spring haul reel", meta: "IG · Fri 19:00" }, { title: "GRWM — festival", meta: "TikTok · Sat 12:00" }, { title: "Q&A carousel", meta: "IG · Sun 18:00" } ],
-        canvas: { type: "query", id: "posts" } },
-      { kind: "system", icon: "megaphone", text: "Campaign brief received · \u201cNuv-mode\u201d · €4,000 · 2 reels + 3 stories", time: "09:10", canvas: { type: "deal", id: "nuvmode" } },
-      { kind: "email", dir: "in", addr: "partnerships@lumen.co", subject: "Sponsorship — August, 2 reels", body: "Loved the spring content. €4k for 2 reels + 3 stories in August — does that work?", time: "09:24" },
-      { kind: "note", text: "Best engagement window is Thu 7pm. Move the haul reel from Fri to Thu 19:00 for the algorithm bump.", time: "09:28" },
-      { kind: "object", objType: "case", icon: "life-preserver", title: "Instagram token expired", meta: "#91 · open · scheduler paused", time: "09:35", canvas: { type: "case", id: "token" } },
-      { kind: "system", icon: "cash-stack", text: "Payout €3,200 · brand Lumen · invoice #INV-118 paid", time: "12:10" }
-    ]
-  };
+  // C3 (AC2): the THREADS fixture (per-tenant fixture timelines) is removed — the feed renders ONLY
+  // the live seam (client.feed). The four workspace SHELLS (TENANTS) remain as chrome (the workspace
+  // switcher / profile memberships / accents), but no fixture timeline backs the feed anymore.
 
   RECORDS = {
     platform: {
@@ -2170,9 +2115,13 @@ class Component extends DCLogic {
   // is [{id,...flat}]; connRun records a run via client.run(id,args) → POST /api/connectors/:id/run.
   loadConnectors() {
     if (!this.client || !this.client.list) return;
+    // C8 (AC23): a LIVE failure is surfaced via the error toast — not masked as the fixture catalog.
+    // Only fall back silently to the fixture catalog when genuinely offline (state.live !== true, i.e.
+    // the FixtureClient is serving and the connector type may be unregistered). When live, a rejected
+    // list() is a real error and must be visible.
     this.client.list("connector", { limit: 50 })
       .then((res) => this.setState({ connectors: (res && res.rows) || [] }))
-      .catch(() => {}); // unregistered offline → keep the fixture catalog
+      .catch((e) => { if (this.state.live === true) this.setState({ seamError: this.seamErr("connectors", e) }); });
   }
   connRun = (id) => {
     if (!this.client || !this.client.run) { this.setState({ seamError: this.seamErr("run", new Error("no data client")) }); return; }
@@ -2446,12 +2395,26 @@ class Component extends DCLogic {
   dismissSeamError = () => this.setState({ seamError: null });
   // AC25 — the ONE consistent "coming soon" label, shared by every gated surface (NotBuilt model).
   notBuiltTagLabel() { return this.rLang() === "fr" ? "Bientôt disponible" : "Coming soon"; }
-  // AC13 — Reload re-gets the conflicted entity on its fresh version and clears the conflict.
+  // AC13 / C9 — Reload re-gets the conflicted entity on its FRESH version and re-opens the form on it.
+  // The previous impl discarded the get result and only reloaded the feed, so a re-save still PATCHed
+  // the stale _version → another conflict. Now: when the conflicted entity is the open ctx, swap in the
+  // fresh entity, re-seed the draft, and restore formMode:"edit" on the new _version. Then refresh the
+  // feed if a conversation is open.
   reloadConflict = () => {
     const cf = this.state.conflict; if (!cf) return;
     if (this.client && cf.type && cf.id) {
       this.client.get(cf.type, cf.id)
-        .then(() => { this.setState({ conflict: null }); if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens); })
+        .then((fresh) => {
+          const c = this.state.ctx, reopen = c && c.id === cf.id && c.type === cf.type;
+          const next = { conflict: null };
+          if (reopen) {
+            const hadForm = this.state.formMode === "edit";
+            next.ctx = Object.assign({}, c, { entity: fresh, title: this.titleOf(fresh, c.options) });
+            if (hadForm) { next.formMode = "edit"; next.formDraft = Object.assign({}, fresh); }
+          }
+          this.setState(next);
+          if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens);
+        })
         .catch((e) => this.setState({ conflict: null, seamError: this.seamErr("reload", e) }));
     } else {
       this.setState({ conflict: null });
@@ -2471,7 +2434,7 @@ class Component extends DCLogic {
   onInput = (e) => { this.setState({ composerText: e.target.value }); };
   pick = (t) => { this.setState({ composerText: t }); };
   react = () => { this.setState((s) => ({ thumbs: s.thumbs + 1 })); };
-  send = () => { const t = (this.state.composerText || "").trim(); if (!t) return; this.setState({ composerText: "" }); const om = /^open(?::csv|\s+csv)\s+([\w.-]+)/i.exec(t); if (om) { this.openCsv(om[1]); return; } const nm = /^new:dashboard(?:\s+(.+))?$/i.exec(t); if (nm) { this.newDashboard((nm[1] || "Dashboard").trim()); return; } const rp = /^new:(pdf|deck)(?:\s+(.+))?$/i.exec(t); if (rp) { this.newReport(rp[1].toLowerCase(), (rp[2] || "report").trim()); return; } const re = /^reply:email(?:\s+([\w.\-]+\.\w+))?\s+body[:=]\s*"?([^"]*)"?$/i.exec(t); if (re) { this.replyEmail(re[1], re[2]); return; } const ql = /^query:logs(?:\s+service[:=]\s*([\w.-]+))?/i.exec(t); if (ql) { this.queryLogs(ql[1] || "api"); return; } const nt = /^note\s+"?([^"]*)"?\s*$/i.exec(t); if (nt) { this.addNote(nt[1]); return; } if (/^close:case\b/i.test(t)) { this.closeCase(); return; } if (this.state.feedMode === "data" && this.state.activeData && window.NUMU_NACL) { const r = window.NUMU_NACL.parseOp(this.state.activeData, t); if (r && r.ok) { if (r.chart) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "chart", isChart: true, audience: "all", nacl: r.nacl, impact: r.impact, bars: r.bars, cats: r.cats, chartType: r.type }] })); if (this.canWrite() && this.client) { this.client.create("chart", { title: r.title || r.nacl, chart_type: r.type, spec: { type: r.type, cats: r.cats }, project_id: this.state.activeProject }).catch((e) => this.pushErr("chart", e)); } return; } if (r.query) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "data", isResult: true, audience: "all", nacl: r.nacl, impact: r.impact, headers: r.view.columns.map((c) => c.name != null ? c.name : c.n), rows: r.view.rows.slice(0, 8).map((row) => ({ cells: row.map((v) => v == null || v === "" ? "\u2014" : String(v)) })) }] })); return; } const nd = Object.assign({}, this.state.activeData, { columns: r.result.columns, rows: r.result.rows }); this.setState((s) => ({ activeData: nd, added: [...s.added, { id: "a" + s.added.length, kind: "step", isStep: true, audience: "all", nacl: r.nacl, stepKind: r.step.kind, impact: r.impact, notPersisted: true, persistNote: "Session-only — cleaning steps are not yet persisted (step-persist coming soon)." }] })); return; } } this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "text", isSent: true, audience: "all", channel: s.channel, text: t }] })); };
+  send = () => { const t = (this.state.composerText || "").trim(); if (!t) return; this.setState({ composerText: "" }); const om = /^open(?::csv|\s+csv)\s+([\w.-]+)/i.exec(t); if (om) { this.openCsv(om[1]); return; } const nm = /^new:dashboard(?:\s+(.+))?$/i.exec(t); if (nm) { this.newDashboard((nm[1] || "Dashboard").trim()); return; } const rp = /^new:(pdf|deck)(?:\s+(.+))?$/i.exec(t); if (rp) { this.newReport(rp[1].toLowerCase(), (rp[2] || "report").trim()); return; } const re = /^reply:email(?:\s+([\w.\-]+\.\w+))?\s+body[:=]\s*"?([^"]*)"?$/i.exec(t); if (re) { this.replyEmail(re[1], re[2]); return; } const ql = /^query:logs(?:\s+service[:=]\s*([\w.-]+))?/i.exec(t); if (ql) { this.queryLogs(ql[1] || "api"); return; } const nt = /^note\s+"?([^"]*)"?\s*$/i.exec(t); if (nt) { this.addNote(nt[1]); return; } if (/^close:case\b/i.test(t)) { this.closeCase(); return; } if (this.state.feedMode === "data" && this.state.activeData && window.NUMU_NACL) { const r = window.NUMU_NACL.parseOp(this.state.activeData, t); if (r && r.ok) { if (r.chart) { if (!this.canWrite()) { this.writeBlocked("chart"); return; } if (!this.client) { this.pushErr("chart", new Error("no data client")); return; } this.client.create("chart", { title: r.title || r.nacl, chart_type: r.type, spec: { type: r.type, cats: r.cats }, project_id: this.state.activeProject }).then(() => { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "chart", isChart: true, audience: "all", nacl: r.nacl, impact: r.impact, bars: r.bars, cats: r.cats, chartType: r.type }] })); }).catch((e) => this.pushErr("chart", e)); return; } if (r.query) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "data", isResult: true, audience: "all", nacl: r.nacl, impact: r.impact, headers: r.view.columns.map((c) => c.name != null ? c.name : c.n), rows: r.view.rows.slice(0, 8).map((row) => ({ cells: row.map((v) => v == null || v === "" ? "\u2014" : String(v)) })) }] })); return; } const nd = Object.assign({}, this.state.activeData, { columns: r.result.columns, rows: r.result.rows }); this.setState((s) => ({ activeData: nd, added: [...s.added, { id: "a" + s.added.length, kind: "step", isStep: true, audience: "all", nacl: r.nacl, stepKind: r.step.kind, impact: r.impact, notPersisted: true, persistNote: "Session-only — cleaning steps are not yet persisted (step-persist coming soon)." }] })); return; } } this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "text", isSent: true, audience: "all", channel: s.channel, text: t }] })); };
   togglePlay = () => {
     const p = !this.state.playing; this.setState({ playing: p });
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
@@ -2526,8 +2489,9 @@ class Component extends DCLogic {
     var t = (ty === "line" || ty === "area") ? "line" : "bar";
     return { textStyle: { color: text }, grid: { left: 44, right: 14, top: 14, bottom: 46 }, xAxis: { type: "category", data: labels, axisLabel: { color: text, rotate: labels.length > 6 ? 38 : 0, fontSize: 10 } }, yAxis: { type: "value", axisLabel: { color: text } }, series: [{ type: t, data: vals, itemStyle: { color: accent }, areaStyle: ty === "area" ? {} : undefined, smooth: ty === "line" || ty === "area" }] };
   }
-  persistFeed(tenant, added) { try { localStorage.setItem("numu.feed." + tenant, JSON.stringify(added || [])); } catch (e) {} }
-  loadFeed(tenant) { try { return JSON.parse(localStorage.getItem("numu.feed." + tenant) || "[]") || []; } catch (e) { return []; } }
+  // C3 (AC2): persistFeed()/loadFeed() (the numu.feed.* localStorage feed store) are removed — the feed
+  // is live (client.feed); nothing reads or writes numu.feed.* anymore. feedKey() is kept ONLY as a
+  // conversation-switch change key (componentDidUpdate); it touches no localStorage.
   feedKey() { return this.state.activeProject ? ("proj." + this.state.activeProject) : this.rTenant(); }
   loadProjects() { try { return JSON.parse(localStorage.getItem("numu.projects") || "[]") || []; } catch (e) { return []; } }
   saveProjects(ps) { try { localStorage.setItem("numu.projects", JSON.stringify(ps)); } catch (e) {} }
@@ -2539,15 +2503,10 @@ class Component extends DCLogic {
   projChannels() { try { return JSON.parse(localStorage.getItem("numu.projChannel") || "{}") || {}; } catch (e) { return {}; } }
   saveProjChannels(m) { try { localStorage.setItem("numu.projChannel", JSON.stringify(m)); } catch (e) {} }
   channelOf(id, dflt) { const m = this.projChannels(); return m[id] || dflt; }
-  // switching feeds: persist the OLD key with the OLD feed before changing key (no cross-key wipe)
-  newProject = () => {
-    const ps = this.loadProjects(); const id = "p" + Date.now();
-    ps.push({ id: id, name: "New project " + (ps.length + 1) }); this.saveProjects(ps);
-    const m = this.projChannels(); m[id] = "clients"; this.saveProjChannels(m);
-    try { this.persistFeed(this._lastKey != null ? this._lastKey : this.feedKey(), this.state.added); } catch (e) {}
-    this._lastKey = "proj." + id;
-    this.setState({ activeProject: id, page: "workspace", feedMode: "chat", activeData: null, activeSource: null, added: [], projMenu: null });
-  };
+  // C3 (AC2/AC22): "+ New" creates a LIVE conversation (client.create("project") → the rail re-sourced
+  // from client.conversations()), the same live path as promoteToProject. No localStorage project /
+  // persistFeed write — the rail reads state.convos, so a fixture-only project would never surface.
+  newProject = () => this.promoteToProject({ title: "New conversation" });
   // SEAM GRAFT (Slice 3): selecting a conversation morphs the three regions and re-sources
   // the feed from the seam (AC3) — no localStorage feed. Session-local composer blocks reset.
   selectUserProject = (id) => {
@@ -2568,13 +2527,19 @@ class Component extends DCLogic {
   saveCase(id, c) { try { localStorage.setItem(this.caseKey(id), JSON.stringify(c)); } catch (e) {} }
   newCaseId() { let h = ""; for (let i = 0; i < 16; i++) h += "0123456789ABCDEF"[Math.floor(Math.random() * 16)]; return "CAS_" + h; }
   seedCase(id, title) { const c = { caseId: this.newCaseId(), title: title || "Case", status: "open", met: {} }; this.saveCase(id, c); return c; }
-  activeCase() { const id = this.state.activeProject; if (!id) return null; const p = this.loadProjects().find((x) => x.id === id); if (!p || p.origin !== "case") return null; return this.loadCase(id) || this.seedCase(id, p.name); }
+  // C1 (AC2): "is this a case conversation?" reads the LIVE conversation's origin (state.convos ←
+  // client.conversations()), NOT loadProjects() (localStorage). The close-gate workflow state (checks
+  // met / status) is still device-local (the close-gate overlay), keyed by the conversation id.
+  activeCase() { const id = this.state.activeProject; if (!id) return null; const conv = (this.state.convos || []).find((c) => c.id === id); if (!conv || conv.origin !== "case") return null; return this.loadCase(id) || this.seedCase(id, conv.title || conv.id); }
   markCheck(checkId) { const id = this.state.activeProject; if (!id) return; const c = this.activeCase(); if (!c) return; c.met = c.met || {}; c.met[checkId] = true; this.saveCase(id, c); }
   appendBlock(block) { this.setState((s) => ({ added: [...s.added, Object.assign({ id: "a" + s.added.length }, block)] })); }
   // SEAM GRAFT (Slice 4/5): write-gate + error surfacing for the §5b composer binding.
   // canWrite() blocks writes when offline (AC24); writeBlocked() surfaces why; pushErr()
   // renders a non-throwing internal-note error block for a rejected seam call (AC23).
-  canWrite() { return this.state.live !== false; }
+  // C10 (AC24) — fail-safe: writes are allowed ONLY once liveness has resolved to true. During the
+  // mount window state.live is null (unresolved); `!== false` wrongly permitted writes then. `=== true`
+  // blocks writes until the /api/health probe confirms the server is reachable.
+  canWrite() { return this.state.live === true; }
   writeBlocked(verb) {
     this.appendBlock({ kind: "system", isSystem: true, audience: "all", icon: "wifi-off",
       text: "Offline — " + verb + " is disabled until the server is reachable.", cursor: "default" });
@@ -2612,10 +2577,14 @@ class Component extends DCLogic {
   addNote = (text) => {
     const body = (text || "").trim(); if (!body) return;
     if (!this.canWrite()) { this.writeBlocked("note"); return; }
-    this.markCheck("repro-attached");
-    this.appendBlock({ kind: "note", isNote: true, audience: "operator", text: body, label: "operator note" });
     if (!this.client) { this.pushErr("note", new Error("no data client")); return; }
+    // C6: push the note block + advance the close-gate check ONLY after the create resolves — a
+    // failed note must not leave a phantom block or advance repro-attached.
     this.client.create("message", { body: body, channel: "note", visibility: "internal", project_id: this.state.activeProject })
+      .then(() => {
+        this.markCheck("repro-attached");
+        this.appendBlock({ kind: "note", isNote: true, audience: "operator", text: body, label: "operator note" });
+      })
       .catch((e) => this.pushErr("note", e));
   };
   // AC9e — close:case → client.update("case", id, {status:"done"}, version) → PATCH
@@ -2627,7 +2596,11 @@ class Component extends DCLogic {
     if (!this.canWrite()) { this.writeBlocked("close:case"); return; }
     const caseId = c.caseId;
     if (!this.client) { this.pushErr("close:case", new Error("no data client")); return; }
-    this.client.update("case", caseId, { status: "done" }, c._version)
+    // C5 (AC13): source the LIVE case version (client.get → flat {_version}) before the PATCH, so the
+    // update carries a real If-Match. The localStorage seedCase has NO _version — using it sent the
+    // PATCH with no If-Match → a 428 mislabeled as a conflict. Mirrors the board close path.
+    this.client.get("case", caseId)
+      .then((live) => this.client.update("case", caseId, { status: "done" }, live && live._version))
       .then(() => {
         c.status = "closed"; this.saveCase(id, c);
         this.appendBlock({ kind: "system", isDecision: true, ok: true, audience: "all", icon: "check-circle-fill", code: "200 case_closed", text: caseId + " · open → closed" });
@@ -2669,36 +2642,21 @@ class Component extends DCLogic {
       statusBg: closed ? "var(--success-tint)" : "var(--warning-tint)", statusColor: closed ? "var(--success)" : "var(--warning)",
       metLabel: metCount + "/" + total + " close-checks passed", stepper: stepper, checks: checks };
   }
-  ensureChannel(id, name) { const cs = this.loadChannels(); if (!cs.some((c) => c.id === id)) { cs.unshift({ id: id, name: name, system: true }); this.saveChannels(cs); } }
-  // origin: turn an inbox email / a case card into its own project (conversation), seeded with that block
-  openAsProject = (src) => {
-    const origin = src.kind === "email" ? "email" : "case";
-    const title = origin === "email" ? (src.subject || "Email") : (src.title || "Case");
-    const seed = origin === "email"
-      ? { id: "seed-email", kind: "email", isEmail: true, audience: "all", addr: src.addr, subject: src.subject, body: src.body, time: src.time }
-      : { id: "seed-case", kind: "object", isObject: true, audience: "all", objType: src.objType || "case", objIcon: src.icon || "life-preserver", title: src.title, meta: src.meta, accentColor: src.client ? this.accentValue(src.client) : "var(--accent)" };
-    const ps = this.loadProjects(); const id = "p" + Date.now();
-    ps.push({ id: id, name: title, origin: origin }); this.saveProjects(ps);
-    if (origin === "case") this.seedCase(id, title);
-    this.ensureChannel("inbox", "Inbox");
-    const cm = this.projChannels(); cm[id] = "inbox"; this.saveProjChannels(cm);
-    const feed = [seed]; this.persistFeed("proj." + id, feed);
-    try { this.persistFeed(this._lastKey != null ? this._lastKey : this.feedKey(), this.state.added); } catch (e) {}
-    this._lastKey = "proj." + id;
-    this.setState({ activeProject: id, page: "workspace", feedMode: "chat", activeData: null, activeSource: null, added: feed, projMenu: null });
-  };
+  // C3 (AC22): the legacy fixture-feed "openAsProject" (localStorage project + persistFeed seed) is
+  // removed — the live CTA is promoteToProject (client.create("project") → rail re-sourced from
+  // client.conversations()). No live path seeds a project feed into localStorage anymore.
   toggleProjMenu = (id) => { this.setState((s) => ({ projMenu: s.projMenu === id ? null : id, renamingProj: null })); };
   startRename = (id, cur) => { this.setState({ renamingProj: id, renameText: cur || "", projMenu: null }); };
   renameProject = (id, name) => { const nm = (name || "").trim(); const ps = this.loadProjects(); const p = ps.find((x) => x.id === id); if (p && nm) { p.name = nm; this.saveProjects(ps); } this.setState({ renamingProj: null, renameText: "" }); };
   moveProject = (id, channelId) => { const m = this.projChannels(); m[id] = channelId; this.saveProjChannels(m); this.setState({ projMenu: null }); };
+  // C3 (AC2): clear a conversation's local overlay (channel placement + pin). No numu.feed.* read or
+  // write — the feed is live (client.feed); deselecting just drops to the empty-state (added: []).
   deleteProject = (id) => {
-    const ps = this.loadProjects().filter((x) => x.id !== id); this.saveProjects(ps);
-    try { localStorage.removeItem("numu.feed.proj." + id); } catch (e) {}
     const m = this.projChannels(); if (m[id]) { delete m[id]; this.saveProjChannels(m); }
     const ss = this.pins(); if (ss.has(id)) { ss.delete(id); try { localStorage.setItem("numu.pins", JSON.stringify([...ss])); } catch (e) {} }
     if (this.state.activeProject === id) {
-      const tkey = this.rTenant(); this._lastKey = tkey;
-      this.setState({ activeProject: null, projMenu: null, renamingProj: null, feedMode: "chat", activeData: null, activeSource: null, added: this.loadFeed(tkey) });
+      this._lastKey = this.rTenant();
+      this.setState({ activeProject: null, projMenu: null, renamingProj: null, feedMode: "chat", activeData: null, activeSource: null, added: [] });
     } else { this.setState({ projMenu: null, renamingProj: null }); }
   };
   startAddChannel = () => this.setState({ addingChannel: true, newChannelText: "" });
@@ -2743,9 +2701,20 @@ class Component extends DCLogic {
         moveTargets: channels.filter((c) => c.id !== channelId).map((c) => ({ id: c.id, name: c.name, onPick: () => this.moveProject(id, c.id) }))
       };
     };
-    const tenants = this.ORDER.map((t) => row(t, this.TENANTS[t].name, this.TENANTS[t].mark, this.accentValue(t), this.TENANT_CHANNEL[t], false));
-    const users = this.loadProjects().map((p) => row(p.id, p.name, "\u00b7", "var(--text-subtle)", this.channelOf(p.id, "clients"), true));
-    const all = tenants.concat(users);
+    // SEAM (C1): the conversation rail renders the LIVE conversation list (state.convos \u2190
+    // client.conversations()), NOT the THREADS/TENANTS fixtures. localStorage is kept ONLY for
+    // the per-conversation overlay: pins (numu.pins) + channel placement (numu.projChannel).
+    // Grouping = the channel-placement overlay if set, else the server's channel_group mapped to a
+    // local channel id (by name), else the "clients" default. promoteToProject re-loads convos so a
+    // new conversation surfaces here automatically.
+    const chanByName = {}; channels.forEach((c) => { chanByName[String(c.name).toLowerCase()] = c.id; });
+    const convoChannel = (conv) => {
+      const ov = this.channelOf(conv.id, null); if (ov) return ov;
+      const byName = conv.channel ? chanByName[String(conv.channel).toLowerCase()] : null;
+      return byName || "clients";
+    };
+    const all = (this.state.convos || []).map((conv) =>
+      row(conv.id, conv.title || conv.id, "\u00b7", "var(--text-subtle)", convoChannel(conv), true));
     const pinned = all.filter((p) => pins.has(p.id));
     const groups = [];
     if (pinned.length) groups.push({ id: "pinned", name: "Pinned", icon: "pin-angle-fill", notRenaming: true, projects: pinned, onDragOver: null, onDrop: null });
@@ -2852,11 +2821,13 @@ class Component extends DCLogic {
     });
   }
   feedBlocks(tenant) {
-    // For a live conversation, the timeline is the seam feed (server reach+visibility filtered) plus
-    // any session-local composer blocks; the lens is enforced server-side, so no client re-filter here.
-    const seamBase = this.state.activeProject ? this.seamFeedBlocks() : this.messagesFor(tenant);
-    const seed = seamBase;
-    const all = seed.concat(this.state.added || []).map((b) => {
+    // C2/C7 (AC2/AC3): the feed renders ONLY the live seam feed (client.feed) plus session-local
+    // composer blocks — NEVER the THREADS fixture. With no conversation selected there is no seam
+    // feed, so the timeline is just the session-local blocks (empty on a fresh landing → the
+    // empty-state per AC3). The lens is enforced server-side (?lens=mine filters by author), so the
+    // seam blocks are returned as-is on the active-conversation path — no client lens re-filter.
+    const seamBase = this.state.activeProject ? this.seamFeedBlocks() : [];
+    const all = seamBase.concat(this.state.added || []).map((b) => {
       if (b && b.isDecision) { const bad = b.code && String(b.code).indexOf("422") === 0;
         return Object.assign({}, b,
           { decColor: b.ok ? "var(--success)" : (bad ? "var(--danger)" : "var(--text-muted)"),
@@ -2864,9 +2835,13 @@ class Component extends DCLogic {
             decBorder: b.ok ? "color-mix(in srgb, var(--success) 35%, transparent)" : (bad ? "color-mix(in srgb, var(--danger) 35%, transparent)" : "var(--border)") }); }
       return b;
     });
+    // When a conversation is open the seam already applied the lens; only re-filter the session-local
+    // "customer" view (operator notes hidden) on the no-conversation path. The "mine" lens is NEVER
+    // re-filtered client-side (the server's ?lens=mine already filtered by author — re-filtering here
+    // would drop the caller's own public messages).
     const lens = this.state.lens || "all";
-    if (lens === "customer") return all.filter((b) => (b.audience || "all") !== "operator");
-    if (lens === "mine") return all.filter((b) => (b.audience || "all") === "operator");
+    if (!this.state.activeProject && lens === "customer") return all.filter((b) => (b.audience || "all") !== "operator");
+    if (!this.state.activeProject && lens === "mine") return all.filter((b) => (b.audience || "all") === "operator");
     return all;
   }
   lensOptionsView() {
@@ -2880,7 +2855,10 @@ class Component extends DCLogic {
       onPick: () => this.setLens(o.id), bg: on ? "var(--accent)" : "var(--surface)", color: on ? "#fff" : "var(--text-muted)",
       fw: on ? "var(--weight-semibold)" : "var(--weight-medium)", divider: i === 0 ? "none" : "1px solid var(--border)" }; });
   }
-  feedRawCount(tenant) { return (this.state.activeProject ? (this.state.feedItems || []) : this.messagesFor(tenant)).length + (this.state.added || []).length; }
+  // C2 (AC3): raw feed size for the empty-state gate — live seam items (when a conversation is
+  // selected) plus session-local composer blocks; NEVER the THREADS fixture. No conversation +
+  // no composer output ⇒ 0 ⇒ the empty-state renders.
+  feedRawCount(tenant) { return (this.state.activeProject ? (this.state.feedItems || []).length : 0) + (this.state.added || []).length; }
   // AC9a \u2014 open:csv <name> \u2192 client.upload(file,project,tld) \u2192 POST /api/files (multipart) \u2192
   // UploadOutcome; push a file/csv block from the returned outcome. On failure push an
   // internal-note error block (.catch), never a silent throw. The DSL form names a source;
@@ -2918,10 +2896,12 @@ class Component extends DCLogic {
     if (this.state.activeSource) parts.push("clean " + this.state.activeSource);
     if (charts) parts.push(charts + " chart" + (charts > 1 ? "s" : ""));
     if (dashes) parts.push(dashes + " dashboard" + (dashes > 1 ? "s" : ""));
-    const block = { id: "a" + a.length, kind: "report", isReport: true, audience: "all", name: name, ext: ext, parts: parts.join(" \u00b7 ") || "the thread" };
-    this.setState((s) => ({ added: [...s.added, block] }));
     if (!this.client) { this.pushErr("new:" + ext, new Error("no data client")); return; }
+    const partsLabel = parts.join(" \u00b7 ") || "the thread";
+    // C6: render the report block only after the attachment create resolves; .catch surfaces a failure
+    // (no phantom report on a rejected write).
     this.client.create("attachment", { kind: "report", title: name, ext: ext, project_id: this.state.activeProject })
+      .then(() => this.appendBlock({ kind: "report", isReport: true, audience: "all", name: name, ext: ext, parts: partsLabel }))
       .catch((e) => this.pushErr("new:" + ext, e));
   };
   // AC9e — reply:email … body:"…" → client.create("message",{direction:"out",channel:"email"}) →
@@ -2929,53 +2909,33 @@ class Component extends DCLogic {
   // the message entity is created live; the outbound send is not wired. Offline-gated; .catch surfaces.
   replyEmail = (file, body) => {
     if (!this.canWrite()) { this.writeBlocked("reply:email"); return; }
-    this.markCheck("customer-updated");
-    const block = { id: "a" + (this.state.added || []).length, kind: "text", isReplyEmail: true, audience: "all", body: body || "", attach: file || null,
-      gatedNote: "Email sent via gmail — connector send is coming soon (message recorded)." };
-    this.setState((s) => ({ added: [...s.added, block] }));
     if (!this.client) { this.pushErr("reply:email", new Error("no data client")); return; }
+    // C6 (CRITICAL): the close-gate's customer-updated check + the reply block are recorded ONLY after
+    // the message create resolves. A FAILED reply must NOT advance the close-gate (markCheck) nor leave
+    // a phantom "sent" block — both moved out of the synchronous path into .then.
     this.client.create("message", { body: body || "", channel: "email", direction: "out", visibility: "public", project_id: this.state.activeProject })
+      .then(() => {
+        this.markCheck("customer-updated");
+        this.appendBlock({ kind: "text", isReplyEmail: true, audience: "all", body: body || "", attach: file || null,
+          gatedNote: "Email sent via gmail — connector send is coming soon (message recorded)." });
+      })
       .catch((e) => this.pushErr("reply:email", e));
   };
   // AC9d — new:dashboard → client.create("dashboard",{…}) → POST /api/objects/dashboard
   // (its tiles reference the thread's charts). Offline-gated; .catch surfaces the failure.
   newDashboard = (name) => {
     if (!this.canWrite()) { this.writeBlocked("new:dashboard"); return; }
+    if (!this.client) { this.pushErr("new:dashboard", new Error("no data client")); return; }
     const charts = (this.state.added || []).filter((b) => b.isChart).map((b) => ({ nacl: b.nacl, cats: b.cats, type: b.chartType }));
-    const block = { id: "dash-" + Date.now(), kind: "dashboard", isDashboard: true, audience: "all", name: name, charts: charts, chartCount: charts.length, empty: charts.length === 0 };
-    this.setState((s) => ({ added: [...s.added, block], feedMode: "dashboard" }));
-    if (this.client) {
-      this.client.create("dashboard", { title: name, spec: { tiles: charts.map((c) => ({ chart_id: null })) }, project_id: this.state.activeProject })
-        .catch((e) => this.pushErr("new:dashboard", e));
-    }
+    this.setState({ feedMode: "dashboard" });
+    // C6: append the dashboard block only after the create resolves; .catch surfaces a failed write
+    // (no phantom dashboard block).
+    this.client.create("dashboard", { title: name, spec: { tiles: charts.map((c) => ({ chart_id: null })) }, project_id: this.state.activeProject })
+      .then(() => this.appendBlock({ kind: "dashboard", isDashboard: true, audience: "all", name: name, charts: charts, chartCount: charts.length, empty: charts.length === 0 }))
+      .catch((e) => this.pushErr("new:dashboard", e));
   };
-  messagesFor(tenant) {
-    const raw = this.THREADS[tenant] || [];
-    return raw.map((m, i) => {
-      const onOpen = m.canvas ? () => this.openCanvas(m.canvas.type, m.canvas.id) : undefined;
-      const isBubble = m.kind === "text" || m.kind === "sms";
-      const isOut = m.dir === "out";
-      const clientColor = m.client ? this.accentValue(m.client) : null;
-      return Object.assign({}, m, {
-        id: m.id || (tenant + "-" + i), audience: m.audience || (m.kind === "note" ? "operator" : "all"),
-        isDivider: m.kind === "divider", isSystem: m.kind === "system", isCall: m.kind === "call",
-        isEmail: m.kind === "email", isNote: m.kind === "note", isNacl: m.kind === "nacl", isObject: m.kind === "object",
-        isBubble, isSms: m.kind === "sms",
-        exprVerb: m.verb, exprRest: m.rest,
-        onOpen, cursor: onOpen ? "pointer" : "default",
-        author: m.author || (isOut ? this.meName : "Aria Vex"),
-        align: isBubble ? (isOut ? "flex-end" : "flex-start") : "stretch",
-        itemsAlign: isOut ? "flex-end" : "flex-start",
-        bubbleBg: isOut ? "var(--accent-tint)" : "var(--surface-subtle)",
-        bubbleBorder: isOut ? "var(--accent-border)" : "var(--border)",
-        hasReactions: !!m.react, reactions: m.react ? [{ e: "♥", n: 1 + this.state.thumbs }] : [], onReact: this.react,
-        accentColor: clientColor || "var(--accent)",
-        clientTag: m.client ? this.TENANTS[m.client].name.split(" ")[0] : null, clientColor,
-        objIcon: m.icon || "dot",
-        onOpenAsProject: (m.kind === "email" || (m.kind === "object" && m.objType === "case")) ? ((e) => { if (e && e.stopPropagation) e.stopPropagation(); this.openAsProject(m); }) : null
-      });
-    });
-  }
+  // C3 (AC2): messagesFor()/THREADS removed — the feed renders ONLY the live seam (seamFeedBlocks ←
+  // client.feed). No live path reads the THREADS fixture for feed/entity data anymore.
 
   meInitials = "JM";
   meName = "Jordan";
@@ -3002,7 +2962,10 @@ class Component extends DCLogic {
     };
     const thread = threadMap[tenant];
     // a selected user project IS the conversation — its name/identity replaces the tenant header
-    const activeProj = this.state.activeProject ? (this.loadProjects().find((p) => p.id === this.state.activeProject) || null) : null;
+    // C1 (AC2): the selected conversation IS the live conversation — its identity (from state.convos,
+    // sourced by client.conversations()) replaces the tenant header. NOT loadProjects() (localStorage).
+    const activeConv = this.state.activeProject ? ((this.state.convos || []).find((c) => c.id === this.state.activeProject) || null) : null;
+    const activeProj = activeConv ? { name: activeConv.title || activeConv.id, origin: activeConv.origin } : null;
     const projInitials = activeProj ? ((activeProj.name || "").replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "\u00b7") : null;
 
     const stripMap = {
