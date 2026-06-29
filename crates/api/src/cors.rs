@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use axum::extract::Request;
-use axum::http::{HeaderValue, Method, StatusCode};
+use axum::http::{header, HeaderValue, Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
@@ -104,10 +104,12 @@ pub async fn cors_layer(cfg: CorsCfg, req: Request, next: Next) -> Response {
                     HeaderValue::from_static(ALLOW_HEADERS),
                 );
                 h.insert("access-control-max-age", HeaderValue::from_static(MAX_AGE));
-                h.append("vary", HeaderValue::from_static("Origin"));
             }
         }
         // NOT allowed → 204 with NO Access-Control-Allow-Origin (deny-by-default; the browser blocks).
+        // Cache safety (F1): `Vary: Origin` whenever an Origin was present — on BOTH the allowed and the
+        // denied preflight — so a shared cache never serves an allowed-origin response to a denied one.
+        vary_if_origin(resp.headers_mut(), origin.is_some());
         return resp;
     }
 
@@ -128,11 +130,22 @@ pub async fn cors_layer(cfg: CorsCfg, req: Request, next: Next) -> Response {
                 "access-control-expose-headers",
                 HeaderValue::from_static(EXPOSE_HEADERS),
             );
-            h.append("vary", HeaderValue::from_static("Origin"));
         }
     }
-    // No Origin / not allowed → stamp nothing (same-origin needs none; deny-by-default for cross-origin).
+    // No Origin / not allowed → stamp no ACAO (same-origin needs none; deny-by-default for cross-origin),
+    // but still `Vary: Origin` whenever an Origin was present (F1) so the actual-response branch — allowed
+    // AND denied — is cache-safe too.
+    vary_if_origin(resp.headers_mut(), origin.is_some());
     resp
+}
+
+/// Append `Vary: Origin` when the request carried an `Origin` header (F1). Appending (not inserting)
+/// composes with any `Vary` a handler already set, and is correct on both the allowed and denied paths:
+/// the response varies by origin regardless of whether this particular origin was allowlisted.
+fn vary_if_origin(headers: &mut axum::http::HeaderMap, origin_present: bool) {
+    if origin_present {
+        headers.append(header::VARY, HeaderValue::from_static("origin"));
+    }
 }
 
 #[cfg(test)]

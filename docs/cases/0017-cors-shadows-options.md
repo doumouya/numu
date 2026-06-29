@@ -126,3 +126,32 @@ this Case need only fix the layer + add the regression tests (the no-DB `options
   field. If Em wants it on `Config` per the spec, the tester must add `cors_dev: false` to that literal
   first (TEST-DRIFT on the literal, not on an AC — AC5 is `[REVIEW]`/`[CARGO]` and has no literal assertion).
   → Parts D-test/AC8-test green; Part E (e2e probe) + Part F (skill) remain. → reviewer.
+- **2026-06-29 — review (3 specialists, read-only): CORS security CORRECT** (no `*` w/ credentials,
+  deny-by-default, no origin-reflection, exact-origin echo, correct preflight detection, dev off-by-default +
+  localhost-only). No critical/high. **Fix-now round:** (1) **monitor = point-fix + untested:**
+  `assert_options_routed` keys on the exact old `2xx+empty` fingerprint & is private → invert to the POSITIVE
+  contract (`routed iff 401 + non-empty`), extract `pub fn options_self_check_routed(status, body_empty)`,
+  unit-test its truth table; (2) **`Vary: Origin`** only on allowed → set whenever an `Origin` is present;
+  (3) **promote `NUMU_CORS_DEV` to `Config.cors_dev`** (resolves the coder DEVIATION + the untestable wiring;
+  tester adds `cors_dev: false` to the test literals); (4) **default `cors_origins` EMPTY** (deny-by-default;
+  localhost via `NUMU_CORS_DEV`) + boot-warn if empty & not dev; (5) **AC3 actual-request deny** test
+  (GET+evil-origin → no ACAO). DEFER: a `debug!` on denied origin; extra cors unit cases; confirm
+  `options_parity.rs` dev-login under the CI build profile. → tester-fix then coder-fix.
+- **2026-06-29 — coder (Claude Opus 4.8), fix-round:** Greened the tester's new RED `options_routing.rs`
+  cases (truth-table + dev-mode on/off + AC3 actual-deny + the `cors_dev: false` `Config` literals).
+  **F2** — inverted the monitor to the POSITIVE contract: extracted `pub fn options_self_check_routed(status,
+  body_empty) -> bool` (routed iff `401` + non-empty body; any 2xx-empty / empty-401 / 403/405/500 is a
+  violation), rewrote `assert_options_routed` to use it (body-read error → violation, logged distinctly;
+  KEEP SERVING either way), and slimmed the event payload to `{check, status, body_empty}`. **F1** —
+  `cors.rs` now appends `Vary: Origin` (via a `vary_if_origin` helper) whenever a request carries an
+  `Origin`, on BOTH the preflight and the actual-response branch, allowed AND denied (cache safety), via
+  `headers.append(header::VARY, …)`. **F3** — promoted the dev flag to `Config.cors_dev` (read in
+  `from_env` via `env_flag("NUMU_CORS_DEV")`); `build_router` now reads `cfg.cors_dev` (resolves the prior
+  DEVIATION). **F4** — `cors_origins` now defaults EMPTY (deny-by-default; `unwrap_or_default()`); `run()`
+  warns at boot when `cors_origins` is empty AND `cors_dev` is off. **GREEN:** `cargo test -p numu-api`
+  (NO db-tests) — `options_routing.rs` 7/7 (4 originals + truth-table + dev-mode + AC3 actual-deny), 11 lib
+  unit tests (incl. the 2 cors.rs unit tests); `cargo fmt --check` + `cargo clippy -p numu-api -- -D
+  warnings` clean; `web/tests/shapes.test.mjs` 5/5. Reconciled RUNNING.md (deny-all default + the
+  `NUMU_CORS_DEV` / `NUMU_CORS_ORIGINS` semantics + `Vary: Origin` note), OBSERVABILITY.md (positive
+  self-check line + the new `{check, status, body_empty}` payload), ADR 0004 (positive
+  `options_self_check_routed` contract + the violation reaction). No TEST-DRIFT. → reviewer.

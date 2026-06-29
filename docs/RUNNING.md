@@ -24,8 +24,8 @@ Migrations run automatically on boot (idempotent — safe to restart). `GET /hea
 |---|---|---|
 | `DATABASE_URL` | — (required) | Postgres DSN |
 | `NUMU_BIND` | `127.0.0.1:8080` | listen address |
-| `NUMU_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | explicit allowlist of browser origins allowed to call the API with credentials (comma-separated; **never `*`** — cookie sessions forbid it). Deny-by-default: any other origin gets no CORS headers. |
-| `NUMU_CORS_DEV` | off | localhost dev mode — additionally allowlists any `http://localhost[:port]` / `http://127.0.0.1[:port]` origin (still the exact-origin echo, never `*`). Leave OFF in prod. |
+| `NUMU_CORS_ORIGINS` | — (empty: **deny all cross-origin**) | explicit allowlist of browser origins allowed to call the API with credentials (comma-separated; **never `*`** — cookie sessions forbid it). **Deny-by-default**: unset ⇒ empty ⇒ every cross-origin request is denied (same-origin only); set this to your real prod origin(s) for cross-origin. |
+| `NUMU_CORS_DEV` | off | localhost dev mode — additionally allowlists any `http://localhost[:port]` / `http://127.0.0.1[:port]` origin (still the exact-origin echo, never `*`). Use this for localhost cross-origin dev; leave OFF in prod. If both this is off AND `NUMU_CORS_ORIGINS` is empty, the boot log warns that all cross-origin requests are denied. |
 | `NUMU_DEBUG` | off | enables `POST /api/_debug/echo` |
 | `NUMU_TRUST_PROXY` | off | trust `X-Forwarded-For` for the `/auth` rate limit (set only behind a real proxy) |
 | `NUMU_AUTH_RATE_LIMIT` / `_WINDOW_SECS` | `30` / `60` | per-client `/auth` limit |
@@ -45,9 +45,9 @@ matters for how you wire the frontend:
   server: { proxy: { '/api': 'http://127.0.0.1:8099', '/auth': 'http://127.0.0.1:8099' } }
   ```
 
-- **Direct cross-origin** (frontend at `:5173` calling the API at `:8099`): CORS is configured (set
-  `NUMU_CORS_ORIGINS` to your origin, or `NUMU_CORS_DEV=1` for any localhost origin in dev) and you must
-  `fetch(url, { credentials: 'include' })`. **Caveat:** a `SameSite=Lax` cookie is *not* sent on cross-site
+- **Direct cross-origin** (frontend at `:5173` calling the API at `:8099`): cross-origin is **denied by
+  default** — set `NUMU_CORS_ORIGINS` to your origin (prod), or `NUMU_CORS_DEV=1` for any localhost origin
+  in dev — and you must `fetch(url, { credentials: 'include' })`. **Caveat:** a `SameSite=Lax` cookie is *not* sent on cross-site
   XHR, so direct cross-origin cookie auth doesn't work over plain HTTP — use the proxy for dev, or
   `SameSite=None; Secure` over HTTPS in prod (ask and I'll make the cookie's SameSite configurable).
 
@@ -56,7 +56,9 @@ matters for how you wire the frontend:
 > + an allowlisted `Origin`) with `204` and the exact-origin credentialed header set, and passes every other
 > OPTIONS through to the router (so the OPTIONS self-description works cross-origin). It **never** emits
 > `Access-Control-Allow-Origin: *` (cookie sessions forbid it); a non-allowlisted origin gets no CORS headers
-> at all. The full contract is in [`HTTP.md` §2a](HTTP.md) + [`decisions/0004-build-router-and-startup-self-check.md`](decisions/0004-build-router-and-startup-self-check.md).
+> at all. The default is **deny-all cross-origin** (empty `NUMU_CORS_ORIGINS`, `NUMU_CORS_DEV` off →
+> same-origin only); `Vary: Origin` is set whenever a request carries an `Origin` (allowed or denied) so a
+> shared cache never crosses origins. The full contract is in [`HTTP.md` §2a](HTTP.md) + [`decisions/0004-build-router-and-startup-self-check.md`](decisions/0004-build-router-and-startup-self-check.md).
 
 ### The contract (all verified live)
 

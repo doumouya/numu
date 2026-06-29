@@ -76,6 +76,16 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut state = AppState::new(pool, registry, workflows);
     state.data_dir = std::sync::Arc::new(cfg.data_dir.clone());
 
+    // Deny-by-default boot warning (Case 0017, F4): with no explicit allowlist AND dev mode off, every
+    // cross-origin request is denied (same-origin only). Warn here — the subscriber is live (like the
+    // web_dir warn) — so an operator sees the misconfig at startup, not via mystery CORS failures later.
+    if cfg.cors_origins.is_empty() && !cfg.cors_dev {
+        tracing::warn!(
+            "NUMU_CORS_ORIGINS empty and NUMU_CORS_DEV off — all cross-origin requests will be denied \
+             (same-origin only)"
+        );
+    }
+
     // ONE assembly point (AC6): the fully-layered app — every route + the rate-limit + the trace +
     // request-id + the CORS layer, in the canonical order. `run()`, the integration tests, and the
     // startup self-check all build the SAME router through here, so there is no parallel copy to drift.
@@ -117,9 +127,9 @@ pub fn build_router(state: AppState, cfg: &Config) -> Router {
     // Case 0017: a preflight-accurate, explicit-allowlist, credentialed-correct CORS layer (cors.rs)
     // REPLACES the blanket `tower_http::cors::CorsLayer`. The old layer short-circuited EVERY OPTIONS
     // 200/empty before the router, shadowing the OPTIONS self-description handlers; this one only
-    // short-circuits a TRUE preflight and passes every other OPTIONS through. Dev mode (NUMU_CORS_DEV)
-    // additionally allowlists localhost origins (still exact-origin echo, never `*`).
-    let cors_cfg = CorsCfg::new(&cfg.cors_origins, config::env_flag("NUMU_CORS_DEV"));
+    // short-circuits a TRUE preflight and passes every other OPTIONS through. Dev mode (cfg.cors_dev,
+    // from NUMU_CORS_DEV) additionally allowlists localhost origins (still exact-origin echo, never `*`).
+    let cors_cfg = CorsCfg::new(&cfg.cors_origins, cfg.cors_dev);
     let cors = middleware::from_fn(move |req, next| {
         let cors_cfg = cors_cfg.clone();
         async move { cors::cors_layer(cors_cfg, req, next).await }
@@ -163,10 +173,19 @@ pub fn build_router(state: AppState, cfg: &Config) -> Router {
         .with_state(state)
 }
 
+/// The POSITIVE routing contract (Case 0017, F2): the cookieless OPTIONS probe is ROUTED iff it is the
+/// `Caller` extractor's pre-DB 401 WITH a non-empty problem+json body. ANYTHING else — a 2xx-empty CORS
+/// short-circuit, an empty 401, or a 403/405/500 from a future shadowing layer — is a contract violation
+/// (this is a class-guard, not a single-fingerprint check).
+pub fn options_self_check_routed(status: axum::http::StatusCode, body_empty: bool) -> bool {
+    status == axum::http::StatusCode::UNAUTHORIZED && !body_empty
+}
+
 /// Startup self-check (Case 0017, AC8): drive a cookieless `OPTIONS /api/objects/<type>` through the REAL
-/// `app` and confirm it was ROUTED, not CORS-shadowed. Routed = `401` (the `Caller` extractor rejects the
-/// missing cookie at auth.rs:79 BEFORE any DB query, so the probe needs no DB). Shadowed = `200`/`204`
-/// with an EMPTY body (the old blanket CORS short-circuit). On a shadow: `tracing::error!` +
+/// `app` and confirm it was ROUTED, not CORS-shadowed, via the positive `options_self_check_routed`
+/// contract. Routed = `401` + non-empty body (the `Caller` extractor rejects the missing cookie at
+/// auth.rs:79 BEFORE any DB query, so the probe needs no DB). Anything else (a 2xx-empty short-circuit, or
+/// a 403/405/500 from a future shadowing layer) is a violation: `tracing::error!` +
 /// `startup.contract_violation` event, then KEEP SERVING (Em's choice — not fail-fast).
 async fn assert_options_routed(app: &Router, state: &AppState) {
     use axum::body::Body;
@@ -206,19 +225,21 @@ async fn assert_options_routed(app: &Router, state: &AppState) {
     };
 
     let status = resp.status();
-    let empty = axum::body::to_bytes(resp.into_body(), usize::MAX)
-        .await
-        .map(|b| b.is_empty())
-        .unwrap_or(true);
+    // On a body-read error treat as a violation AND log the read error distinctly — do NOT silently
+    // fold it into "empty-OK" (a read failure is itself contract-drift, not a clean empty body).
+    let body_empty = match axum::body::to_bytes(resp.into_body(), usize::MAX).await {
+        Ok(b) => b.is_empty(),
+        Err(e) => {
+            tracing::error!(route = %uri, error = %e, "startup self-check: could not read OPTIONS probe body");
+            true
+        }
+    };
 
-    // shadowed = a 2xx (200/204) with an empty body; routed = 401 (or any non-empty/error body).
-    let shadowed = status.is_success() && empty;
-    if shadowed {
+    if !options_self_check_routed(status, body_empty) {
         tracing::error!(
-            route = %uri,
-            status = %status,
-            "startup self-check: OPTIONS is CORS-SHADOWED (2xx empty) — the self-description route is \
-             not reachable over HTTP (Case 0017). Keeping serving; see startup.contract_violation event."
+            %status,
+            "startup contract violation: OPTIONS not routed — a layer may be shadowing the .options() \
+             route (Case 0017 class)"
         );
         let ctx = RequestCtx {
             request_id: ids::request_id(),
@@ -231,18 +252,14 @@ async fn assert_options_routed(app: &Router, state: &AppState) {
             None,
             "startup.contract_violation",
             json!({
-                "contract": "options_routed",
-                "route": uri,
-                "observed_status": status.as_u16(),
-                "observed_empty_body": empty,
-                "case": "0017",
-                "detail": "a middleware layer is shadowing the OPTIONS self-description route",
+                "check": "options_routing",
+                "status": status.as_u16(),
+                "body_empty": body_empty,
             }),
         )
         .await;
     } else {
-        // routed = 401 (the expected cookieless signal) or any non-empty/error body — not shadowed.
-        tracing::info!(route = %uri, status = %status, "startup self-check: OPTIONS routing OK");
+        tracing::info!("startup self-check: OPTIONS routing OK");
     }
 }
 

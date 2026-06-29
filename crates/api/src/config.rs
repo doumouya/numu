@@ -11,7 +11,11 @@ pub struct Config {
     pub auth_rate_limit: u32,
     pub auth_rate_window_secs: u64,
     /// browser origins allowed to call the API with credentials (the frontend's dev/prod origins).
+    /// Deny-by-default: empty unless `NUMU_CORS_ORIGINS` is set (localhost dev rides `cors_dev`).
     pub cors_origins: Vec<String>,
+    /// `NUMU_CORS_DEV` — localhost dev mode: additionally allowlist any `http://localhost[:port]` /
+    /// `http://127.0.0.1[:port]` origin (still the exact-origin echo, never `*`). Off in prod.
+    pub cors_dev: bool,
     /// where uploaded file blobs live on disk (`<data_dir>/files/<FIL>.bin`). Default `./data`.
     pub data_dir: std::path::PathBuf,
     /// static frontend root served same-origin via `ServeDir`; `NUMU_WEB_DIR`, default `./web`.
@@ -29,8 +33,9 @@ impl Config {
             debug: env_flag("NUMU_DEBUG"),
             auth_rate_limit: env_parse("NUMU_AUTH_RATE_LIMIT", 30),
             auth_rate_window_secs: env_parse("NUMU_AUTH_RATE_WINDOW_SECS", 60),
-            // comma-separated; defaults cover the common Vite/Next dev ports so a local frontend works
-            // out of the box. Set NUMU_CORS_ORIGINS to your real origin(s) in any other setup.
+            // comma-separated explicit allowlist. Deny-by-default (Case 0017 F4): when unset, this is
+            // EMPTY — all cross-origin requests are denied (same-origin only). Set NUMU_CORS_ORIGINS to
+            // your real prod origin(s); localhost cross-origin dev rides NUMU_CORS_DEV=1 instead.
             cors_origins: std::env::var("NUMU_CORS_ORIGINS")
                 .map(|v| {
                     v.split(',')
@@ -38,12 +43,8 @@ impl Config {
                         .filter(|s| !s.is_empty())
                         .collect()
                 })
-                .unwrap_or_else(|_| {
-                    vec![
-                        "http://localhost:5173".to_string(),
-                        "http://localhost:3000".to_string(),
-                    ]
-                }),
+                .unwrap_or_default(),
+            cors_dev: env_flag("NUMU_CORS_DEV"),
             data_dir: std::env::var("NUMU_DATA_DIR")
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|_| std::path::PathBuf::from("./data")),

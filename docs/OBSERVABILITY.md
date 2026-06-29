@@ -91,15 +91,17 @@ engine also audits its own boot-time contract checks. The greppable taxonomy gai
 
 | `kind` | when | payload | reaction |
 |---|---|---|---|
-| `startup.contract_violation` | a startup self-check found a live contract breach | `{ contract, route, observed_status, observed_empty_body, case, detail }` | `tracing::error!` + the event, then **KEEP SERVING** (warn + audit, not fail-fast) |
+| `startup.contract_violation` | a startup self-check found a live contract breach | `{ check, status, body_empty }` | `tracing::error!` + the event, then **KEEP SERVING** (warn + audit, not fail-fast) |
 
 The first such check (Case 0017, [ADR 0004](decisions/0004-build-router-and-startup-self-check.md)):
 `assert_options_routed` drives a cookieless `OPTIONS /api/objects/<type>` through the real `build_router`
-app at boot — **routed** = `401` (the `Caller` extractor's pre-DB reject), **shadowed** = a `2xx` with an
-empty body (a middleware layer short-circuiting the route). A shadow emits
-`startup.contract_violation`; a pass logs `startup self-check: OPTIONS routing OK`. The probe synthesizes a
-`RequestCtx` (minted request/trace ids) since there is no real request at boot, and uses the `"system"`
-actor sentinel.
+app at boot and tests the **positive** routing contract (`options_self_check_routed(status, body_empty)`):
+**routed** iff `status == 401` (the `Caller` extractor's pre-DB reject) **AND the body is non-empty** (the
+problem+json envelope). **Any other response is a violation** — a `2xx`-empty CORS short-circuit, an empty
+`401`, or a `403`/`405`/`500` from a future shadowing layer all fail the check (a class-guard, not a single
+fingerprint). A violation emits `startup.contract_violation` (`{check:"options_routing", status, body_empty}`);
+a pass logs `startup self-check: OPTIONS routing OK`. The probe synthesizes a `RequestCtx` (minted
+request/trace ids) since there is no real request at boot, and uses the `"system"` actor sentinel.
 
 **Ops hardening — LIVE (CASE 0008 B4).** `POST /api/_debug/echo` (the TRACE replacement, §4) and `PATCH
 /api/_debug/log-level` are wired; plus a typed `Config::from_env` (one place reads env), a per-client

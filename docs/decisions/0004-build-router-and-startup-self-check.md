@@ -43,14 +43,19 @@ Two structural guardrails so this class of breach fails a test (or a boot log) i
 
 2. **A startup self-check (`assert_options_routed`) runs every boot**, after `build_router` and before
    `axum::serve`. It drives a **cookieless** `OPTIONS /api/objects/<a registered type, or "probe">` through
-   the REAL `app` via `oneshot` and checks the request was **routed, not CORS-shadowed**:
-   - **routed** = `401` (the `Caller` extractor rejects the missing cookie at `auth.rs:79` BEFORE any DB
-     query — so the probe needs no DB connection),
-   - **shadowed** = `2xx` (200/204) with an **empty** body (the old blanket-CORS short-circuit signature).
+   the REAL `app` via `oneshot` and tests the **positive** routing contract — extracted as the pure,
+   unit-tested predicate `pub fn options_self_check_routed(status, body_empty) -> bool` (a class-guard, not
+   a single-fingerprint negative check):
+   - **routed** iff `status == 401` (the `Caller` extractor rejects the missing cookie at `auth.rs:79`
+     BEFORE any DB query — so the probe needs no DB connection) **AND** the body is **non-empty** (the
+     problem+json envelope).
+   - **violation** = anything else: a `2xx`-empty CORS short-circuit, an empty `401`, or a `403`/`405`/`500`
+     from a future shadowing layer. (A body-read error is also treated as a violation, logged distinctly.)
 
-   On a shadow: `tracing::error!` **and** `db::record_event(kind:"startup.contract_violation", …)`, then
-   **KEEP SERVING** — warn + audit, not fail-fast (Em's choice: a misconfigured CORS layer should be loud,
-   not a boot crash). On a pass: a `tracing::info!("startup self-check: OPTIONS routing OK")`.
+   On a violation: `tracing::error!` **and** `db::record_event(kind:"startup.contract_violation",
+   {check:"options_routing", status, body_empty})`, then **KEEP SERVING** — warn + audit, not fail-fast
+   (Em's choice: a misconfigured CORS layer should be loud, not a boot crash). On a pass: a
+   `tracing::info!("startup self-check: OPTIONS routing OK")`.
 
 The pair is backstopped by the no-DB regression test (`tests/options_routing.rs`, plain `cargo test`) that
 builds the app via the real `build_router` over a non-connecting `PgPool::connect_lazy` + the new
