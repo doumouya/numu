@@ -202,10 +202,11 @@ mod tests {
         );
     }
 
-    /// A no-archetype type carries the `'none'` default — still present on the wire,
-    /// never omitted (the column is non-null since migration 0016).
+    /// A type carrying the migration-0016 default `'record'` — still present on the
+    /// wire, never omitted (the column is non-null since 0016; the CHECK set does NOT
+    /// include `'none'`, so the default is `'record'`).
     #[test]
-    fn typedef_serializes_context_view_default_none() {
+    fn typedef_serializes_context_view_default_record() {
         let td = TypeDef {
             type_id: "workspace".to_string(),
             id_prefix: "WSP".to_string(),
@@ -214,7 +215,7 @@ mod tests {
             scope_parents: Vec::new(),
             is_builtin: true,
             method_policy: serde_json::json!({}),
-            context_view: "none".to_string(),
+            context_view: "record".to_string(),
             fields: Vec::new(),
         };
 
@@ -222,8 +223,8 @@ mod tests {
 
         assert_eq!(
             wire.get("context_view").and_then(|v| v.as_str()),
-            Some("none"),
-            "context_view must be present (default 'none') even for no-archetype types (AC1)"
+            Some("record"),
+            "context_view must be present (default 'record') for default-archetype types (AC1)"
         );
     }
 }

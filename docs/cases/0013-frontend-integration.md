@@ -118,4 +118,24 @@ CORS for a truly cross-site deploy (moot while same-origin).
   gate-covered; **AC2/AC3/AC1-catalog+OPTIONS/AC8-killer-flow are live-E2E-only** (`tools/e2e-0013.sh` vs a
   seeded live server) per the OOM design — that E2E is the remaining proof for ops. ONE new LOW/non-blocking
   flag: the AC1 default test still names/asserts `'none'` (should be `'record'`); it still passes (proves
-  key-present only) → cleanup on next touch / fold into 0015. → Checkpoint 2 (Em). → tester starts (Step 2).
+  key-present only) → cleanup on next touch / fold into 0015. → Checkpoint 2 (Em).
+- **2026-06-29 — CHECKPOINT 2 (Em): "run live E2E first, push if green."**
+- **2026-06-29 — ops live E2E: LIVE-RED (12/13), do NOT push (yet).** Built `numu-api` (no OOM, ~14GiB free),
+  served same-origin on :8099 with `NUMU_WEB_DIR=web` against a fresh Postgres (`numu_0013_live`), dev-login
+  cookie, `seed-demo.sh` ✓. **PASS:** AC2 `/api/health` 200; AC1 `GET /api/types/file`→`context_view:"table"`
+  + catalog 21/21; AC3 static `/probe.txt` 200 + `/api/types` API-wins; AC8 conversations(3), feed
+  (lens=all/customer, bogus→404, bad-lens→400), upload→`UploadOutcome{cleanness:100,encoding:utf-8,cols}`,
+  `GET /R3 Shell.dc.html` 200 same-origin. **FAIL (1):** AC1 OPTIONS-parity — `OPTIONS /api/objects/:type`
+  returns 200 **empty**. **Root cause (pre-existing, not 0013):** `tower_http::cors::CorsLayer` (lib.rs:145,
+  outermost) short-circuits ALL OPTIONS as preflight before the router, so `coll_options`/`item_options`
+  (objects.rs:508/794 — which DO emit `context_view` at :327) are never reached. Same on `main` (CORS landed
+  Case 0009); the db-tests hit the router directly, bypassing the layer, so it was never caught. Impact on
+  0013: NONE for bind-live — the frontend reads `context_view` from `GET /api/types/:type` (passes). Also:
+  `tools/e2e-0013.sh` sends no cookie → its `/api/types*` checks spuriously 401 (tester-owned script bug).
+  → escalate the fix-direction decision to Em (drop OPTIONS-parity from 0013 + file CORS bug separately, vs
+  fix CORS now, vs remove CORS for same-origin).
+- **2026-06-29 — Em decision: "Drop OPTIONS-parity from 0013, file CORS bug separately."** AC1 descoped to the
+  GET endpoints (both LIVE-GREEN). OPTIONS parity + the CORS-shadows-OPTIONS fix → new **Case 0016**. The
+  `options_body` context_view line stays (forward-compatible). 0013 is now **LIVE-GREEN**. → tester cleans up
+  `tools/e2e-0013.sh` (cookie auth + OPTIONS check → skip-with-0016-ref) and the AC1 `'none'`→`'record'` test
+  flag; then push (Em pre-authorized "push if green"). → tester starts (Step 2).
