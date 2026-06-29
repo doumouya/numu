@@ -29,6 +29,7 @@ fn test_cfg() -> Config {
         auth_rate_limit: 30,
         auth_rate_window_secs: 60,
         cors_origins: vec!["https://app.example".to_string()],
+        cors_dev: false,
         data_dir: std::path::PathBuf::from("."),
         web_dir: std::path::PathBuf::from("."),
     }
