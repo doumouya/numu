@@ -47,7 +47,7 @@
   <div style="flex:1; display:flex; flex-direction:column; min-width:0">
 
     <!-- TOPBAR (shared component) -->
-    <dc-import name="TopBar" tenant-mark="{{ tenantMark }}" tenant-name="{{ tenantName }}" tenant-sub="{{ tenantSub }}" nacl-hint="{{ naclHint }}" on-search="{{ noop }}" has-notif="{{ hasNotif }}" on-notif="{{ noop }}" me-initials="{{ meInitials }}" on-toggle-rail="{{ toggleRail }}" on-info="{{ openNaclInfo }}" on-toggle-panel="{{ panelToggleHandler }}" panel-open="{{ ctxPanelOpen }}" hint-size="100%,3.25rem"></dc-import>
+    <dc-import name="TopBar" tenant-mark="{{ tenantMark }}" tenant-name="{{ tenantName }}" tenant-sub="{{ tenantSub }}" nacl-hint="{{ naclHint }}" on-search="{{ openSearch }}" has-notif="{{ hasNotif }}" on-notif="{{ openNotif }}" me-initials="{{ meInitials }}" on-toggle-rail="{{ toggleRail }}" on-info="{{ openNaclInfo }}" on-toggle-panel="{{ panelToggleHandler }}" panel-open="{{ ctxPanelOpen }}" hint-size="100%,3.25rem"></dc-import>
     
 
     <!-- BODY -->
@@ -518,6 +518,16 @@
               <div style="display:flex; flex-direction:column; gap:0.15rem; margin-bottom:0.2rem">
                 <span style="font-size:var(--text-2xl); font-weight:var(--weight-bold); letter-spacing:-0.02em">{{ ui.settings }}</span>
                 <span style="font-size:var(--text-md); color:var(--text-muted)">{{ settingsSub }}</span>
+              </div>
+
+              <!-- AC15 — preferences are client-side: a clear "this device" label (server-side prefs GATED,
+                   AC25 shared coming-soon affordance). Theme/dialect changes take effect live via the shell. -->
+              <div style="display:flex; align-items:flex-start; gap:0.5rem; border:1px dashed var(--border-strong); border-radius:var(--radius-sm); padding:0.5rem 0.7rem; background:var(--surface-subtle)">
+                <span style="display:inline-flex; color:var(--text-subtle); margin-top:0.05rem"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="hdd-fill" hint-size="0.8rem,0.8rem"></x-import></span>
+                <div style="display:flex; flex-direction:column; gap:0.1rem; min-width:0">
+                  <span style="font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text)">{{ thisDeviceLabel }}</span>
+                  <span style="font-size:var(--text-xs); color:var(--text-muted); line-height:1.45">{{ thisDeviceNote }}</span>
+                </div>
               </div>
 
               <!-- Appearance -->
@@ -1500,6 +1510,58 @@
       </div>
     </div>
   </sc-if>
+
+  <!-- ===================== SEAM: GLOBAL SEARCH (CASE 0019, Slice 10, AC21) =====================
+       GET /api/search?q= → results [{entity_id,type,title,rank}]; clicking a result opens it in its
+       archetype (AC7). An empty q is never sent. -->
+  <sc-if value="{{ searchOpen }}">
+    <div onClick="{{ closeSearch }}" style="position:fixed; inset:0; z-index:66; background:rgba(2,6,23,0.55); display:flex; align-items:flex-start; justify-content:center; padding:8vh 2vw">
+      <div onClick="{{ stopRow }}" style="width:min(38rem, 96vw); max-height:70vh; display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow-popover); overflow:hidden">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border)">
+          <span style="display:inline-flex; color:var(--text-subtle)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="search" hint-size="0.9rem,0.9rem"></x-import></span>
+          <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Input" value="{{ searchQuery }}" placeholder="{{ searchPlaceholder }}" on-input="{{ onSearchInput }}" hint-size="100%,2.1rem"></x-import>
+        </div>
+        <div style="flex:1; overflow:auto">
+          <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="5">
+            <div onClick="{{ r.onOpen }}" style="display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.85rem; border-bottom:1px solid var(--border-subtle); cursor:pointer">
+              <span style="font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.3rem; flex:none">{{ r.type }}</span>
+              <span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.title }}</span>
+              <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ r.id }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ searchEmpty }}">
+            <div style="padding:1.5rem 1rem; text-align:center; font-size:var(--text-sm); color:var(--text-subtle)">{{ searchEmptyLabel }}</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== SEAM: NOTIFICATIONS → OPEN AS PROJECT (CASE 0019, Slice 10, AC22) =====================
+       The "open as project" CTA calls client.create("project", …) and selects the new conversation. -->
+  <sc-if value="{{ notifOpen }}">
+    <div onClick="{{ closeNotif }}" style="position:fixed; inset:0; z-index:66; background:rgba(2,6,23,0.45); display:flex; align-items:flex-start; justify-content:flex-end; padding:4rem 1.2rem 0 0">
+      <div onClick="{{ stopRow }}" style="width:min(24rem, 94vw); max-height:70vh; display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow-popover); overflow:hidden">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md)">{{ ui.notifications }}</span>
+          <span style="flex:1"></span>
+          <button onClick="{{ closeNotif }}" title="Close" style="width:1.7rem; height:1.7rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.78rem,0.78rem"></x-import></button>
+        </div>
+        <div style="flex:1; overflow:auto">
+          <sc-for list="{{ notifFeed }}" as="n" hint-placeholder-count="3">
+            <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border-subtle)">
+              <div style="display:flex; align-items:center; gap:0.5rem">
+                <span style="display:inline-flex; color:{{ n.color }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ n.icon }}" hint-size="0.85rem,0.85rem"></x-import></span>
+                <span style="flex:1; font-size:var(--text-sm); color:var(--text)">{{ n.text }}</span>
+                <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ n.time }}</span>
+              </div>
+              <button onClick="{{ n.onPromote }}" disabled="{{ n.promoteDisabled }}" style="align-self:flex-start; display:flex; align-items:center; gap:0.35rem; height:1.85rem; padding:0 0.65rem; border:1px solid var(--accent); background:{{ n.promoteBg }}; color:{{ n.promoteColor }}; border-radius:var(--radius-xs); cursor:{{ n.promoteCursor }}; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="folder-plus" hint-size="0.72rem,0.72rem"></x-import>{{ openAsProjectLabel }}</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;surfaceTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;slate&quot;,&quot;options&quot;:[&quot;slate&quot;,&quot;graphite&quot;,&quot;carbon&quot;,&quot;sandstone&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;startWorkspace&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;platform&quot;,&quot;options&quot;:[&quot;platform&quot;,&quot;studio&quot;,&quot;commerce&quot;,&quot;social&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;en&quot;,&quot;options&quot;:[&quot;en&quot;,&quot;fr&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;platformAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3f5573&quot;,&quot;options&quot;:[&quot;#3f5573&quot;,&quot;#46607f&quot;,&quot;#3a5a8c&quot;,&quot;#54627a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;studioAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#b13c5f&quot;,&quot;options&quot;:[&quot;#b13c5f&quot;,&quot;#a8466a&quot;,&quot;#9d3b6e&quot;,&quot;#c24a63&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;commerceAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#9a6518&quot;,&quot;options&quot;:[&quot;#9a6518&quot;,&quot;#a96f1e&quot;,&quot;#8a5a2a&quot;,&quot;#9c6b3a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;socialAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2a7d63&quot;,&quot;options&quot;:[&quot;#2a7d63&quot;,&quot;#2f8f5f&quot;,&quot;#1f7a72&quot;,&quot;#3a7d4f&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;secondaryAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5b6cb0&quot;,&quot;options&quot;:[&quot;#5b6cb0&quot;,&quot;#6d6fa3&quot;,&quot;#4f6f9c&quot;,&quot;#7a6cae&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;}}">
@@ -1525,7 +1587,9 @@ class Component extends DCLogic {
     // drill overlay. profileLive = { memberships, activity, identity } sourced live (AC16).
     typeCounts: {}, typeList: null, profileLive: null,
     // SEAM GRAFT (Slice 9): live connector catalog (AC18) + the http_json run state.
-    connectors: null, connRunBusy: null, connRunResult: null
+    connectors: null, connRunBusy: null, connRunResult: null,
+    // SEAM GRAFT (Slice 10): global search (AC21) + notifications (AC22).
+    searchOpen: false, searchQuery: "", searchResults: null, notifOpen: false
   };
 
   // ===== SEAM GRAFT (CASE 0019 console-cutover, Slice 3) =======================
@@ -1819,6 +1883,36 @@ class Component extends DCLogic {
       typeListEmpty: rows.length === 0, typeListEmptyLabel: "No " + (((o && o.displayNamePlural) || tl.type).toLowerCase()) + " yet."
     };
   }
+  // render-vals for global search + notifications (Slice 10).
+  searchVals() {
+    if (!this.state.searchOpen) return { searchOpen: false };
+    const q = this.state.searchQuery || "", results = this.state.searchResults;
+    return {
+      searchOpen: true, closeSearch: this.closeSearch, stopRow: this.stopRow,
+      searchQuery: q, onSearchInput: this.onSearchInput,
+      searchPlaceholder: this.t("Search records & threads"),
+      searchResults: Array.isArray(results) ? results.map((r) => ({ type: r.type, title: r.title || r.entity_id || r.id, id: r.entity_id || r.id, onOpen: () => this.openSearchResult(r) })) : [],
+      searchEmpty: Array.isArray(results) && results.length === 0 && q.trim().length > 0,
+      searchEmptyLabel: this.t("No results")
+    };
+  }
+  NOTIF_FEED = [
+    { id: "n1", icon: "life-preserver", color: "var(--warning)", text: "New case · Encoding garbled on import", time: "09:17", title: "Encoding garbled on import" },
+    { id: "n2", icon: "chat-square-text", color: "var(--accent)", text: "Client message · Maison Réts", time: "09:40", title: "Maison Réts thread" },
+    { id: "n3", icon: "box-arrow-up", color: "var(--success)", text: "Deploy ✓ · api v1.8.0", time: "08:30", title: "Deploy api v1.8.0" }
+  ];
+  notifVals() {
+    if (!this.state.notifOpen) return { notifOpen: false };
+    const writable = this.canWrite();
+    return {
+      notifOpen: true, closeNotif: this.closeNotif, stopRow: this.stopRow,
+      openAsProjectLabel: this.t("Open as project"),
+      notifFeed: this.NOTIF_FEED.map((n) => ({ icon: n.icon, color: n.color, text: n.text, time: n.time,
+        onPromote: () => this.promoteToProject(n), promoteDisabled: !writable,
+        promoteBg: writable ? "var(--accent)" : "var(--surface-sunken)", promoteColor: writable ? "#fff" : "var(--text-subtle)",
+        promoteCursor: writable ? "pointer" : "not-allowed" }))
+    };
+  }
   // ============================================================================
 
   ORDER = ["platform", "studio", "commerce", "social"];
@@ -2089,6 +2183,45 @@ class Component extends DCLogic {
       .catch((e) => this.setState({ connRunBusy: null, connRunResult: null, seamError: this.seamErr("run " + id, e) }));
   };
   selectConn = (id) => { this.setState({ connSel: id }); };
+
+  // ===== SEAM GRAFT (Slice 10): global search (AC21) =====
+  // The TopBar search opens an overlay; typing calls GET /api/search?q= via client.search and renders
+  // results [{entity_id,type,title,rank}]. An empty q is NOT sent (backend 400s on blank). Clicking a
+  // result opens the entity in its archetype (AC7; an unregistered type falls back to record).
+  openSearch = () => this.setState({ searchOpen: true });
+  closeSearch = () => this.setState({ searchOpen: false, searchQuery: "", searchResults: null });
+  onSearchInput = (e) => {
+    const q = e && e.target ? e.target.value : String(e || "");
+    this.setState({ searchQuery: q });
+    if (!q.trim()) { this.setState({ searchResults: null }); return; } // empty q never hits the API
+    if (!this.client || !this.client.search) return;
+    this.client.search(q)
+      .then((resp) => { if (this.state.searchQuery === q) this.setState({ searchResults: (resp && resp.results) || [] }); })
+      .catch((err) => this.setState({ searchResults: [], seamError: this.seamErr("search", err) }));
+  };
+  openSearchResult = (r) => {
+    if (!r) return;
+    this.closeSearch();
+    this.openEntity(r.type, r.entity_id || r.id); // AC7 — archetype dispatch (unknown type → record)
+  };
+
+  // ===== SEAM GRAFT (Slice 10): notifications → "open as project" CTA (AC22) =====
+  // A notification promotes to a project via client.create("project", …); the new conversation is then
+  // selected in the rail (rail re-sourced from client.conversations). Write-gated offline (AC24).
+  openNotif = () => this.setState({ notifOpen: true });
+  closeNotif = () => this.setState({ notifOpen: false });
+  promoteToProject = (notif) => {
+    if (!this.client) { this.setState({ seamError: this.seamErr("open as project", new Error("no data client")) }); return; }
+    if (!this.canWrite()) { this.setState({ seamError: this.seamErr("open as project", new Error("Offline — promoting to a project is disabled until the server is reachable.")) }); return; }
+    const title = (notif && notif.title) || "New project";
+    this.client.create("project", { title: title, name: title, origin: "manual", status: "active" })
+      .then((row) => {
+        this.setState({ notifOpen: false });
+        this.loadConversations(); // refresh the rail so the new conversation appears
+        this.selectUserProject(row.id); // select it (morphs the three regions)
+      })
+      .catch((e) => this.setState({ seamError: this.seamErr("open as project", e) }));
+  };
   connectConn = (id) => { this.setState((s) => ({ connToggles: Object.assign({}, s.connToggles, { [this.rTenant() + "/" + id]: true }), connSel: id })); };
   disconnectConn = (id) => { this.setState((s) => ({ connToggles: Object.assign({}, s.connToggles, { [this.rTenant() + "/" + id]: false }) })); };
   toggleFlow = (key) => { this.setState((s) => ({ flowOff: Object.assign({}, s.flowOff, { [key]: !s.flowOff[key] }) })); };
@@ -3042,7 +3175,7 @@ class Component extends DCLogic {
     const connScopes = this.SCOPES[connSel] || [];
     const connLog = dInfo.connected ? (this.KIND_LOG[dItem.kind] || []).map((t, i) => ({ text: t, time: [dInfo.sync || "just now", "14m ago", "1h ago"][i] })) : [];
 
-    return Object.assign(this.ctxVals(), this.typeListVals(), {
+    return Object.assign(this.ctxVals(), this.typeListVals(), this.searchVals(), this.notifVals(), {
       setRoot: this.setRoot, noop: this.noop,
       screenLabel: T.name + " · " + page,
       tenantMark: T.mark, tenantName: T.name, tenantSub: T.sub, tenantShort: T.short,
@@ -3092,6 +3225,8 @@ class Component extends DCLogic {
       railToggleTitle: this.state.railCollapsed ? "Show panel" : "Hide panel",
       accentSwatchLabel: this.t("accent") + " · " + T.short + " + " + this.t("secondary"),
       settingsSub: T.name + " · " + this.t(theme === "light" ? "Light theme" : "Night theme"),
+      thisDeviceLabel: this.t("Preferences are saved on this device"),
+      thisDeviceNote: this.t("Theme, density, accent, language and your nacl dialect live in this browser only — server-synced preferences are coming soon."),
       connSubtitle: this.t("Link external systems to {ws}. Data syncs into this workspace's threads and records — you choose the scope.").replace("{ws}", T.name),
       connReconnectSuffix: this.t(" — reconnect to resume sync"),
       languages: this.LANGS.map((l) => ({ code: l.code, endonym: l.endonym, ready: l.status === "ready", current: l.code === this.rLang(), statusLabel: l.code === this.rLang() ? this.t("current") : (l.status === "soon" ? "soon" : ""), onClick: l.status === "ready" ? (() => this.setLang(l.code)) : this.noop, opacity: l.status === "soon" ? "0.5" : "1", bg: l.code === this.rLang() ? "var(--accent-tint)" : "var(--surface)", border: l.code === this.rLang() ? "var(--accent)" : "var(--border)", cursor: l.status === "ready" ? "pointer" : "default" })),
