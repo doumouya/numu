@@ -1272,10 +1272,17 @@
           <span style="font-family:var(--font-mono); font-weight:var(--weight-bold); letter-spacing:-0.02em">nacl</span>
           <span style="font-size:var(--text-md); color:var(--text-muted)">{{ ui.naclReference }}</span>
           <span style="flex:1"></span>
-          <a href="{{ naclRefSrc }}" target="_blank" rel="noopener" title="Open full page" style="display:inline-flex; align-items:center; gap:0.35rem; height:1.9rem; padding:0 0.65rem; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); text-decoration:none; font-size:var(--text-sm); font-weight:var(--weight-medium)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="box-arrow-up-right" hint-size="0.78rem,0.78rem"></x-import>{{ ui.openFull }}</a>
           <button onClick="{{ closeNaclInfo }}" title="Close" style="width:1.9rem; height:1.9rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.85rem,0.85rem"></x-import></button>
         </div>
-        <iframe src="{{ naclRefSrc }}" title="nacl language reference" style="flex:1; width:100%; border:none; background:var(--surface)"></iframe>
+        <!-- CASE 0019 console-cutover — naclRefSrc fix: the standalone "nacl Reference.dc.html" page is not
+             vendored in web/, so the old <iframe src="{{ naclRefSrc }}"> + "Open full page" <a href> both
+             404'd (and leaked an uninterpolated template var into a fetched URL). Replaced with an inline
+             coming-soon panel so the modal opens cleanly with zero network fetch. -->
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.6rem; padding:2rem; text-align:center; background:var(--surface)">
+          <span style="display:inline-flex; color:var(--text-subtle)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="cone-striped" hint-size="1.6rem,1.6rem"></x-import></span>
+          <span style="font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--warning); border:1px solid var(--warning); border-radius:999px; padding:0.1rem 0.6rem">{{ comingSoonLabel }}</span>
+          <span style="font-size:var(--text-md); color:var(--text-muted); max-width:42ch; line-height:1.5">{{ ui.naclReferenceNote }}</span>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -1763,18 +1770,19 @@ class Component extends DCLogic {
       .catch((e) => this.setState({ seamError: this.seamErr("list " + tl.type, e) }));
   }
 
-  // ===== SEAM GRAFT (Slice 8): live profile — identity + memberships + recent activity (AC16) =====
-  // Sources the caller's identity, workspace memberships, and recent events from the live API. Security
-  // stays the existing coming-soon stub (AC17). Falls back silently to the existing fixture profile.
+  // ===== SEAM GRAFT (Slice 8): live profile — identity card stays live; memberships + activity gated =====
+  // The identity card is sourced statically (no fetch). Memberships and recent activity have NO public
+  // endpoint: `membership` and `event` are SYSTEM tables (not registered object types), and members.rs
+  // exposes only the per-object roster (/:type/:id/members), never the caller's own memberships or an
+  // events feed. Calling list("membership")/list("event") 404s. So those two sub-sections are gated as the
+  // shared "coming soon" affordance (AC25 NotBuilt model, like the AC17 security stub): they render from
+  // the existing local fixtures and no live request is issued. When a real /me/memberships + activity feed
+  // lands, restore the list() calls here. (CASE 0019 console-cutover — profile 404 fix.)
   loadProfileLive() {
     if (!this.client || this._profileLoaded) return;
     this._profileLoaded = true;
-    // memberships: the caller's workspace rows; activity: recent events. Both via list() — a type the
-    // registry lacks rejects, and we keep the fixture profile (no throw, AC23-safe).
-    const out = {};
-    const done = () => this.setState({ profileLive: Object.assign({}, this.state.profileLive || {}, out) });
-    this.client.list("membership", { limit: 20 }).then((r) => { out.memberships = (r && r.rows) || []; done(); }).catch(() => {});
-    this.client.list("event", { limit: 8 }).then((r) => { out.activity = (r && r.rows) || []; done(); }).catch(() => {});
+    // No fetch: leave profileLive without `memberships`/`activity` so the render falls through to the
+    // local fixtures (the designed coming-soon fallback). This produces NO 404 on profile load.
   }
 
   // ===== render-vals for the live archetype panel + form (Slice 6/7/9) =====
@@ -3182,7 +3190,6 @@ class Component extends DCLogic {
       conflictTitle: this.t("This record changed"),
       conflictNote: this.t("This record changed since you opened it — reload to see the latest before saving again."),
       conflictReloadLabel: this.t("Reload"), reloadConflict: this.reloadConflict,
-      naclRefSrc: "nacl Reference.dc.html?theme=" + (theme === "light" ? "light" : "dark") + "&tone=" + this.rTone(),
       toggleRail: this.toggleRail, setLang: this.setLang,
       panelW: this.state.railCollapsed ? "0rem" : "15.5rem", panelBorder: this.state.railCollapsed ? "0px solid transparent" : "1px solid var(--border)",
       railToggleTitle: this.state.railCollapsed ? "Show panel" : "Hide panel",
@@ -3202,6 +3209,7 @@ class Component extends DCLogic {
         objectsPanel: this.t("Objects panel"), objectsPanelDesc: this.t("Pick which of this workspace's object types appear in the panel. Each is a registered type — a row, not a migration."),
         preview: this.t("Preview"), previewDesc: this.t("Your interface, live — every change above lands here first."), detail: this.t("Detail"),
         naclReference: this.t("language reference"), openFull: this.t("Full page"),
+        naclReferenceNote: this.t("The full nacl language reference is on the way. For now, type a verb in the composer and numu will guide you."),
         components: this.t("components"), primary: this.t("Primary"), ghost: this.t("Ghost"),
         sampleCard: this.t("sample card"), sampleRow: this.t("Deploy · api v1.8.0"), sampleRow2: this.t("Sync · maison-rets"), naclSample: this.t("nacl · your dialect"),
         naclDialect: this.t("nacl dialect"), naclDialectDesc: this.t("The nacl keyword language is independent of the interface. Pick a skin, or rename any verb to build your own dialect."), naclReset: this.t("Reset to skin"),
