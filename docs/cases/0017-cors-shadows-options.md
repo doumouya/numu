@@ -2,7 +2,7 @@
 
 > (Renumbered 0016→0017 — `0016` collided with `docs/cases/0016-postgres-ha-docs.md` from a parallel effort.)
 
-- **Status:** in_progress
+- **Status:** in_review (fix + monitor green via ci.sh; pending live E2E + push + Part F skill)
 - **Type:** bug (+ hardening)
 - **Opened:** 2026-06-29
 - **Owner:** Torv (for Em)
@@ -155,3 +155,12 @@ this Case need only fix the layer + add the regression tests (the no-DB `options
   `NUMU_CORS_DEV` / `NUMU_CORS_ORIGINS` semantics + `Vary: Origin` note), OBSERVABILITY.md (positive
   self-check line + the new `{check, status, body_empty}` payload), ADR 0004 (positive
   `options_self_check_routed` contract + the violation reaction). No TEST-DRIFT. → reviewer.
+- **2026-06-29 — review gate: ci.sh GREEN** (orchestrator-run, db skipped): fmt · clippy `-D warnings` ·
+  `cargo test` (lib 11 + options_routing 7) · js shapes 5/5 · 10/10 audits clean/baselined.
+- **2026-06-29 — ops LIVE-GREEN (Part E + live E2E).** Implemented Part E in `tools/e2e-0013.sh` (promoted the
+  OPTIONS-parity check SKIP→hard; added the per-type contract loop over `GET /api/types`). Built `numu-api`
+  (no OOM), served on a fresh `numu_0017_live` Postgres with `NUMU_CORS_ORIGINS=https://app.example`. **Proved
+  live:** boot log `startup self-check: OPTIONS routing OK` (the monitor); authed `OPTIONS /api/objects/file`
+  → 200 with `context_view`+`fields` (THE FIX — was 200-empty); `e2e-0013.sh` **28/28** (incl. the per-type
+  loop over 22 types); CORS preflight allow → 204 exact-origin ACAO+ACAC+max-age 7200+vary; non-allowlisted →
+  no ACAO. → push (Em pre-authorized "push if green").

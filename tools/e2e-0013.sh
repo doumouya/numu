@@ -99,19 +99,50 @@ else
   bad "AC1  GET /api/types catalog missing context_view (code=$HTTP_CODE)"
 fi
 
-# ── AC1-OPTIONS-parity: KNOWN ISSUE (Case 0017), DESCOPED from 0013 ──────────
-# OPTIONS /api/objects/:type SHOULD echo context_view in its options_body
-# (objects.rs emits it at the handler), but tower_http::cors::CorsLayer (lib.rs,
-# outermost) short-circuits ALL OPTIONS as CORS preflight before the router, so
-# coll_options/item_options never run → empty 200. Pre-existing (CORS landed Case
-# 0009), filed as Case 0017. Em descoped OPTIONS-parity from 0013; the frontend
-# reads context_view from GET /api/types/:type (above, LIVE-GREEN). This is a
-# SKIP, NOT a FAIL — it does not count toward the failure exit.
+# ── AC1-OPTIONS-parity: Case 0017 FIXED — regression now fails ───────────────
+# OPTIONS /api/objects/:type echoes context_view in its options_body (objects.rs
+# emits it at the handler). Case 0017 replaced tower_http::cors::CorsLayer (which
+# short-circuited ALL OPTIONS as CORS preflight before the router) with a
+# preflight-accurate layer: only a TRUE preflight (OPTIONS + Access-Control-
+# Request-Method + allowlisted Origin) is short-circuited, so a NON-preflight
+# authed OPTIONS reaches coll_options/item_options and self-describes. This was a
+# SKIP while blocked by Case 0017; it is now a HARD check — a future live
+# regression (a layer re-shadowing OPTIONS) FAILS here instead of silently
+# skipping.
 http_options_auth "/api/objects/file"
 if printf '%s' "$HTTP_BODY" | grep -q '"context_view"'; then
-  ok 'AC1  OPTIONS /api/objects/file → options_body has "context_view" (parity, Case 0017 fixed)'
+  ok 'AC1  OPTIONS /api/objects/file → options_body has "context_view" (parity, Case 0017 FIXED)'
 else
-  note 'AC1-OPTIONS-parity — blocked by Case 0017 (CorsLayer shadows OPTIONS); frontend uses GET /api/types/:type'
+  bad "AC1-OPTIONS-parity — Case 0017 FIXED, regression now fails: OPTIONS /api/objects/file missing context_view (code=$HTTP_CODE) — a layer may be re-shadowing OPTIONS"
+fi
+
+# ── AC10 (Case 0017): per-type live contract probe ──────────────────────────
+# Generalized OPTIONS self-description check: GET /api/types (authed) → for every
+# registered type_id, an authed NON-preflight OPTIONS /api/objects/<type> must
+# self-describe with BOTH "context_view" AND "fields" in its body. One line per
+# type; any miss is a hard FAIL (a layer re-shadowing OPTIONS, or a type whose
+# OPTIONS handler regressed). Needs jq.
+http_get_auth "/api/types"
+if [ "$HTTP_CODE" = "200" ] && command -v jq >/dev/null 2>&1; then
+  TYPE_IDS="$(printf '%s' "$HTTP_BODY" | jq -r '.types[].type_id' 2>/dev/null || true)"
+  if [ -z "$TYPE_IDS" ]; then
+    bad "AC10  per-type OPTIONS loop — could not parse type_id list from GET /api/types"
+  else
+    for t in $TYPE_IDS; do
+      http_options_auth "/api/objects/$t"
+      if [ "$HTTP_CODE" = "200" ] \
+         && printf '%s' "$HTTP_BODY" | grep -q '"context_view"' \
+         && printf '%s' "$HTTP_BODY" | grep -q '"fields"'; then
+        ok "AC10  OPTIONS /api/objects/$t → body has context_view + fields"
+      else
+        bad "AC10  OPTIONS /api/objects/$t missing context_view/fields (code=$HTTP_CODE)"
+      fi
+    done
+  fi
+elif ! command -v jq >/dev/null 2>&1; then
+  bad "AC10  per-type OPTIONS loop — jq not installed (required for the contract probe)"
+else
+  bad "AC10  per-type OPTIONS loop — GET /api/types failed (code=$HTTP_CODE)"
 fi
 
 # ── AC3: sentinel static served by ServeDir (mounted AFTER /api/*) ───────────
