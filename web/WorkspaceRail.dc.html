@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+</helmet>
+<nav style="width:3.6rem; height:100%; flex:none; display:flex; flex-direction:column; align-items:center; gap:0.45rem; padding:0.6rem 0; border-right:1px solid var(--border); background:var(--surface-subtle); box-sizing:border-box">
+  <sc-for list="{{ workspaces }}" as="w" hint-placeholder-count="4">
+    <button onClick="{{ w.onClick }}" title="{{ w.name }}" style="position:relative; width:2.45rem; height:2.45rem; display:grid; place-items:center; border-radius:0.62rem; border:1px solid {{ w.border }}; background:{{ w.bg }}; color:{{ w.fg }}; cursor:pointer; font-family:var(--font-mono); font-size:0.66rem; font-weight:var(--weight-bold); letter-spacing:-0.03em">
+      <sc-if value="{{ w.active }}"><span style="position:absolute; left:-0.61rem; top:50%; transform:translateY(-50%); width:0.2rem; height:1.35rem; border-radius:999px; background:{{ w.accent }}"></span></sc-if>
+      {{ w.mark }}
+    </button>
+    <sc-if value="{{ w.divider }}"><span style="width:1.5rem; height:1px; background:var(--border); margin:0.1rem 0"></span></sc-if>
+  </sc-for>
+  <span style="flex:1"></span>
+  <button onClick="{{ onToggleTheme }}" title="{{ themeToggleTitle }}" style="width:2.1rem; height:2.1rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-muted); cursor:pointer">
+    <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ themeIcon }}" hint-size="0.95rem,0.95rem"></x-import>
+  </button>
+  <sc-if value="{{ hasConnectors }}">
+    <button onClick="{{ onConnectors }}" title="Connectors" style="width:2.1rem; height:2.1rem; display:grid; place-items:center; border:1px solid {{ connectorsBorder }}; border-radius:var(--radius-sm); background:{{ connectorsBg }}; color:{{ connectorsFg }}; cursor:pointer">
+      <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plug" hint-size="0.95rem,0.95rem"></x-import>
+    </button>
+  </sc-if>
+  <button onClick="{{ onSettings }}" title="Settings" style="width:2.1rem; height:2.1rem; display:grid; place-items:center; border:1px solid {{ settingsBorder }}; border-radius:var(--radius-sm); background:{{ settingsBg }}; color:{{ settingsFg }}; cursor:pointer">
+    <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="gear" hint-size="0.95rem,0.95rem"></x-import>
+  </button>
+  <button onClick="{{ onProfile }}" title="Profile" style="width:2.25rem; height:2.25rem; display:grid; place-items:center; border:2px solid {{ profileBorder }}; border-radius:999px; background:var(--surface-sunken); color:var(--text-muted); cursor:pointer; font-size:0.6rem; font-weight:var(--weight-bold)">{{ meInitials }}</button>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:58,&quot;height&quot;:520},&quot;workspaces&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{mark:string;name:string;accent:string;active?:boolean;onClick?:()=&gt;void}&gt;&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;activePage&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string|null&quot;},&quot;meInitials&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;JM&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const theme=this.props.theme||"light";
+    const ws=(this.props.workspaces||[]).map((w,i)=>({
+      mark:w.mark, name:w.name, accent:w.accent, active:!!w.active, onClick:w.onClick||(()=>{}),
+      bg: w.active?w.accent:"var(--surface)", fg: w.active?"#ffffff":w.accent, border: w.active?w.accent:"var(--border)",
+      divider: i===0
+    }));
+    const ap=this.props.activePage;
+    return {
+      workspaces:ws,
+      themeIcon: theme==="light"?"moon-stars":"brightness-high", themeToggleTitle:this.props.themeToggleTitle||"Theme", onToggleTheme:this.props.onToggleTheme||(()=>{}),
+      hasConnectors: !!this.props.onConnectors, onConnectors:this.props.onConnectors||(()=>{}),
+      connectorsBg: ap==="connectors"?"var(--accent-tint)":"var(--surface)", connectorsBorder: ap==="connectors"?"var(--accent)":"var(--border)", connectorsFg: ap==="connectors"?"var(--accent)":"var(--text-muted)",
+      settingsBg: ap==="settings"?"var(--accent-tint)":"var(--surface)", settingsBorder: ap==="settings"?"var(--accent)":"var(--border)", settingsFg: ap==="settings"?"var(--accent)":"var(--text-muted)", onSettings:this.props.onSettings||(()=>{}),
+      profileBorder: ap==="profile"?"var(--accent)":"var(--border)", onProfile:this.props.onProfile||(()=>{}),
+      meInitials:this.props.meInitials||"JM"
+    };
+  }
+}
+</script>
+</body>
+</html>

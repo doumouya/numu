@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+</helmet>
+<div style="width:100%; height:100%; overflow:auto; background:var(--surface)">
+  <table style="border-collapse:collapse; width:100%; font-family:var(--font-mono); font-size:0.68rem; font-variant-numeric:tabular-nums">
+    <thead>
+      <sc-if value="{{ d.hasGroups }}">
+        <tr>
+          <th style="position:sticky; left:0; top:0; z-index:3; background:var(--surface-sunken); border-bottom:1px solid var(--border); border-right:1px solid var(--border)"></th>
+          <sc-for list="{{ d.groups }}" as="g" hint-placeholder-count="3">
+            <th colSpan="{{ g.span }}" style="text-align:center; padding:0.25rem 0.45rem; background:var(--surface-sunken); border-bottom:1px solid var(--border); border-left:1px solid var(--border-subtle); color:var(--text); font-weight:var(--weight-semibold); white-space:nowrap">{{ g.label }}</th>
+          </sc-for>
+          <sc-if value="{{ d.totalInGroupRow }}"><th rowSpan="2" style="text-align:right; padding:0.25rem 0.5rem; background:var(--accent-tint); border-bottom:1px solid var(--border); border-left:1px solid var(--border); color:var(--accent); font-weight:var(--weight-bold); white-space:nowrap; vertical-align:bottom">{{ d.totalColLabel }}</th></sc-if>
+        </tr>
+      </sc-if>
+      <tr>
+        <th style="position:sticky; left:0; top:{{ d.headTop }}; z-index:3; text-align:left; padding:0.3rem 0.55rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-strong); border-right:1px solid var(--border); color:var(--text-muted); font-weight:var(--weight-semibold); text-transform:uppercase; letter-spacing:0.04em; font-size:0.6rem; white-space:nowrap">{{ d.rowDimLabel }}</th>
+        <sc-for list="{{ d.columns }}" as="c" hint-placeholder-count="4">
+          <th style="text-align:right; padding:0.3rem 0.55rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-strong); color:var(--text-muted); font-weight:var(--weight-semibold); white-space:nowrap">{{ c.label }}</th>
+        </sc-for>
+        <sc-if value="{{ d.totalInLeafRow }}"><th style="text-align:right; padding:0.3rem 0.55rem; background:var(--accent-tint); border-bottom:1px solid var(--border-strong); border-left:1px solid var(--border); color:var(--accent); font-weight:var(--weight-bold); white-space:nowrap">{{ d.totalColLabel }}</th></sc-if>
+      </tr>
+    </thead>
+    <tbody>
+      <sc-for list="{{ d.rows }}" as="r" hint-placeholder-count="8">
+        <tr style="background:{{ r.bg }}">
+          <td style="position:sticky; left:0; z-index:1; text-align:left; padding:0.26rem 0.55rem; background:{{ r.labelBg }}; border-right:1px solid var(--border); border-bottom:1px solid var(--border-subtle); color:var(--text); white-space:nowrap; max-width:14rem; overflow:hidden; text-overflow:ellipsis">{{ r.label }}</td>
+          <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="4">
+            <td style="text-align:right; padding:0.26rem 0.55rem; border-bottom:1px solid var(--border-subtle); color:{{ cell.color }}">{{ cell.display }}</td>
+          </sc-for>
+          <sc-if value="{{ d.showTotalCol }}"><td style="text-align:right; padding:0.26rem 0.55rem; border-bottom:1px solid var(--border-subtle); border-left:1px solid var(--border); background:var(--accent-tint); color:var(--accent); font-weight:var(--weight-semibold)">{{ r.total }}</td></sc-if>
+        </tr>
+      </sc-for>
+    </tbody>
+    <sc-if value="{{ d.showTotalRow }}">
+      <tfoot>
+        <tr>
+          <td style="position:sticky; left:0; z-index:1; text-align:left; padding:0.3rem 0.55rem; background:var(--surface-sunken); border-top:1px solid var(--border-strong); border-right:1px solid var(--border); color:var(--text); font-weight:var(--weight-bold); text-transform:uppercase; letter-spacing:0.04em; font-size:0.6rem">{{ d.totalRowLabel }}</td>
+          <sc-for list="{{ d.colTotals }}" as="t" hint-placeholder-count="4">
+            <td style="text-align:right; padding:0.3rem 0.55rem; background:var(--surface-sunken); border-top:1px solid var(--border-strong); color:var(--text); font-weight:var(--weight-semibold)">{{ t }}</td>
+          </sc-for>
+          <sc-if value="{{ d.showTotalCol }}"><td style="text-align:right; padding:0.3rem 0.55rem; background:var(--accent-tint); border-top:1px solid var(--border-strong); border-left:1px solid var(--border); color:var(--accent); font-weight:var(--weight-bold)">{{ d.grandTotal }}</td></sc-if>
+        </tr>
+      </tfoot>
+    </sc-if>
+  </table>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:560,&quot;height&quot;:340},&quot;model&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;PivotModel&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const m = this.props.model || {};
+    const rows = (m.rows || []).map((r, i) => ({
+      label: r.label,
+      total: r.total,
+      bg: i % 2 ? "var(--surface-subtle)" : "var(--surface)",
+      labelBg: i % 2 ? "var(--surface-subtle)" : "var(--surface)",
+      cells: (r.cells || []).map(c => ({ display: c.display, color: (c.display === "" ? "var(--text-subtle)" : "var(--text)") }))
+    }));
+    return {
+      d: {
+        rowDimLabel: m.rowDimLabel || "", hasGroups: !!m.hasGroups, groups: m.groups || [],
+        columns: m.columns || [], rows: rows,
+        headTop: m.hasGroups ? "1.55rem" : "0",
+        showTotalCol: !!m.showTotalCol, totalInGroupRow: !!m.totalInGroupRow, totalInLeafRow: !!m.totalInLeafRow,
+        showTotalRow: !!m.showTotalRow, colTotals: m.colTotals || [], grandTotal: m.grandTotal,
+        totalColLabel: m.totalColLabel || "Total", totalRowLabel: m.totalRowLabel || "Total"
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

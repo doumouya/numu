@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+</helmet>
+<sc-if value="{{ flush }}">
+  <aside style="width:24rem; flex:none; height:100%; min-height:0; border-left:1px solid var(--border); background:var(--surface); display:flex; flex-direction:column">{{ children }}</aside>
+</sc-if>
+<sc-if value="{{ padded }}">
+  <aside style="width:24rem; flex:none; height:100%; min-height:0; border-left:1px solid var(--border); background:var(--surface); overflow-y:auto; padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-3)">{{ children }}</aside>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:384,&quot;height&quot;:520},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;flush&quot;,&quot;options&quot;:[&quot;flush&quot;,&quot;padded&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const variant = this.props.variant || "flush";
+    return { flush: variant !== "padded", padded: variant === "padded", children: this.props.children };
+  }
+}
+</script>
+</body>
+</html>

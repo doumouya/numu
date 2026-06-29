@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/elevation.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+</helmet>
+<header style="display:flex; align-items:center; gap:0.6rem; padding:0 var(--space-3); height:3.25rem; border-bottom:1px solid var(--border); background:var(--surface); box-sizing:border-box">
+  <sc-if value="{{ onToggleRail }}">
+    <button onClick="{{ onToggleRail }}" title="Toggle sidebar" style="width:2rem; height:2rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="layout-sidebar" hint-size="0.9rem,0.9rem"></x-import></button>
+  </sc-if>
+  <sc-if value="{{ hasTabs }}">
+    <div style="display:inline-flex; align-items:center; gap:2px; padding:3px; background:var(--surface-subtle); border:1px solid var(--border); border-radius:var(--radius); flex:none">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.onClick }}" title="{{ t.title }}" aria-label="{{ t.title }}" style="width:2rem; height:1.7rem; display:grid; place-items:center; border:none; border-radius:var(--radius-sm); background:{{ t.bg }}; color:{{ t.color }}; box-shadow:{{ t.shadow }}; cursor:pointer">
+          <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ t.icon }}" hint-size="0.95rem,0.95rem"></x-import>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <button onClick="{{ onSearch }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem; height:2rem; padding:0 0.75rem; border:1px solid var(--border); border-radius:999px; background:var(--surface-subtle); color:var(--text-subtle); cursor:pointer; font:inherit" style-hover="border-color:var(--accent)">
+    <span style="display:inline-flex"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="terminal" hint-size="0.85rem,0.85rem"></x-import></span>
+    <span style="font-family:var(--font-mono); font-size:var(--text-sm); color:var(--accent); font-weight:var(--weight-semibold)">qir</span>
+    <span style="font-size:var(--text-sm); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0">{{ qirHint }}</span>
+    <span style="flex:1"></span>
+    <span style="font-family:var(--font-mono); font-size:0.62rem; border:1px solid var(--border); border-radius:4px; padding:0 0.3rem; color:var(--text-subtle); flex:none">⌘K</span>
+  </button>
+  <button onClick="{{ onInfo }}" title="qir commands" aria-label="qir command reference" style="width:2rem; height:2rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer; flex:none" style-hover="border-color:var(--accent); color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="info-circle" hint-size="0.9rem,0.9rem"></x-import></button>
+  <button onClick="{{ onNotif }}" title="Notifications" style="position:relative; width:2rem; height:2rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer; flex:none">
+    <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="bell" hint-size="0.9rem,0.9rem"></x-import>
+    <sc-if value="{{ hasNotif }}"><span style="position:absolute; top:0.25rem; right:0.3rem; width:0.42rem; height:0.42rem; border-radius:999px; background:var(--accent); border:1px solid var(--surface)"></span></sc-if>
+  </button>
+  <sc-if value="{{ hasPanelToggle }}">
+    <button onClick="{{ onTogglePanel }}" title="Toggle panel" aria-label="Toggle side panel" aria-pressed="{{ panelOpen }}" style="width:2rem; height:2rem; display:grid; place-items:center; border:1px solid {{ panelBtnBorder }}; border-radius:var(--radius-xs); background:{{ panelBtnBg }}; color:{{ panelBtnColor }}; cursor:pointer; flex:none" style-hover="border-color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="layout-sidebar-reverse" hint-size="0.9rem,0.9rem"></x-import></button>
+  </sc-if>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:56},&quot;tabs&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{icon:string;title?:string;active?:boolean;onClick?:()=&gt;void}&gt;&quot;},&quot;qirHint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;read · chart · clean · join&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;hasNotif&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onToggleRail&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onSearch&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onInfo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onNotif&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onTogglePanel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;panelOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const tabs = (this.props.tabs || []).map((t) => ({
+      icon: t.icon || "square", title: t.title || t.label || "", onClick: t.onClick || (() => {}),
+      bg: t.active ? "var(--surface)" : "transparent",
+      color: t.active ? "var(--accent)" : "var(--text-muted)",
+      shadow: t.active ? "var(--shadow-popover)" : "none"
+    }));
+    return {
+      tabs, hasTabs: tabs.length > 0,
+      onToggleRail: this.props.onToggleRail,
+      onSearch: this.props.onSearch || (() => {}),
+      qirHint: this.props.qirHint || "read · chart · clean · join",
+      onInfo: this.props.onInfo || (() => {}),
+      hasNotif: this.props.hasNotif !== false,
+      onNotif: this.props.onNotif || (() => {}),
+      hasPanelToggle: !!this.props.onTogglePanel,
+      onTogglePanel: this.props.onTogglePanel || (() => {}),
+      panelOpen: !!this.props.panelOpen,
+      panelBtnBg: this.props.panelOpen ? "var(--accent-tint)" : "var(--surface)",
+      panelBtnColor: this.props.panelOpen ? "var(--accent)" : "var(--text-muted)",
+      panelBtnBorder: this.props.panelOpen ? "var(--accent)" : "var(--border)"
+    };
+  }
+}
+</script>
+</body>
+</html>

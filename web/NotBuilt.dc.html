@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+</helmet>
+<div style="height:100%; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.85rem; padding:var(--space-6); text-align:center; box-sizing:border-box; color:var(--text-muted)">
+  <span style="width:3.6rem; height:3.6rem; border-radius:var(--radius); display:grid; place-items:center; background:var(--surface-subtle); border:1px solid var(--border); color:var(--text-subtle)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ icon }}" hint-size="1.5rem,1.5rem"></x-import></span>
+  <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:center">
+    <span style="font-size:var(--text-xl); font-weight:var(--weight-bold); color:var(--text); letter-spacing:-0.01em">{{ label }}</span>
+    <span style="font-family:var(--font-mono); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--warning); border:1px solid var(--warning); border-radius:999px; padding:0.1rem 0.6rem">{{ tag }}</span>
+  </div>
+  <p style="max-width:24rem; font-size:var(--text-md); line-height:1.6; margin:0">{{ note }}</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:360},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;This view&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tag&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Not built yet&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;note&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;This part of numu hasn't been built yet — it's on the roadmap.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;cone-striped&quot;,&quot;tsType&quot;:&quot;string&quot;}}"></script>
+</body>
+</html>
