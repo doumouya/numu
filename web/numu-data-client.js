@@ -249,6 +249,15 @@
       fully_null_rows: f.fully_null_rows || 0, size_bytes: f.size_bytes || 0, columns: clone(f.columns_meta || []) });
   };
   FixtureClient.prototype.run = function () { return Promise.reject(new Error("run: fixture stub — see R4")); };
+  // ── recordCheck: offline stand-in for POST /api/objects/case/:id/checks/:name (members.rs:35) ──
+  // (CASE 0019 console-cutover, AC20). Marks a close-check on the seeded case so the board archetype's
+  // close-gate can advance offline; live, the HttpClient POSTs to the checks route.
+  FixtureClient.prototype.recordCheck = function (caseId, name) {
+    var row = (ENTITIES.case || []).find(function (r) { return r.id === caseId; });
+    if (!row) return Promise.reject(new Error("not found " + caseId));
+    row.checks = row.checks || {}; row.checks[name] = true;
+    return delay({ case_id: caseId, name: name, ok: true });
+  };
   // ── search: offline stand-in for GET /api/search?q= → {query,results:[{entity_id,type,title,rank}]} ──
   // (CASE 0019 console-cutover, AC21). Scans the seeded ENTITIES for a substring match on the title-ish
   // fields and returns the live result shape so the TopBar can route via AC7's archetype dispatch.
@@ -357,6 +366,11 @@
   // POST /api/connectors/:id/run — the http_json connector run path (connectors.rs:23).
   // `args` is the run payload; returns the connector's run result envelope as-is.
   HttpClient.prototype.run = function (id, args) { return this._send("POST", "/api/connectors/" + id + "/run", args || {}); };
+  // POST /api/objects/case/:id/checks/:name — record a case close-check (members.rs:35).
+  // (CASE 0019 console-cutover, AC20). The body is empty; the route keys off the path segments.
+  HttpClient.prototype.recordCheck = function (caseId, name) {
+    return this._send("POST", "/api/objects/case/" + encodeURIComponent(caseId) + "/checks/" + encodeURIComponent(name), {});
+  };
   // GET /api/search?q=<term> → {query, results:[{entity_id,type,title,rank}]} (search.rs:78–85).
   // (CASE 0019 console-cutover, AC21). Surfaces the results array for TopBar → AC7 archetype routing.
   // An empty/blank q is NOT sent (the backend 400s on blank — search.rs:47); returns an empty result set.
@@ -382,7 +396,7 @@
     this.ready = fetch((base || "") + "/api/health", { credentials: "include" })
       .then(function (r) { self.live = r.ok; }).catch(function () { self.live = false; });
   }
-  ["types", "options", "list", "get", "create", "update", "feed", "conversations", "upload", "run", "search"].forEach(function (m) {
+  ["types", "options", "list", "get", "create", "update", "feed", "conversations", "upload", "run", "search", "recordCheck"].forEach(function (m) {
     AutoClient.prototype[m] = function () {
       var args = arguments, self = this;
       return this.ready.then(function () {

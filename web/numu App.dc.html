@@ -1278,6 +1278,163 @@
       </div>
     </div>
   </sc-if>
+
+  <!-- ===================== SEAM: LIVE ARCHETYPE CONTEXT PANEL (CASE 0019, Slice 6/7) =====================
+       AC7/AC8 — opening any entity dispatches on options.contextView across all 11 archetypes; an unknown
+       context_view falls back to `record`. AC11/AC12/AC13 — the SAME panel hosts the R1-style create/edit
+       form built from field metadata, saving via create()/update(...,_version) (If-Match). -->
+  <sc-if value="{{ ctxOpen }}">
+    <div onClick="{{ closeCtx }}" style="position:fixed; inset:0; z-index:58; background:rgba(2,6,23,0.5); display:flex; align-items:stretch; justify-content:flex-end">
+      <div onClick="{{ stopRow }}" style="width:min(30rem, 96vw); height:100%; display:flex; flex-direction:column; background:var(--surface-subtle); border-left:1px solid var(--border-strong); box-shadow:var(--shadow-popover); overflow:hidden">
+        <!-- header: title + archetype tag (AC8 — TopBar-style context_view tag) -->
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.65rem 0.85rem; border-bottom:1px solid var(--border); background:var(--surface)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ ctxTitle }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:var(--font-mono); font-size:0.58rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.35rem">{{ ctxArch }}</span>
+          <button onClick="{{ closeCtx }}" title="Close" style="width:1.7rem; height:1.7rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.78rem,0.78rem"></x-import></button>
+        </div>
+
+        <!-- VIEW: archetype dispatch -->
+        <sc-if value="{{ ctxView }}">
+          <div style="flex:1; overflow:auto">
+            <!-- record / thread archetype -->
+            <sc-if value="{{ archRecord }}">
+              <div style="padding:0.5rem 0.85rem; display:flex; flex-direction:column; gap:0.1rem">
+                <sc-for list="{{ recordFields }}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:baseline; gap:0.6rem; padding:0.32rem 0; border-bottom:1px solid var(--border-subtle)">
+                    <span style="width:6.5rem; flex:none; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+                    <sc-if value="{{ f.isStatus }}"><span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.35rem">{{ f.value }}</span></sc-if>
+                    <sc-if value="{{ f.isPlain }}"><span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); font-family:{{ f.font }}">{{ f.value }}</span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <!-- table archetype (file columns_meta) -->
+            <sc-if value="{{ archTable }}">
+              <table style="width:100%; border-collapse:collapse; font-size:var(--text-sm)">
+                <thead><tr><th style="text-align:left; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">column</th><th style="text-align:left; padding:0.3rem 0.5rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">type</th><th style="text-align:right; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">null</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ tableCols }}" as="c" hint-placeholder-count="5">
+                    <tr style="border-bottom:1px solid var(--border-subtle)"><td style="padding:0.28rem 0.85rem; font-family:var(--font-mono); color:var(--text)">{{ c.name }}</td><td style="padding:0.28rem 0.5rem; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-subtle)">{{ c.dtype }}</td><td style="padding:0.28rem 0.85rem; text-align:right; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted)">{{ c.nullPct }}</td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </sc-if>
+            <!-- chart archetype (Chart over spec.cats + chart_type) -->
+            <sc-if value="{{ archChart }}">
+              <div style="padding:0.7rem 0.85rem; height:15rem"><dc-import name="Chart" cats="{{ chartCats }}" type="{{ chartType }}" hint-size="100%,100%"></dc-import></div>
+            </sc-if>
+            <!-- dashboard archetype (grid of Chart minis, tile chart_ids resolved) -->
+            <sc-if value="{{ archDashboard }}">
+              <div style="padding:0.6rem 0.7rem; display:grid; grid-template-columns:1fr; gap:0.6rem">
+                <sc-for list="{{ dashTiles }}" as="tile" hint-placeholder-count="2">
+                  <div style="border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden">
+                    <div style="padding:0.3rem 0.55rem; border-bottom:1px solid var(--border-subtle); font-size:0.66rem; color:var(--text-muted); font-family:var(--font-mono)">{{ tile.title }}</div>
+                    <div style="height:9rem; padding:0.3rem"><dc-import name="Chart" cats="{{ tile.cats }}" type="{{ tile.type }}" hint-size="100%,100%"></dc-import></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <!-- media archetype (audio player) -->
+            <sc-if value="{{ archMedia }}">
+              <div style="padding:1rem 0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+                <div style="display:flex; align-items:center; gap:0.7rem">
+                  <div style="width:3.5rem; height:3.5rem; border-radius:var(--radius-sm); background:var(--accent-tint); border:1px solid var(--accent-border); display:grid; place-items:center; flex:none; color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="music-note-beamed" hint-size="1.4rem,1.4rem"></x-import></div>
+                  <div style="display:flex; flex-direction:column; min-width:0"><span style="font-weight:var(--weight-semibold)">{{ mediaTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ mediaArtist }} · {{ mediaDuration }}</span></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem">
+                  <span style="width:2.4rem; height:2.4rem; border-radius:999px; background:var(--accent); color:#fff; display:grid; place-items:center; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="play-fill" hint-size="1rem,1rem"></x-import></span>
+                  <div style="flex:1; height:0.35rem; border-radius:999px; background:var(--surface-sunken); overflow:hidden"><span style="display:block; width:34%; height:100%; background:var(--accent)"></span></div>
+                </div>
+              </div>
+            </sc-if>
+            <!-- collection archetype (cover + child list) -->
+            <sc-if value="{{ archCollection }}">
+              <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+                <div style="display:flex; gap:0.7rem; align-items:center">
+                  <div style="width:4.5rem; height:4.5rem; border-radius:var(--radius-sm); background:linear-gradient(135deg, var(--accent), var(--chart-5, #7c5cff)); flex:none"></div>
+                  <div style="display:flex; flex-direction:column"><span style="font-weight:var(--weight-semibold); font-size:var(--text-md)">{{ collTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ collCount }} items</span></div>
+                </div>
+                <div style="display:flex; flex-direction:column">
+                  <sc-for list="{{ collItems }}" as="it" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:0.6rem; padding:0.35rem 0.2rem; border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle); width:1.2rem">{{ it.n }}</span><span style="flex:1; font-size:var(--text-sm)">{{ it.title }}</span><span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle)">{{ it.duration }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <!-- calendar archetype -->
+            <sc-if value="{{ archCalendar }}">
+              <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.6rem">
+                <div style="display:flex; align-items:stretch; gap:0.7rem">
+                  <div style="width:3.2rem; flex:none; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; text-align:center"><div style="background:var(--accent); color:#fff; font-size:0.56rem; text-transform:uppercase; letter-spacing:0.05em; padding:0.15rem">{{ calMonth }}</div><div style="font-size:1.3rem; font-weight:var(--weight-bold); padding:0.2rem 0">{{ calDay }}</div></div>
+                  <div style="display:flex; flex-direction:column; justify-content:center"><span style="font-weight:var(--weight-semibold)">{{ calTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ calTime }} · {{ calLocation }}</span></div>
+                </div>
+              </div>
+            </sc-if>
+            <!-- board archetype (case status lanes + close-checks) -->
+            <sc-if value="{{ archBoard }}">
+              <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.6rem">
+                <div style="display:flex; align-items:center; gap:0.5rem"><span style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">status</span><span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.4rem">{{ boardStatus }}</span></div>
+                <div style="display:flex; gap:0.3rem">
+                  <sc-for list="{{ boardLane }}" as="s" hint-placeholder-count="4">
+                    <div style="flex:1; text-align:center; padding:0.3rem 0.1rem; border-radius:var(--radius-xs); background:{{ s.bg }}; color:{{ s.color }}; font-size:0.58rem; font-family:var(--font-mono)">{{ s.label }}</div>
+                  </sc-for>
+                </div>
+                <div style="font-size:var(--text-sm); color:var(--text-muted)">{{ boardTitle }}</div>
+                <!-- AC20 — the three close-checks (POST /api/objects/case/:id/checks/:name) + gated close -->
+                <div style="display:flex; flex-direction:column; gap:0.3rem; border-top:1px solid var(--border-subtle); padding-top:0.5rem">
+                  <span style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ boardCheckLabel }}</span>
+                  <sc-for list="{{ boardChecks }}" as="ck" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0">
+                      <button onClick="{{ ck.onRecord }}" disabled="{{ ck.disabled }}" style="width:1.3rem; height:1.3rem; flex:none; display:grid; place-items:center; border:{{ ck.dotBorder }}; border-radius:4px; background:{{ ck.dotBg }}; color:#fff; cursor:{{ ck.cursor }}; font-size:0.7rem">{{ ck.mark }}</button>
+                      <span style="flex:1; font-size:var(--text-sm); color:{{ ck.textColor }}">{{ ck.label }}</span>
+                    </div>
+                  </sc-for>
+                  <button onClick="{{ boardCloseAction }}" disabled="{{ boardCloseDisabled }}" style="margin-top:0.3rem; height:2.1rem; border:none; border-radius:var(--radius-xs); background:{{ boardCloseBg }}; color:{{ boardCloseColor }}; font-weight:var(--weight-semibold); cursor:{{ boardCloseCursor }}">{{ boardCloseLabel }}</button>
+                </div>
+              </div>
+            </sc-if>
+            <!-- preview archetype (post preview) -->
+            <sc-if value="{{ archPreview }}">
+              <div style="padding:0.85rem">
+                <div style="border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden">
+                  <div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.65rem; border-bottom:1px solid var(--border-subtle)"><span style="width:1.6rem; height:1.6rem; border-radius:999px; background:var(--accent-tint); flex:none"></span><span style="font-size:var(--text-sm); font-weight:var(--weight-semibold)">{{ prevHandle }}</span><span style="flex:1"></span><span style="font-family:var(--font-mono); font-size:0.56rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.3rem">{{ prevStatus }}</span></div>
+                  <div style="padding:0.7rem 0.65rem; font-size:var(--text-md); line-height:1.5">{{ prevBody }}</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <!-- AC11/AC12 — edit affordance (write-gated when offline, AC24) -->
+          <div style="flex:none; padding:0.55rem 0.85rem; border-top:1px solid var(--border); background:var(--surface); display:flex; gap:0.4rem">
+            <sc-if value="{{ ctxCanEdit }}">
+              <button onClick="{{ startCtxEdit }}" style="display:flex; align-items:center; gap:0.4rem; height:2rem; padding:0 0.8rem; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); border-radius:var(--radius-sm); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="pencil" hint-size="0.78rem,0.78rem"></x-import>{{ ctxEditLabel }}</button>
+            </sc-if>
+            <sc-if value="{{ ctxEditBlocked }}">
+              <span style="font-size:var(--text-xs); color:var(--text-subtle); display:flex; align-items:center; gap:0.35rem"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="lock-fill" hint-size="0.7rem,0.7rem"></x-import>{{ ctxReadOnlyLabel }}</span>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- CREATE / EDIT form (AC11 — built from field.kind; AC12 — save via create()/update If-Match) -->
+        <sc-if value="{{ ctxForm }}">
+          <div style="flex:1; overflow:auto; padding:0.7rem 0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+            <sc-for list="{{ formFields }}" as="f" hint-placeholder-count="4">
+              <label style="display:flex; flex-direction:column; gap:0.25rem">
+                <span style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+                <sc-if value="{{ f.isEnum }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Select" value="{{ f.value }}" options="{{ f.enumOptions }}" on-change="{{ f.onChange }}" hint-size="100%,2.1rem"></x-import></sc-if>
+                <sc-if value="{{ f.isBool }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Checkbox" checked="{{ f.checked }}" on-change="{{ f.onToggle }}" hint-size="auto,1.4rem">{{ f.label }}</x-import></sc-if>
+                <sc-if value="{{ f.isText }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Input" value="{{ f.value }}" type="{{ f.inputType }}" on-input="{{ f.onInput }}" hint-size="100%,2.1rem"></x-import></sc-if>
+              </label>
+            </sc-for>
+          </div>
+          <div style="flex:none; padding:0.55rem 0.85rem; border-top:1px solid var(--border); background:var(--surface); display:flex; gap:0.4rem">
+            <button onClick="{{ saveCtxForm }}" style="height:2rem; padding:0 1rem; border:none; border-radius:var(--radius-sm); background:var(--accent); color:#fff; font-weight:var(--weight-semibold); cursor:pointer">{{ ctxSaveLabel }}</button>
+            <button onClick="{{ cancelCtxForm }}" style="height:2rem; padding:0 0.8rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-muted); cursor:pointer; font:inherit; font-size:var(--text-sm)">{{ ctxCancelLabel }}</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;surfaceTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;slate&quot;,&quot;options&quot;:[&quot;slate&quot;,&quot;graphite&quot;,&quot;carbon&quot;,&quot;sandstone&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;startWorkspace&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;platform&quot;,&quot;options&quot;:[&quot;platform&quot;,&quot;studio&quot;,&quot;commerce&quot;,&quot;social&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;en&quot;,&quot;options&quot;:[&quot;en&quot;,&quot;fr&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;platformAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3f5573&quot;,&quot;options&quot;:[&quot;#3f5573&quot;,&quot;#46607f&quot;,&quot;#3a5a8c&quot;,&quot;#54627a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;studioAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#b13c5f&quot;,&quot;options&quot;:[&quot;#b13c5f&quot;,&quot;#a8466a&quot;,&quot;#9d3b6e&quot;,&quot;#c24a63&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;commerceAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#9a6518&quot;,&quot;options&quot;:[&quot;#9a6518&quot;,&quot;#a96f1e&quot;,&quot;#8a5a2a&quot;,&quot;#9c6b3a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;socialAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2a7d63&quot;,&quot;options&quot;:[&quot;#2a7d63&quot;,&quot;#2f8f5f&quot;,&quot;#1f7a72&quot;,&quot;#3a7d4f&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;secondaryAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5b6cb0&quot;,&quot;options&quot;:[&quot;#5b6cb0&quot;,&quot;#6d6fa3&quot;,&quot;#4f6f9c&quot;,&quot;#7a6cae&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;}}">
@@ -1292,7 +1449,12 @@ class Component extends DCLogic {
     connSel: null, connToggles: {}, flowOff: {},
     lang: null, railCollapsed: false, surfaceTone: null, naclInfoOpen: false, nacllang: null, naclCustom: null,
     // SEAM GRAFT (Slice 3): live data-plane state, sourced from the seam (not fixtures/localStorage).
-    live: null, convos: [], feedItems: [], lens: "all", seamError: null, conflict: null
+    live: null, convos: [], feedItems: [], lens: "all", seamError: null, conflict: null,
+    // SEAM GRAFT (Slice 6/7): the live archetype context panel + R1-style create/edit form.
+    // ctx = { type, options, entity, arch, title, dashTiles } resolved off options(type)+get(type,id);
+    // formMode = null|"create"|"edit"; formDraft is the in-progress record. Both render in ONE overlay
+    // that dispatches on options.contextView across the 11 archetypes (AC7/AC8) and on field.kind (AC11).
+    ctx: null, formMode: null, formDraft: null
   };
 
   // ===== SEAM GRAFT (CASE 0019 console-cutover, Slice 3) =======================
@@ -1328,6 +1490,194 @@ class Component extends DCLogic {
   // Normalize a rejected seam call into a visible, non-throwing error affordance (AC23).
   // 412/428 are routed to the conflict-reload UX (Slice 5) by the caller; this is the generic surface.
   seamErr(op, e) { return { op: op, message: (e && e.message) || String(e), at: Date.now() }; }
+
+  // ===== SEAM GRAFT (Slice 6): the live archetype context panel (AC7/AC8) =====
+  // Opening any entity resolves Promise.all([options(type), get(type,id)]) and renders the
+  // panel chosen by options.contextView across all 11 archetypes. Reuses R2's dispatch +
+  // titleOf; the dashboard archetype resolves spec.tiles[].chart_id → chart entities. An
+  // unknown context_view falls back to `record` (none renders blank). Every seam call has a
+  // .catch (AC23) — a rejection surfaces the error toast and leaves the panel closed.
+  titleOf(rec, opts) {
+    const tf = ((opts && opts.fields) || []).find((f) => f.options && f.options.role === "title");
+    return tf ? (rec[tf.field] || rec.id) : (rec.title || rec.filename || rec.id);
+  }
+  openEntity = (type, id) => {
+    if (!this.client) { this.setState({ seamError: this.seamErr("open " + type, new Error("no data client")) }); return; }
+    Promise.all([this.client.options(type), this.client.get(type, id)])
+      .then((res) => {
+        const options = res[0], entity = res[1];
+        const arch = (options && options.contextView) || "record";
+        const ctx = { type: type, id: id, options: options, entity: entity, arch: arch,
+          title: this.titleOf(entity, options), dashTiles: null };
+        this.setState({ ctx: ctx, formMode: null, formDraft: null });
+        // dashboard archetype: resolve tile chart_ids → chart entities (R2 :188–192).
+        if (arch === "dashboard" && entity && entity.spec && Array.isArray(entity.spec.tiles)) {
+          Promise.all(entity.spec.tiles.filter((t) => t && t.chart_id).map((t) => this.client.get("chart", t.chart_id)))
+            .then((charts) => { const c = this.state.ctx; if (c && c.id === id)
+              this.setState({ ctx: Object.assign({}, c, { dashTiles: charts.map((ch) => ({ title: ch.title, cats: (ch.spec && ch.spec.cats) || [], type: ch.chart_type })) }) }); })
+            .catch((e) => this.setState({ seamError: this.seamErr("dashboard tiles", e) }));
+        }
+      })
+      .catch((e) => this.setState({ seamError: this.seamErr("open " + type, e) }));
+  };
+  // AC8 — a feed artifact card opens the correct archetype: file/csv → table (its type), chart → chart.
+  // No new renderer: maps the feed item to (type,id) and defers to openEntity (AC7's dispatch).
+  openArtifact = (item) => {
+    if (!item) return;
+    const kind = item.kind, d = item.data || {};
+    let type = null;
+    if (kind === "file" || kind === "csv") type = "file";
+    else if (kind === "chart") type = "chart";
+    else if (kind === "dashboard") type = "dashboard";
+    else type = d.entity_type || kind;
+    const id = item.entity_id || item.ref_id || d.id || item.id;
+    if (!type || !id) { this.setState({ seamError: this.seamErr("open artifact", new Error("artifact has no entity to open")) }); return; }
+    this.openEntity(type, id);
+  };
+  closeCtx = () => this.setState({ ctx: null, formMode: null, formDraft: null });
+
+  // ===== SEAM GRAFT (Slice 7): R1-style create/edit forms from field metadata (AC11/AC12/AC13) =====
+  // editableFields() = options.fields.filter(editable). startCreate seeds options.default; the form
+  // dispatches per field.kind (enum→Select, bool→Checkbox, else Input, int→number). Save POSTs
+  // (create) or PATCHes with If-Match (update) via the seam; a 412/428 routes to the conflict UX.
+  editableFields(options) { return ((options && options.fields) || []).filter((f) => f.editable); }
+  startCreate = (type) => {
+    if (!this.client) { this.setState({ seamError: this.seamErr("create", new Error("no data client")) }); return; }
+    this.client.options(type).then((options) => {
+      const draft = {};
+      (options.fields || []).forEach((f) => { const def = f.options && f.options.default; if (def != null) draft[f.field] = def; });
+      this.setState({ ctx: { type: type, id: null, options: options, entity: null, arch: options.contextView || "record", title: null, dashTiles: null }, formMode: "create", formDraft: draft });
+    }).catch((e) => this.setState({ seamError: this.seamErr("create", e) }));
+  };
+  startCtxEdit = () => {
+    const c = this.state.ctx; if (!c || !c.entity) return;
+    this.setState({ formMode: "edit", formDraft: Object.assign({}, c.entity) });
+  };
+  cancelCtxForm = () => this.setState({ formMode: null, formDraft: null });
+  setFormField(field, v) { this.setState((s) => ({ formDraft: Object.assign({}, s.formDraft, { [field]: v }) })); }
+  saveCtxForm = () => {
+    const c = this.state.ctx, mode = this.state.formMode, draft = this.state.formDraft;
+    if (!c || !this.client) return;
+    if (!this.canWrite()) { this.setState({ seamError: this.seamErr("save", new Error("Offline — writes are disabled until the server is reachable.")) }); return; }
+    const p = mode === "create"
+      ? this.client.create(c.type, draft)
+      : this.client.update(c.type, c.entity.id, draft, c.entity._version);
+    p.then((row) => {
+      this.setState({ ctx: Object.assign({}, c, { id: row.id, entity: row, title: this.titleOf(row, c.options) }), formMode: null, formDraft: null });
+    }).catch((e) => {
+      if (mode === "edit" && this.handleConflict(c.type, c.entity.id, e)) return; // 412/428 → conflict-reload UX
+      this.setState({ seamError: this.seamErr("save", e) });
+    });
+  };
+
+  // ===== SEAM GRAFT (Slice 9): the live case board close-gate (AC20) =====
+  // Recording a check POSTs /api/objects/case/:id/checks/:name; the close transition fires only when
+  // all three pass (the cases_guard returns 422 otherwise — surfaced, not swallowed). 412/428 → conflict.
+  CASE_BOARD_CHECKS = ["root-cause-known", "repro-attached", "customer-updated"];
+  recordCtxCheck = (name) => {
+    const c = this.state.ctx; if (!c || !this.client || !this.client.recordCheck) return;
+    if (!this.canWrite()) { this.setState({ seamError: this.seamErr("check", new Error("Offline — recording checks is disabled until the server is reachable.")) }); return; }
+    // POST /api/objects/case/:id/checks/:name (members.rs:35) via the seam's recordCheck() method.
+    this.client.recordCheck(c.id, name)
+      .then(() => this.openEntity("case", c.id))
+      .catch((e) => this.setState({ seamError: this.seamErr("check " + name, e) }));
+  };
+  closeCtxCase = () => {
+    const c = this.state.ctx; if (!c || !this.client || !c.entity) return;
+    if (!this.canWrite()) { this.setState({ seamError: this.seamErr("close:case", new Error("Offline — close is disabled until the server is reachable.")) }); return; }
+    this.client.update("case", c.entity.id, { status: "done" }, c.entity._version)
+      .then((row) => this.setState({ ctx: Object.assign({}, c, { entity: row, title: this.titleOf(row, c.options) }) }))
+      .catch((e) => {
+        if (this.handleConflict("case", c.entity.id, e)) return;
+        this.setState({ seamError: this.seamErr("close:case", e) });
+      });
+  };
+
+  // ===== render-vals for the live archetype panel + form (Slice 6/7/9) =====
+  // Computes every template prop the ctx overlay reads, dispatching on ctx.arch (11 archetypes,
+  // unknown → record) and on ctx.options.fields for the form. Pure: reads state, no side effects.
+  MONTHS_SHORT = ["JAN","FÉV","MAR","AVR","MAI","JUN","JUL","AOÛ","SEP","OCT","NOV","DÉC"];
+  ctxVals() {
+    const c = this.state.ctx, mode = this.state.formMode, draft = this.state.formDraft;
+    if (!c) return { ctxOpen: false };
+    const o = c.options, sel = c.entity, arch = c.arch || "record";
+    const isForm = mode === "create" || mode === "edit";
+    const m = {
+      ctxOpen: true, closeCtx: this.closeCtx, stopRow: this.stopRow,
+      ctxTitle: isForm ? (mode === "create" ? ("New " + ((o && o.displayName) || c.type)) : ("Editing · " + (c.title || (sel && sel.id) || c.type))) : (c.title || (sel && sel.id) || c.type),
+      ctxArch: arch,
+      ctxView: !isForm && !!sel, ctxForm: isForm
+    };
+    // ----- VIEW: archetype dispatch (AC7) -----
+    if (!isForm && sel && o) {
+      m.archRecord = arch === "record" || arch === "thread";
+      m.archTable = arch === "table"; m.archChart = arch === "chart"; m.archDashboard = arch === "dashboard";
+      m.archMedia = arch === "media"; m.archCollection = arch === "collection"; m.archCalendar = arch === "calendar";
+      m.archBoard = arch === "board"; m.archPreview = arch === "preview";
+      // record / thread (and the fallback): every non-json field as a row.
+      if (m.archRecord) {
+        m.recordFields = (o.fields || []).filter((f) => f.kind !== "json").map((f) => {
+          const v = sel[f.field]; const isStatus = !!(f.options && f.options.role === "status");
+          return { label: f.label, value: v == null || v === "" ? "—" : String(v), isStatus: isStatus, isPlain: !isStatus,
+            font: f.kind === "int" || f.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit" };
+        });
+      }
+      if (m.archTable) m.tableCols = (sel.columns_meta || []).map((col) => ({ name: col.name, dtype: col.dtype || col.semantic_dtype || "—", nullPct: (col.null_pct || 0) + "%" }));
+      if (m.archChart) { m.chartCats = (sel.spec && sel.spec.cats) || []; m.chartType = sel.chart_type || (sel.spec && sel.spec.type) || "bar"; }
+      if (m.archDashboard) m.dashTiles = c.dashTiles || [];
+      if (m.archMedia) { m.mediaTitle = sel.title; m.mediaArtist = sel.artist || "—"; m.mediaDuration = sel.duration || ""; }
+      if (m.archCollection) { m.collTitle = sel.title; const tr = sel.tracks || []; m.collCount = tr.length; m.collItems = tr.map((t, i) => ({ n: i + 1, title: t.title, duration: t.duration || "" })); }
+      if (m.archCalendar) {
+        const dt = String(sel.starts_at || ""); const parts = dt.split(/[ \-]/);
+        m.calMonth = this.MONTHS_SHORT[(parseInt(parts[1], 10) || 1) - 1] || ""; m.calDay = parts[2] || ""; m.calTitle = sel.title; m.calTime = (dt.split(" ")[1] || ""); m.calLocation = sel.location || "";
+      }
+      if (m.archBoard) {
+        const lanes = ["backlog", "in_review", "blocked", "done"];
+        m.boardStatus = sel.status; m.boardTitle = sel.title;
+        m.boardLane = lanes.map((l) => ({ label: l, bg: l === sel.status ? "var(--accent)" : "var(--surface-sunken)", color: l === sel.status ? "#fff" : "var(--text-subtle)" }));
+        const met = sel.checks || {}; const total = this.CASE_BOARD_CHECKS.length;
+        const metCount = this.CASE_BOARD_CHECKS.filter((n) => met[n]).length;
+        const writable = this.canWrite();
+        m.boardCheckLabel = metCount + "/" + total + " close-checks";
+        m.boardChecks = this.CASE_BOARD_CHECKS.map((n) => ({ label: n, mark: met[n] ? "✓" : "",
+          dotBg: met[n] ? "var(--accent)" : "var(--surface)", dotBorder: met[n] ? "none" : "1px solid var(--border-strong)",
+          textColor: met[n] ? "var(--text)" : "var(--text-muted)",
+          disabled: !!met[n] || !writable, cursor: (met[n] || !writable) ? "default" : "pointer",
+          onRecord: () => this.recordCtxCheck(n) }));
+        const closed = sel.status === "done";
+        const closeReady = metCount === total && !closed && writable;
+        m.boardCloseDisabled = !closeReady; m.boardCloseAction = closeReady ? this.closeCtxCase : this.noop;
+        m.boardCloseLabel = closed ? "Closed" : (closeReady ? "Close case" : "Close · " + metCount + "/" + total + " checks");
+        m.boardCloseBg = closeReady ? "var(--accent)" : "var(--surface-sunken)";
+        m.boardCloseColor = closeReady ? "#fff" : "var(--text-subtle)";
+        m.boardCloseCursor = closeReady ? "pointer" : "not-allowed";
+      }
+      if (m.archPreview) { m.prevHandle = sel.platform || "post"; m.prevStatus = sel.status; m.prevBody = sel.body || ""; }
+      // edit affordance — gated when offline (AC24); no edit on the board (close-gate owns the case).
+      const editable = arch !== "board" && (o.fields || []).some((f) => f.editable);
+      const writable = this.canWrite();
+      m.ctxCanEdit = editable && writable; m.ctxEditBlocked = editable && !writable;
+      m.ctxEditLabel = "Edit"; m.ctxReadOnlyLabel = "Read-only — offline"; m.startCtxEdit = this.startCtxEdit;
+    }
+    // ----- CREATE / EDIT form (AC11) -----
+    if (isForm && o) {
+      m.formFields = this.editableFields(o).map((f) => {
+        const v = draft ? draft[f.field] : "";
+        const isEnum = f.kind === "enum", isBool = f.kind === "bool";
+        return { label: f.label, value: v == null ? "" : String(v),
+          isEnum: isEnum, isBool: isBool, isText: !isEnum && !isBool,
+          inputType: f.kind === "int" ? "number" : "text",
+          enumOptions: isEnum ? ((f.options && f.options.enum) || []).map((e) => ({ value: e, label: e })) : [],
+          checked: !!v,
+          onChange: (val) => this.setFormField(f.field, val && val.target ? val.target.value : val),
+          onInput: (e) => this.setFormField(f.field, e && e.target ? e.target.value : e),
+          onToggle: (e) => this.setFormField(f.field, e && e.target ? e.target.checked : !v) };
+      });
+      m.ctxSaveLabel = mode === "create" ? "Create" : "Save changes"; m.ctxCancelLabel = "Cancel";
+      m.saveCtxForm = this.saveCtxForm; m.cancelCtxForm = this.cancelCtxForm;
+    }
+    return m;
+  }
   // ============================================================================
 
   ORDER = ["platform", "studio", "commerce", "social"];
@@ -2156,8 +2506,56 @@ class Component extends DCLogic {
         checkIcon: on ? "check-square-fill" : "square", checkColor: on ? "var(--accent)" : "var(--text-subtle)" };
     });
   }
+  // SEAM GRAFT (Slice 6): map the seam feed items (client.feed → {id,kind,at,visibility,author,data})
+  // into renderable blocks via the ONE typed-message renderer (AC5). file/csv + chart cards carry an
+  // onOpen that opens the entity in its archetype (AC8 → openArtifact → openEntity → AC7's dispatch).
+  seamFeedBlocks() {
+    const items = this.state.feedItems || [];
+    return items.map((it, i) => {
+      const d = it.data || {}, kind = it.kind, audience = it.visibility === "internal" ? "operator" : "all";
+      const isOut = d.direction === "out";
+      const base = { id: it.id || ("feed-" + i), audience: audience, at: it.at, author: it.author };
+      if (kind === "message") {
+        const isNote = d.channel === "note", isEmail = d.channel === "email", isSms = d.channel === "sms";
+        return Object.assign(base, { kind: "message",
+          isEmail: isEmail, isNote: isNote, isSms: isSms,
+          isBubble: !isEmail && !isNote, isSent: isOut,
+          text: d.body || "", body: d.body || "", subject: d.subject || "", addr: d.addr || it.author,
+          channel: d.channel, label: isNote ? "note" : null,
+          align: isOut ? "flex-end" : "flex-start", itemsAlign: isOut ? "flex-end" : "flex-start",
+          bubbleBg: isOut ? "var(--accent-tint)" : "var(--surface-subtle)", bubbleBorder: isOut ? "var(--accent-border)" : "var(--border)" });
+      }
+      if (kind === "file" || kind === "csv") {
+        return Object.assign(base, { kind: "data", isData: true, isArtifact: true,
+          name: d.filename || d.name || "file.csv", cleanness: d.cleanness, encoding: d.encoding,
+          colsLabel: String(d.col_count != null ? d.col_count : (d.columns ? d.columns.length : 0)),
+          nullsLabel: String(d.fully_null_rows || 0), cols: [],
+          onOpen: () => this.openArtifact(it), cursor: "pointer" });
+      }
+      if (kind === "chart") {
+        return Object.assign(base, { kind: "chart", isChart: true, isArtifact: true,
+          nacl: d.title || "chart", cats: (d.spec && d.spec.cats) || [], chartType: d.chart_type || "bar",
+          onOpen: () => this.openArtifact(it), cursor: "pointer" });
+      }
+      if (kind === "dashboard") {
+        return Object.assign(base, { kind: "dashboard", isDashboard: true, isArtifact: true,
+          name: d.title || "dashboard", chartCount: (d.spec && d.spec.tiles ? d.spec.tiles.length : 0),
+          onOpen: () => this.openArtifact(it), cursor: "pointer" });
+      }
+      if (kind === "event") {
+        return Object.assign(base, { kind: "note", isNote: true, label: "event",
+          text: (d.event || "event") + (d.payload && d.payload.impact ? " · " + d.payload.impact : "") });
+      }
+      // unknown kind → a plain text block (AC5: no type renders blank).
+      return Object.assign(base, { kind: "text", isSent: false, isBubble: true, text: d.body || d.text || JSON.stringify(d),
+        align: "flex-start", itemsAlign: "flex-start", bubbleBg: "var(--surface-subtle)", bubbleBorder: "var(--border)" });
+    });
+  }
   feedBlocks(tenant) {
-    const seed = this.state.activeProject ? [] : this.messagesFor(tenant);
+    // For a live conversation, the timeline is the seam feed (server reach+visibility filtered) plus
+    // any session-local composer blocks; the lens is enforced server-side, so no client re-filter here.
+    const seamBase = this.state.activeProject ? this.seamFeedBlocks() : this.messagesFor(tenant);
+    const seed = seamBase;
     const all = seed.concat(this.state.added || []).map((b) => {
       if (b && b.isDecision) { const bad = b.code && String(b.code).indexOf("422") === 0;
         return Object.assign({}, b,
@@ -2182,7 +2580,7 @@ class Component extends DCLogic {
       onPick: () => this.setLens(o.id), bg: on ? "var(--accent)" : "var(--surface)", color: on ? "#fff" : "var(--text-muted)",
       fw: on ? "var(--weight-semibold)" : "var(--weight-medium)", divider: i === 0 ? "none" : "1px solid var(--border)" }; });
   }
-  feedRawCount(tenant) { return (this.state.activeProject ? [] : this.messagesFor(tenant)).length + (this.state.added || []).length; }
+  feedRawCount(tenant) { return (this.state.activeProject ? (this.state.feedItems || []) : this.messagesFor(tenant)).length + (this.state.added || []).length; }
   // AC9a \u2014 open:csv <name> \u2192 client.upload(file,project,tld) \u2192 POST /api/files (multipart) \u2192
   // UploadOutcome; push a file/csv block from the returned outcome. On failure push an
   // internal-note error block (.catch), never a silent throw. The DSL form names a source;
@@ -2466,7 +2864,7 @@ class Component extends DCLogic {
     const connScopes = this.SCOPES[connSel] || [];
     const connLog = dInfo.connected ? (this.KIND_LOG[dItem.kind] || []).map((t, i) => ({ text: t, time: [dInfo.sync || "just now", "14m ago", "1h ago"][i] })) : [];
 
-    return {
+    return Object.assign(this.ctxVals(), {
       setRoot: this.setRoot, noop: this.noop,
       screenLabel: T.name + " · " + page,
       tenantMark: T.mark, tenantName: T.name, tenantSub: T.sub, tenantShort: T.short,
@@ -2627,7 +3025,7 @@ class Component extends DCLogic {
       clientShow: isClient, clientWsLabel: isClient ? this.TENANTS[rec.clientKey].name : "", enterClient: isClient ? (() => this.setTenant(rec.clientKey)) : this.noop,
       progressShow: !!prog, progressLabel: prog ? prog.label : "", progressItems: prog ? prog.items.map((s) => ({ who: s.who, pct: s.pct, width: s.pct + "%" })) : [],
       listShow: !!list, listTitle: list ? list.title : "", listItems: list ? list.items : []
-    };
+    });
   }
 }
 </script>
