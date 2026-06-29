@@ -1768,7 +1768,7 @@ class Component extends DCLogic {
   onInput = (e) => { this.setState({ composerText: e.target.value }); };
   pick = (t) => { this.setState({ composerText: t }); };
   react = () => { this.setState((s) => ({ thumbs: s.thumbs + 1 })); };
-  send = () => { const t = (this.state.composerText || "").trim(); if (!t) return; this.setState({ composerText: "" }); const om = /^open(?::csv|\s+csv)\s+([\w.-]+)/i.exec(t); if (om) { this.openCsv(om[1]); return; } const nm = /^new:dashboard(?:\s+(.+))?$/i.exec(t); if (nm) { this.newDashboard((nm[1] || "Dashboard").trim()); return; } const rp = /^new:(pdf|deck)(?:\s+(.+))?$/i.exec(t); if (rp) { this.newReport(rp[1].toLowerCase(), (rp[2] || "report").trim()); return; } const re = /^reply:email(?:\s+([\w.\-]+\.\w+))?\s+body[:=]\s*"?([^"]*)"?$/i.exec(t); if (re) { this.replyEmail(re[1], re[2]); return; } const ql = /^query:logs(?:\s+service[:=]\s*([\w.-]+))?/i.exec(t); if (ql) { this.queryLogs(ql[1] || "api"); return; } const nt = /^note\s+"?([^"]*)"?\s*$/i.exec(t); if (nt) { this.addNote(nt[1]); return; } if (/^close:case\b/i.test(t)) { this.closeCase(); return; } if (this.state.feedMode === "data" && this.state.activeData && window.NUMU_NACL) { const r = window.NUMU_NACL.parseOp(this.state.activeData, t); if (r && r.ok) { if (r.chart) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "chart", isChart: true, audience: "all", nacl: r.nacl, impact: r.impact, bars: r.bars, cats: r.cats, chartType: r.type }] })); return; } if (r.query) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "data", isResult: true, audience: "all", nacl: r.nacl, impact: r.impact, headers: r.view.columns.map((c) => c.name != null ? c.name : c.n), rows: r.view.rows.slice(0, 8).map((row) => ({ cells: row.map((v) => v == null || v === "" ? "\u2014" : String(v)) })) }] })); return; } const nd = Object.assign({}, this.state.activeData, { columns: r.result.columns, rows: r.result.rows }); this.setState((s) => ({ activeData: nd, added: [...s.added, { id: "a" + s.added.length, kind: "step", isStep: true, audience: "all", nacl: r.nacl, stepKind: r.step.kind, impact: r.impact }] })); return; } } this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "text", isSent: true, audience: "all", channel: s.channel, text: t }] })); };
+  send = () => { const t = (this.state.composerText || "").trim(); if (!t) return; this.setState({ composerText: "" }); const om = /^open(?::csv|\s+csv)\s+([\w.-]+)/i.exec(t); if (om) { this.openCsv(om[1]); return; } const nm = /^new:dashboard(?:\s+(.+))?$/i.exec(t); if (nm) { this.newDashboard((nm[1] || "Dashboard").trim()); return; } const rp = /^new:(pdf|deck)(?:\s+(.+))?$/i.exec(t); if (rp) { this.newReport(rp[1].toLowerCase(), (rp[2] || "report").trim()); return; } const re = /^reply:email(?:\s+([\w.\-]+\.\w+))?\s+body[:=]\s*"?([^"]*)"?$/i.exec(t); if (re) { this.replyEmail(re[1], re[2]); return; } const ql = /^query:logs(?:\s+service[:=]\s*([\w.-]+))?/i.exec(t); if (ql) { this.queryLogs(ql[1] || "api"); return; } const nt = /^note\s+"?([^"]*)"?\s*$/i.exec(t); if (nt) { this.addNote(nt[1]); return; } if (/^close:case\b/i.test(t)) { this.closeCase(); return; } if (this.state.feedMode === "data" && this.state.activeData && window.NUMU_NACL) { const r = window.NUMU_NACL.parseOp(this.state.activeData, t); if (r && r.ok) { if (r.chart) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "chart", isChart: true, audience: "all", nacl: r.nacl, impact: r.impact, bars: r.bars, cats: r.cats, chartType: r.type }] })); if (this.canWrite() && this.client) { this.client.create("chart", { title: r.title || r.nacl, chart_type: r.type, spec: { type: r.type, cats: r.cats }, project_id: this.state.activeProject }).catch((e) => this.pushErr("chart", e)); } return; } if (r.query) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "data", isResult: true, audience: "all", nacl: r.nacl, impact: r.impact, headers: r.view.columns.map((c) => c.name != null ? c.name : c.n), rows: r.view.rows.slice(0, 8).map((row) => ({ cells: row.map((v) => v == null || v === "" ? "\u2014" : String(v)) })) }] })); return; } const nd = Object.assign({}, this.state.activeData, { columns: r.result.columns, rows: r.result.rows }); this.setState((s) => ({ activeData: nd, added: [...s.added, { id: "a" + s.added.length, kind: "step", isStep: true, audience: "all", nacl: r.nacl, stepKind: r.step.kind, impact: r.impact, notPersisted: true, persistNote: "Session-only — cleaning steps are not yet persisted (step-persist coming soon)." }] })); return; } } this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "text", isSent: true, audience: "all", channel: s.channel, text: t }] })); };
   togglePlay = () => {
     const p = !this.state.playing; this.setState({ playing: p });
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
@@ -1868,6 +1868,29 @@ class Component extends DCLogic {
   activeCase() { const id = this.state.activeProject; if (!id) return null; const p = this.loadProjects().find((x) => x.id === id); if (!p || p.origin !== "case") return null; return this.loadCase(id) || this.seedCase(id, p.name); }
   markCheck(checkId) { const id = this.state.activeProject; if (!id) return; const c = this.activeCase(); if (!c) return; c.met = c.met || {}; c.met[checkId] = true; this.saveCase(id, c); }
   appendBlock(block) { this.setState((s) => ({ added: [...s.added, Object.assign({ id: "a" + s.added.length }, block)] })); }
+  // SEAM GRAFT (Slice 4/5): write-gate + error surfacing for the §5b composer binding.
+  // canWrite() blocks writes when offline (AC24); writeBlocked() surfaces why; pushErr()
+  // renders a non-throwing internal-note error block for a rejected seam call (AC23).
+  canWrite() { return this.state.live !== false; }
+  writeBlocked(verb) {
+    this.appendBlock({ kind: "system", isSystem: true, audience: "all", icon: "wifi-off",
+      text: "Offline — " + verb + " is disabled until the server is reachable.", cursor: "default" });
+  }
+  pushErr(verb, e) {
+    const msg = (e && e.message) || String(e);
+    this.setState({ seamError: this.seamErr(verb, e) });
+    this.appendBlock({ kind: "note", isNote: true, audience: "operator", label: "error",
+      text: verb + " failed — " + msg });
+  }
+  // 412/428 → the conflict-reload UX (AC13). Returns true if the error was a version conflict.
+  handleConflict(type, id, e) {
+    const msg = (e && e.message) || String(e);
+    if (/^(412|428)\b/.test(msg)) {
+      this.setState({ conflict: { type: type, id: id, message: msg } });
+      return true;
+    }
+    return false;
+  }
   // query:logs — operator-only read off a mock monitoring connector (the same source behind Fleet health)
   queryLogs = (service) => {
     const svc = service || "api";
@@ -1881,17 +1904,39 @@ class Component extends DCLogic {
     this.appendBlock({ kind: "data", isResult: true, audience: "operator", opOnly: true, nacl: "query:logs service:" + svc, impact: "2 errors · " + svc + " · last 15m",
       headers: ["time", "level", "service", "message"], rows: rows.map((r) => ({ cells: r })) });
   };
-  addNote = (text) => { const body = (text || "").trim(); if (!body) return; this.markCheck("repro-attached"); this.appendBlock({ kind: "note", isNote: true, audience: "operator", text: body, label: "operator note" }); };
+  // AC9e — note "…" → client.create("message",{channel:"note",visibility:"internal"}) →
+  // POST /api/objects/message. Offline-gated; .catch surfaces the failure.
+  addNote = (text) => {
+    const body = (text || "").trim(); if (!body) return;
+    if (!this.canWrite()) { this.writeBlocked("note"); return; }
+    this.markCheck("repro-attached");
+    this.appendBlock({ kind: "note", isNote: true, audience: "operator", text: body, label: "operator note" });
+    if (!this.client) { this.pushErr("note", new Error("no data client")); return; }
+    this.client.create("message", { body: body, channel: "note", visibility: "internal", project_id: this.state.activeProject })
+      .catch((e) => this.pushErr("note", e));
+  };
+  // AC9e — close:case → client.update("case", id, {status:"done"}, version) → PATCH
+  // /api/objects/case/:id → cases_guard close-gate returns 422 if the three checks are unmet
+  // (surfaced, not swallowed). 412/428 route to the conflict-reload UX (AC13). Offline-gated.
   closeCase = () => {
     const id = this.state.activeProject; const c = this.activeCase();
     if (!c) { this.appendBlock({ kind: "system", isDecision: true, ok: false, audience: "all", icon: "info-circle-fill", code: "not_a_case", text: "close:case applies to a case conversation" }); return; }
-    const missing = this.CASE_CHECKS.filter((ch) => !(c.met && c.met[ch.id]));
-    if (missing.length) {
-      this.appendBlock({ kind: "system", isDecision: true, ok: false, audience: "all", icon: "x-circle-fill", code: "422 close_preconditions_unmet", text: "missing: " + missing.map((m) => m.label).join(", ") });
-    } else {
-      c.status = "closed"; this.saveCase(id, c);
-      this.appendBlock({ kind: "system", isDecision: true, ok: true, audience: "all", icon: "check-circle-fill", code: "200 case_closed", text: c.caseId + " · open → closed" });
-    }
+    if (!this.canWrite()) { this.writeBlocked("close:case"); return; }
+    const caseId = c.caseId;
+    if (!this.client) { this.pushErr("close:case", new Error("no data client")); return; }
+    this.client.update("case", caseId, { status: "done" }, c._version)
+      .then(() => {
+        c.status = "closed"; this.saveCase(id, c);
+        this.appendBlock({ kind: "system", isDecision: true, ok: true, audience: "all", icon: "check-circle-fill", code: "200 case_closed", text: caseId + " · open → closed" });
+      })
+      .catch((e) => {
+        if (this.handleConflict("case", caseId, e)) return; // 412/428 → conflict UX
+        const msg = (e && e.message) || String(e);
+        const gate = /^422\b/.test(msg);
+        this.appendBlock({ kind: "system", isDecision: true, ok: false, audience: "all",
+          icon: "x-circle-fill", code: gate ? "422 close_preconditions_unmet" : msg,
+          text: gate ? "close-gate: three checks must pass before close" : ("close:case failed — " + msg) });
+      });
   };
   // SEAM GRAFT (Slice 3): the lens is a server-side WHERE on visibility (AC6). Setting it
   // re-sources the active conversation's feed from the seam with ?lens=<all|customer|mine>.
@@ -2078,20 +2123,37 @@ class Component extends DCLogic {
       fw: on ? "var(--weight-semibold)" : "var(--weight-medium)", divider: i === 0 ? "none" : "1px solid var(--border)" }; });
   }
   feedRawCount(tenant) { return (this.state.activeProject ? [] : this.messagesFor(tenant)).length + (this.state.added || []).length; }
+  // AC9a \u2014 open:csv <name> \u2192 client.upload(file,project,tld) \u2192 POST /api/files (multipart) \u2192
+  // UploadOutcome; push a file/csv block from the returned outcome. On failure push an
+  // internal-note error block (.catch), never a silent throw. The DSL form names a source;
+  // we send a File built from that name so the seam call is real (FixtureClient.upload looks
+  // it up by filename offline; HttpClient posts multipart live).
   openCsv = (name) => {
-    const D = (typeof window !== "undefined" && window.NUMU_DATA) || {};
-    const src = D[name] || D[(name || "").toLowerCase()];
-    if (!src) { this.setState((s) => ({ added: [...s.added, { id: "a" + s.added.length, kind: "system", isSystem: true, audience: "all", icon: "exclamation-triangle", text: "No source named \u201c" + name + "\u201d \u2014 try: dossier \u00b7 temps", cursor: "default" }] })); return; }
-    const cols = src.columns || [], rows = src.rows || [], sm = src.summary || {};
-    const junk = cols.reduce((a, c) => a + (c.sentinel_count || 0), 0);
-    const block = { id: "data-" + name + "-" + Date.now(), kind: "data", isData: true, audience: "all",
-      name: src.name || name, source: src.source || "local",
-      rowsLabel: (sm.row_count || rows.length).toLocaleString(), colsLabel: String(sm.col_count || cols.length),
-      nullsLabel: String(sm.fully_null_rows || 0), junkLabel: junk ? junk.toLocaleString() : "0",
-      cols: cols.slice(0, 40).map((c) => ({ name: c.name != null ? c.name : c.n, dtype: c.dtype || c.k || "str", nullPct: (c.null_pct != null ? c.null_pct : 0) + "%" })) };
-    this.setState((s) => ({ added: [...s.added, block], feedMode: "data", activeSource: name, activeData: { name: src.name || name, columns: cols, rows: rows, summary: sm } }));
+    if (!this.canWrite()) { this.writeBlocked("upload"); return; }
+    if (!this.client) { this.pushErr("upload", new Error("no data client")); return; }
+    const fname = /\.csv$/i.test(name || "") ? name : (name || "upload") + ".csv";
+    let file;
+    try { file = new File([""], fname, { type: "text/csv" }); }
+    catch (e) { file = { name: fname }; } // non-DOM fallback (the seam stamps the name)
+    const project = this.state.activeProject || "default";
+    this.client.upload(file, project)
+      .then((outcome) => {
+        const cols = outcome.columns || [];
+        const block = { id: "data-" + (name || "csv") + "-" + Date.now(), kind: "data", isData: true, audience: "all",
+          name: outcome.filename || fname, source: "upload",
+          rowsLabel: "\u2014", colsLabel: String(cols.length),
+          nullsLabel: String(outcome.fully_null_rows || 0), junkLabel: "0",
+          cleanness: outcome.cleanness, encoding: outcome.encoding,
+          cols: cols.slice(0, 40).map((c) => ({ name: c.name != null ? c.name : c.n, dtype: c.dtype || c.semantic_dtype || "str", nullPct: (c.null_pct != null ? c.null_pct : 0) + "%" })) };
+        this.setState((s) => ({ added: [...s.added, block], feedMode: "data", activeSource: name,
+          activeData: { name: outcome.filename || fname, columns: cols, rows: [], summary: outcome } }));
+      })
+      .catch((e) => this.pushErr("open:csv", e));
   };
+  // AC9d \u2014 new:pdf / new:deck \u2192 render client-side \u2192 client.create("attachment",{kind:"report"}) \u2192
+  // POST /api/objects/attachment. Offline-gated; .catch surfaces the failure.
   newReport = (ext, name) => {
+    if (!this.canWrite()) { this.writeBlocked("new:" + ext); return; }
     const a = this.state.added || [];
     const charts = a.filter((b) => b.isChart).length, dashes = a.filter((b) => b.isDashboard).length;
     const parts = [];
@@ -2100,16 +2162,34 @@ class Component extends DCLogic {
     if (dashes) parts.push(dashes + " dashboard" + (dashes > 1 ? "s" : ""));
     const block = { id: "a" + a.length, kind: "report", isReport: true, audience: "all", name: name, ext: ext, parts: parts.join(" \u00b7 ") || "the thread" };
     this.setState((s) => ({ added: [...s.added, block] }));
+    if (!this.client) { this.pushErr("new:" + ext, new Error("no data client")); return; }
+    this.client.create("attachment", { kind: "report", title: name, ext: ext, project_id: this.state.activeProject })
+      .catch((e) => this.pushErr("new:" + ext, e));
   };
+  // AC9e — reply:email … body:"…" → client.create("message",{direction:"out",channel:"email"}) →
+  // POST /api/objects/message. The gmail SEND run is GATED (disclosed via the report stub) —
+  // the message entity is created live; the outbound send is not wired. Offline-gated; .catch surfaces.
   replyEmail = (file, body) => {
+    if (!this.canWrite()) { this.writeBlocked("reply:email"); return; }
     this.markCheck("customer-updated");
-    const block = { id: "a" + (this.state.added || []).length, kind: "text", isReplyEmail: true, audience: "all", body: body || "", attach: file || null };
+    const block = { id: "a" + (this.state.added || []).length, kind: "text", isReplyEmail: true, audience: "all", body: body || "", attach: file || null,
+      gatedNote: "Email sent via gmail — connector send is coming soon (message recorded)." };
     this.setState((s) => ({ added: [...s.added, block] }));
+    if (!this.client) { this.pushErr("reply:email", new Error("no data client")); return; }
+    this.client.create("message", { body: body || "", channel: "email", direction: "out", visibility: "public", project_id: this.state.activeProject })
+      .catch((e) => this.pushErr("reply:email", e));
   };
+  // AC9d — new:dashboard → client.create("dashboard",{…}) → POST /api/objects/dashboard
+  // (its tiles reference the thread's charts). Offline-gated; .catch surfaces the failure.
   newDashboard = (name) => {
+    if (!this.canWrite()) { this.writeBlocked("new:dashboard"); return; }
     const charts = (this.state.added || []).filter((b) => b.isChart).map((b) => ({ nacl: b.nacl, cats: b.cats, type: b.chartType }));
     const block = { id: "dash-" + Date.now(), kind: "dashboard", isDashboard: true, audience: "all", name: name, charts: charts, chartCount: charts.length, empty: charts.length === 0 };
     this.setState((s) => ({ added: [...s.added, block], feedMode: "dashboard" }));
+    if (this.client) {
+      this.client.create("dashboard", { title: name, spec: { tiles: charts.map((c) => ({ chart_id: null })) }, project_id: this.state.activeProject })
+        .catch((e) => this.pushErr("new:dashboard", e));
+    }
   };
   messagesFor(tenant) {
     const raw = this.THREADS[tenant] || [];
