@@ -314,10 +314,12 @@
   HttpClient.prototype.conversations = function () {
     // GET /api/objects/project envelope ⇒ the conversation projection [{id,title,origin,channel,status}] (G6).
     // title = data.title || data.name (live project's label field is `name`); channel = data.channel_group
-    // (undefined live — the UI falls back to the fixture default "Clients").
+    // || "Clients" (no channel_group field on the live project — fall back to the fixture default here, not
+    // in the UI). `var d = it.data || {}` guards a null `data` so a malformed item yields a sane row, not a throw.
     return this._get("/api/objects/project?origin=email,case,connector,manual").then(function (resp) {
       return (resp.items || []).map(function (it) {
-        return { id: it.id, title: it.data.title || it.data.name, origin: it.data.origin, channel: it.data.channel_group, status: it.data.status };
+        var d = it.data || {};
+        return { id: it.id, title: d.title || d.name, origin: d.origin, channel: d.channel_group || "Clients", status: d.status };
       });
     });
   };

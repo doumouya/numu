@@ -52,7 +52,8 @@ on the R3 Shell proof page; the `numu Console.dc.html` cutover is deferred.
 - **AC7 (G6 — conversations mapping)** `[JS-UNIT]`: `HttpClient.conversations()` maps the
   `/api/objects/project` envelope (`{items:[{id,type,data,version,etag}],…}`) to
   `[{id, title, origin, channel, status}]` where `title = data.title || data.name` (live project's label is
-  `name`), `origin = data.origin`, `channel = data.channel_group` (fallback if absent), `status = data.status`.
+  `name`), `origin = data.origin`, `channel = data.channel_group || "Clients"` (fixture default when absent),
+  `status = data.status`; a `data:null` item is guarded (`var d = it.data || {}`) so it yields a sane row.
   Verified against a recorded project-list fixture. NOTE: it must consume the SAME enveloped+flatten path as
   AC4/AC5, not a parallel one.
 
@@ -73,10 +74,10 @@ on the R3 Shell proof page; the `numu Console.dc.html` cutover is deferred.
 
 ### G1 — `TypeDef.context_view` (Rust, `crates/api/src/registry.rs`)
 - `TypeDef` (registry.rs:40-49) gains a field. The DB column is `type_definitions.context_view text`, added by
-  migration 0016 with a CHECK constraint over the 11-archetype census (`'none'` is the default for
-  no-archetype types; `'table'`, `'thread'`, etc. otherwise). Add:
+  migration 0016 with a CHECK constraint over the 11-archetype census (`'record'` is the default for
+  no-archetype types; `'table'`, `'thread'`, etc. otherwise — note `'none'` is NOT in the CHECK set). Add:
   ```rust
-  pub context_view: String,   // mirrors type_definitions.context_view (0016); 'none' default
+  pub context_view: String,   // mirrors type_definitions.context_view (0016); 'record' default
   ```
 - `TypeDefCache::load` SELECT (registry.rs:96-97) must add `context_view` to the column list and populate it
   (`context_view: r.try_get("context_view")?`).
@@ -173,13 +174,16 @@ on the R3 Shell proof page; the `numu Console.dc.html` cutover is deferred.
   `channel_group` field** on the live project — only the fixture has them.
 - **After:**
   ```jsonc
-  items.map(it => ({
-    id:      it.id,
-    title:   it.data.title || it.data.name,   // live: data.name (no title field)
-    origin:  it.data.origin,
-    channel: it.data.channel_group,           // undefined live; UI falls back to "Clients" (fixture default)
-    status:  it.data.status
-  }))
+  items.map(it => {
+    var d = it.data || {};                   // guard a null `data` (malformed item ⇒ sane row, not a throw)
+    return {
+      id:      it.id,
+      title:   d.title || d.name,             // live: data.name (no title field)
+      origin:  d.origin,
+      channel: d.channel_group || "Clients",  // no channel_group on the live project ⇒ fixture default "Clients"
+      status:  d.status
+    };
+  })
   ```
   Reuse the G4 flatten path where convenient, but the output is the conversation projection, not a flat row.
 

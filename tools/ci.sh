@@ -26,6 +26,11 @@ else gate build cargo build --locked; fi
 # ── tests ──
 gate test cargo test --locked
 
+# ── js shape tests: HttpClient response-shape maps (CASE 0013 AC4–AC8). Guarded — a box without node
+#    skips (NUMU_CI_STRICT turns the skip into a failure, like the other holes). ──
+if command -v node >/dev/null 2>&1; then gate "js shape tests" node web/tests/shapes.test.mjs
+else skip "js shape tests" "node not found"; fi
+
 # ── db smoke (conditional): migrations + seed apply and a real query runs; needs a live Postgres.
 #    Skips on a bare clone (keeps fresh-clone-green); NUMU_CI_STRICT makes it mandatory. ──
 if [ -n "${DATABASE_URL:-}" ]; then gate db cargo test --locked --features db-tests

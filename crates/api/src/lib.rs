@@ -129,7 +129,15 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         // Same-origin static frontend: only paths no `/api/*` + `/auth` + health route matched fall
         // through here, so the API always wins by construction (AC3). Serving the bundled frontend from
         // the binary makes the SameSite=Lax; HttpOnly session cookie work with zero CORS (see ADR 0002).
-        .fallback_service(tower_http::services::ServeDir::new(&cfg.web_dir))
+        // Boot-time guard: a missing/non-dir NUMU_WEB_DIR makes the static fallback silently 404 every
+        // asset — warn loudly here (subscriber is live by now) so an operator sees the misconfig at
+        // startup instead of debugging mystery 404s later.
+        .fallback_service({
+            if !cfg.web_dir.is_dir() {
+                tracing::warn!(web_dir = %cfg.web_dir.display(), "NUMU_WEB_DIR missing — static frontend will 404");
+            }
+            tower_http::services::ServeDir::new(&cfg.web_dir)
+        })
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(middleware::from_fn(request_id::request_id_layer))

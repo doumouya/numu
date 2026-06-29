@@ -45,7 +45,7 @@ pub struct TypeDef {
     pub scope_parents: Vec<String>,
     pub is_builtin: bool,
     pub method_policy: serde_json::Value,
-    pub context_view: String, // mirrors type_definitions.context_view (0016); 'none' default
+    pub context_view: String, // mirrors type_definitions.context_view (0016); 'record' default (0016)
     pub fields: Vec<FieldDef>,
 }
 
