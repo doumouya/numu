@@ -1,0 +1,79 @@
+/* ============================================================
+   Datacore — Chart palette
+   ------------------------------------------------------------
+   The one new foundation the echarts-dashboard product needs: a
+   categorical series palette. It is NOT a rainbow — it is anchored
+   on the brand blue accent and extended with harmonious, mutually
+   distinguishable hues (reusing the cyan/violet already used by
+   KindLabel for Int/Float). Light values are the 600-weight hues;
+   dark remaps to the 400/500 weights so series stay legible on the
+   slate-900 surface.
+
+   The Chart component reads these custom properties at runtime
+   (getComputedStyle) to build the ECharts theme, so charts always
+   track the active theme and any token overrides.
+
+   Series order is deliberate: 1 = accent (the default single series),
+   then cool → warm so adjacent categories never collide.
+   ============================================================ */
+
+:root {
+  --chart-1: #2563eb;  /* accent blue   */
+  --chart-2: #0891b2;  /* cyan-600      */
+  --chart-3: #7c3aed;  /* violet-600    */
+  --chart-4: #16a34a;  /* green-600     */
+  --chart-5: #d97706;  /* amber-600     */
+  --chart-6: #dc2626;  /* red-600       */
+  --chart-7: #db2777;  /* pink-600      */
+  --chart-8: #475569;  /* slate-600     */
+
+  /* structural chart tokens (axes, grid, tooltip) — alias the
+     semantic surface/line/text tokens so they flip with the theme */
+  --chart-axis:    var(--text-muted);   /* axis labels, legend text */
+  --chart-grid:    var(--border);       /* split / grid lines       */
+  --chart-track:   var(--surface-sunken); /* empty bar track / base */
+  --chart-tooltip-bg:     var(--surface-overlay);
+  --chart-tooltip-border: var(--border);
+  --chart-tooltip-text:   var(--text);
+
+  /* a single-hue sequential ramp (the accent), for one-measure
+     intensity encodings (heat, choropleth, gradients) */
+  --chart-seq-1: var(--blue-100);
+  --chart-seq-2: #93c5fd;
+  --chart-seq-3: var(--blue-500);
+  --chart-seq-4: var(--blue-700);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-1: #60a5fa;  /* blue-400  */
+    --chart-2: #22d3ee;  /* cyan-400  */
+    --chart-3: #a78bfa;  /* violet-400 */
+    --chart-4: #4ade80;  /* green-400 */
+    --chart-5: #fbbf24;  /* amber-400 */
+    --chart-6: #f87171;  /* red-400   */
+    --chart-7: #f472b6;  /* pink-400  */
+    --chart-8: #94a3b8;  /* slate-400 */
+
+    --chart-seq-1: #1e3a5f;
+    --chart-seq-2: #2563eb;
+    --chart-seq-3: #60a5fa;
+    --chart-seq-4: #bfdbfe;
+  }
+}
+
+[data-theme="dark"] {
+  --chart-1: #60a5fa;
+  --chart-2: #22d3ee;
+  --chart-3: #a78bfa;
+  --chart-4: #4ade80;
+  --chart-5: #fbbf24;
+  --chart-6: #f87171;
+  --chart-7: #f472b6;
+  --chart-8: #94a3b8;
+
+  --chart-seq-1: #1e3a5f;
+  --chart-seq-2: #2563eb;
+  --chart-seq-3: #60a5fa;
+  --chart-seq-4: #bfdbfe;
+}

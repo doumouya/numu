@@ -1,0 +1,20 @@
+/* ============================================================
+   Datacore Design System — global entry point
+   ------------------------------------------------------------
+   Consumers link THIS one file. It is an import manifest only —
+   no rules live here. Everything reachable from these imports
+   (tokens + base) ships to consumers; any @font-face in the
+   closure would declare webfonts (Datacore ships none by design —
+   it uses the platform's system UI + monospace fonts).
+
+   Order matters: colors → type → spacing → elevation define the
+   custom properties; base consumes them last.
+   ============================================================ */
+
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/elevation.css";
+@import "tokens/charts.css";
+@import "tokens/responsive.css";
+@import "tokens/base.css";

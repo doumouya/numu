@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/elevation.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="numu-data-client.js"></script>
+</helmet>
+<div ref="{{ setRoot }}" style="height:100vh; display:flex; flex-direction:column; background:var(--surface); color:var(--text); font:var(--font-body); overflow:hidden">
+
+  <!-- header -->
+  <div style="flex:none; display:flex; align-items:center; gap:0.6rem; height:3rem; padding:0 1rem; border-bottom:1px solid var(--border); background:var(--surface-subtle)">
+    <span style="width:0.9rem; height:0.9rem; border-radius:3px; background:var(--accent); flex:none"></span>
+    <span style="font-weight:var(--weight-semibold); letter-spacing:-0.01em">numu · R0 seam</span>
+    <span style="font-family:var(--font-mono); font-size:0.62rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem">{{ clientLabel }}</span>
+    <span style="flex:1"></span>
+    <span style="font-size:var(--text-sm); color:var(--text-muted)">list + record, entirely from the client seam</span>
+  </div>
+
+  <!-- type tabs -->
+  <div style="flex:none; display:flex; align-items:stretch; gap:0; border-bottom:1px solid var(--border); background:var(--surface)">
+    <sc-for list="{{ types }}" as="t" hint-placeholder-count="4">
+      <button onClick="{{ t.onPick }}" style="display:flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; border:none; border-bottom:2px solid {{ t.underline }}; background:none; color:{{ t.color }}; cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:{{ t.weight }}">
+        {{ t.label }}<span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:999px; padding:0 0.3rem">{{ t.prefix }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- body: list (center) + record (context panel) -->
+  <div style="flex:1; display:flex; min-height:0; overflow:hidden">
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border)">
+      <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.8rem; border-bottom:1px solid var(--border); background:var(--surface-subtle); font-family:var(--font-mono); font-size:0.66rem; color:var(--text-muted)">
+        <span>{{ rowCount }} {{ activeLabelLower }}</span><span style="color:var(--text-subtle)">·</span><span style="color:var(--text-subtle)">{{ activeType }}</span>
+      </div>
+      <div style="flex:1; overflow:auto">
+        <table style="width:100%; border-collapse:collapse; font-size:var(--text-sm)">
+          <thead>
+            <tr>
+              <sc-for list="{{ columns }}" as="c" hint-placeholder-count="4">
+                <th style="position:sticky; top:0; text-align:left; padding:0.35rem 0.7rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-strong); font-size:0.6rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-subtle); font-weight:var(--weight-semibold); white-space:nowrap">{{ c.label }}</th>
+              </sc-for>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+              <tr onClick="{{ r.onSelect }}" style="cursor:pointer; background:{{ r.bg }}; border-bottom:1px solid var(--border-subtle)">
+                <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="4">
+                  <td style="padding:0.35rem 0.7rem; white-space:nowrap; color:{{ cell.color }}; font-family:{{ cell.font }}">{{ cell.text }}</td>
+                </sc-for>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- record detail = the Context Panel shape -->
+    <div style="width:22rem; flex:none; display:flex; flex-direction:column; overflow:hidden; background:var(--surface-subtle)">
+      <sc-if value="{{ hasSelection }}">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ recordTitle }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ recordId }}</span>
+        </div>
+        <div style="flex:1; overflow:auto; padding:0.5rem 0.85rem; display:flex; flex-direction:column; gap:0.1rem">
+          <sc-for list="{{ recordFields }}" as="f" hint-placeholder-count="4">
+            <div style="display:flex; align-items:baseline; gap:0.6rem; padding:0.32rem 0; border-bottom:1px solid var(--border-subtle)">
+              <span style="width:7rem; flex:none; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+              <sc-if value="{{ f.isStatus }}"><span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.35rem">{{ f.value }}</span></sc-if>
+              <sc-if value="{{ f.isPlain }}"><span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); font-family:{{ f.font }}">{{ f.value }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none; padding:0.5rem 0.85rem; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:0.3rem">
+          <sc-for list="{{ verbs }}" as="v" hint-placeholder-count="3">
+            <span style="font-family:var(--font-mono); font-size:0.62rem; color:var(--text-muted); border:1px solid var(--border); border-radius:var(--radius-xs); padding:0.1rem 0.4rem">{{ v }}</span>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ noSelection }}">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem; text-align:center; font-size:var(--text-sm); color:var(--text-subtle)">Select a row — its record loads from the same client.</div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { types: [], activeType: null, options: null, rows: [], selected: null, mode: "fixture" };
+
+  componentDidMount() {
+    this.client = window.NUMU_CLIENT.makeClient(this.state.mode);
+    this.client.types().then((ts) => {
+      this.setState({ types: ts, activeType: ts[0] && ts[0].type });
+      if (ts[0]) this.loadType(ts[0].type);
+    });
+  }
+  loadType(type) {
+    Promise.all([this.client.options(type), this.client.list(type, {})]).then((res) => {
+      this.setState({ activeType: type, options: res[0], rows: res[1].rows, selected: null });
+    });
+  }
+  pick = (type) => { if (type !== this.state.activeType) this.loadType(type); };
+  select = (id) => { this.client.get(this.state.activeType, id).then((rec) => this.setState({ selected: rec })); };
+
+  colFields() { const o = this.state.options; return o ? o.fields.slice(0, 4) : []; }
+  roleOf(field) { const f = (this.state.options.fields || []).find((x) => x.field === field); return f && f.options && f.options.role; }
+
+  renderVals() {
+    const o = this.state.options;
+    const cols = this.colFields();
+    const types = (this.state.types || []).map((t) => ({
+      label: t.displayNamePlural, prefix: t.idPrefix, onPick: () => this.pick(t.type),
+      underline: t.type === this.state.activeType ? "var(--accent)" : "transparent",
+      color: t.type === this.state.activeType ? "var(--text)" : "var(--text-muted)",
+      weight: t.type === this.state.activeType ? "var(--weight-semibold)" : "var(--weight-medium)"
+    }));
+    const rows = (this.state.rows || []).map((r) => ({
+      onSelect: () => this.select(r.id),
+      bg: this.state.selected && this.state.selected.id === r.id ? "var(--accent-tint)" : "transparent",
+      cells: cols.map((c) => {
+        const v = r[c.field];
+        return { text: v == null || v === "" ? "—" : String(v),
+          color: c.options && c.options.role === "title" ? "var(--text)" : "var(--text-muted)",
+          font: c.kind === "int" || c.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit" };
+      })
+    }));
+    const sel = this.state.selected;
+    let recordFields = [], recordTitle = "", recordId = "";
+    if (sel && o) {
+      recordId = sel.id;
+      const titleField = o.fields.find((f) => f.options && f.options.role === "title");
+      recordTitle = titleField ? (sel[titleField.field] || sel.id) : sel.id;
+      recordFields = o.fields.map((f) => {
+        const isStatus = f.options && f.options.role === "status";
+        const v = sel[f.field];
+        return { label: f.label, value: v == null || v === "" ? "—" : String(v),
+          isStatus: !!isStatus, isPlain: !isStatus,
+          font: f.kind === "int" || f.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit" };
+      });
+    }
+    const activeMeta = (this.state.types || []).find((t) => t.type === this.state.activeType);
+    return {
+      setRoot: (el) => { this.rootEl = el; },
+      clientLabel: this.state.mode === "http" ? "HttpClient" : "FixtureClient",
+      types,
+      columns: cols.map((c) => ({ label: c.label })),
+      rows, rowCount: rows.length,
+      activeType: this.state.activeType || "",
+      activeLabelLower: activeMeta ? activeMeta.displayNamePlural.toLowerCase() : "rows",
+      hasSelection: !!sel, noSelection: !sel,
+      recordTitle, recordId, recordFields,
+      verbs: o ? o.verbs : []
+    };
+  }
+}
+</script>
+</body>
+</html>

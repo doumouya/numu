@@ -1,0 +1,74 @@
+/* ============================================================
+   Datacore — Responsive layer  (ported from web-kit)
+   ------------------------------------------------------------
+   The source products were calibrated to a 14-inch laptop and
+   shipped no responsive system. This layer adds web-kit's thesis:
+   device CLASS is judged by pointer / hover / SHORT-side, not
+   width alone — a landscape phone is wide-but-short and a narrow
+   desktop window is not a phone. Prefer fluid sizing (clamp/min/
+   max) and @container; reach for these media rules only when a
+   layout must truly change.
+
+   Scale (min-width, CSS px — also exported here as vars for JS
+   parity; @media can't read a var(), so each rule repeats the
+   literal and tags the token in a comment):
+     xs 360 · sm 480 · md 600 · lg 768 · xl 1024 · 2xl 1280
+     short ≤480 · tall ≥900
+   ============================================================ */
+
+:root {
+  --bp-xs: 360;   /* @kind other */
+  --bp-sm: 480;   /* @kind other */
+  --bp-md: 600;   /* @kind other */
+  --bp-lg: 768;   /* @kind other */
+  --bp-xl: 1024;  /* @kind other */
+  --bp-2xl: 1280; /* @kind other */
+  --bp-short: 480; /* @kind other */
+  --bp-tall: 900;  /* @kind other */
+}
+
+/* ── Touch devices: honour the WCAG ~44px target, regardless of width.
+   A coarse pointer means fingers; grow the control + tap-target tokens so
+   every component that reads them gets roomier without branching. */
+@media (pointer: coarse) {
+  :root {
+    --tap-min: 2.75rem;       /* ≥44px */
+    --control-h: 2.5rem;      /* roomier default control */
+    --control-h-sm: 2.25rem;  /* compact stays finger-friendly */
+  }
+}
+
+/* ── Landscape phone / short viewport: reclaim vertical chrome.
+   Catches e.g. 844×390 — desktop-ish width, phone-ish height. */
+@media (max-height: 480px) and (pointer: coarse) {
+  :root { --pad-section-y: 0.4rem; }
+}
+
+/* ── Reduced motion: the source has near-zero motion; make that a guarantee. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}
+
+/* ── Foldables (Viewport Segments API): keep a single pane off the hinge.
+   Progressive — ignored where unsupported. */
+@media (horizontal-viewport-segments: 2) {
+  .ds-pane { max-width: env(viewport-segment-width 0 0, 100%); }
+}
+
+/* ── Visibility + stack utilities (use sparingly; prefer fluid layout) ──── */
+.ds-hide-below-md { display: none !important; }
+@media (min-width: 600px) { .ds-hide-below-md { display: revert !important; } } /* --bp-md */
+
+.ds-show-below-md { display: revert !important; }
+@media (min-width: 600px) { .ds-show-below-md { display: none !important; } }   /* --bp-md */
+
+/* a row that collapses to a column on narrow widths. */
+.ds-stack-sm { display: flex; gap: var(--space-3); }
+@media (max-width: 599px) { .ds-stack-sm { flex-direction: column; } }          /* < --bp-md */
+
+/* ── Device-class hooks (stamped by a host script; see web-kit responsive.ts):
+   html[data-device="phone"|"tablet"|"desktop"] · [data-touch] · [data-short].
+   Components key behaviour off these where width alone misclassifies. */

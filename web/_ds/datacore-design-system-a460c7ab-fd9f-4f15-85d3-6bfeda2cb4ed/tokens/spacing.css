@@ -1,0 +1,71 @@
+/* ============================================================
+   Datacore — Spacing, sizing, radii, borders, focus, z-index
+   ------------------------------------------------------------
+   The source UI is DENSE: small rem paddings (0.2–0.75rem),
+   hairline 1px borders as the structural device, and modest
+   radii (inputs 0.3rem, buttons 0.4rem). Relative units only;
+   px is reserved for hairlines and the focus ring. Everything
+   here is calibrated to a 14-inch laptop as the primary target.
+   ============================================================ */
+
+:root {
+  /* --- spacing scale (0.25rem base step) --- */
+  --space-0:  0;
+  --space-px: 1px;
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* --- source-calibrated micro-paddings (the table & control rhythm) --- */
+  --pad-cell-y:    0.3rem;   /* td / th vertical   */
+  --pad-cell-x:    0.5rem;   /* td / th horizontal */
+  --pad-input-y:   0.2rem;   /* filter input       */
+  --pad-input-x:   0.3rem;
+  --pad-control-y: 0.4rem;   /* buttons / labels   */
+  --pad-control-x: 0.7rem;
+  --pad-section-x: 1rem;     /* header / toolbar gutter */
+  --pad-section-y: 0.75rem;
+
+  /* --- control sizing (generous hit targets per the brief) --- */
+  --control-h-sm: 1.75rem;   /* ~28px — compact (filter inputs) */
+  --control-h:    2.125rem;  /* ~34px — default */
+  --control-h-lg: 2.5rem;    /* ~40px — comfortable */
+  --tap-min:      2.25rem;   /* ~36px minimum interactive target */
+
+  /* --- radii (small; never pill except true pills) --- */
+  --radius-xs:   0.2rem;   /* hairline chips */
+  --radius-sm:   0.3rem;   /* inputs */
+  --radius:      0.4rem;   /* buttons, cards (default) */
+  --radius-lg:   0.5rem;   /* dialogs, larger panels */
+  --radius-full: 9999px;   /* avatars, status dots, true pills */
+
+  /* --- borders (THE structural device — flat, hairline-driven) --- */
+  --border-width:  1px;
+  --border-line:   var(--border-width) solid var(--border);
+  --border-strong-line: var(--border-width) solid var(--border-strong);
+
+  /* --- focus ring (visible, deliberate; from source: 2px accent, inset) --- */
+  --focus-width:  2px;
+  --focus-offset: -1px;
+  --focus-ring:   var(--focus-width) solid var(--focus);
+
+  /* --- layered surfaces / stacking --- */
+  --z-base:    0;    /* @kind other */
+  --z-sticky:  2;    /* @kind other */
+  --z-dropdown:50;   /* @kind other */
+  --z-popover: 60;   /* @kind other */
+  --z-dialog:  100;  /* @kind other */
+  --z-toast:   200;  /* @kind other */
+
+  /* --- layout maxima --- */
+  --container:     72rem;   /* 1152px content cap for marketing-ish views */
+  --measure:       42rem;   /* readable prose measure */
+  --sidebar-w:     15rem;   /* work-tracker side rail */
+}

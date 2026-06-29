@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/elevation.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="numu-data-client.js"></script>
+  <script src="numu-data.js"></script>
+  <script src="numu-nacl-engine.js"></script>
+  <style>
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:999px;background-clip:padding-box;border:3px solid transparent}
+    *::-webkit-scrollbar-track{background:transparent}
+  </style>
+</helmet>
+<div ref="{{ setRoot }}" style="height:100vh; display:flex; background:var(--surface); color:var(--text); font:var(--font-body); overflow:hidden">
+
+  <!-- OBJECTS PANEL -->
+  <sc-if value="{{ railOpen }}">
+  <div style="width:15rem; flex:none; display:flex; flex-direction:column; border-right:1px solid var(--border); background:var(--surface-subtle); overflow:hidden">
+    <div style="flex:none; display:flex; align-items:center; gap:0.5rem; height:3rem; padding:0 0.85rem; border-bottom:1px solid var(--border)">
+      <span style="width:0.85rem; height:0.85rem; border-radius:3px; background:var(--accent); flex:none"></span>
+      <span style="font-weight:var(--weight-semibold)">Projects</span>
+      <span style="flex:1"></span>
+      <span title="{{ connTitle }}" style="width:0.5rem; height:0.5rem; border-radius:999px; background:{{ connColor }}; flex:none"></span>
+      <button onClick="{{ toggleRail }}" title="Collapse panel" style="width:1.6rem; height:1.6rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="chevron-bar-left" hint-size="0.72rem,0.72rem"></x-import></button>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding:0.3rem 0.4rem">
+      <sc-for list="{{ channels }}" as="ch" hint-placeholder-count="2">
+        <div style="margin-top:0.5rem">
+          <div style="padding:0.2rem 0.5rem; font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ ch.name }}</div>
+          <sc-for list="{{ ch.items }}" as="c" hint-placeholder-count="2">
+            <div onClick="{{ c.onSelect }}" style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.5rem; border-radius:var(--radius-xs); background:{{ c.bg }}; cursor:pointer">
+              <span style="display:inline-flex; color:{{ c.iconColor }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ c.icon }}" hint-size="0.78rem,0.78rem"></x-import></span>
+              <span style="flex:1; min-width:0; font-size:var(--text-sm); font-weight:{{ c.weight }}; color:{{ c.color }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ c.title }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- FEED (center) -->
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden">
+    <div style="flex:none; display:flex; align-items:center; gap:0.7rem; height:3rem; padding:0 1rem; border-bottom:1px solid var(--border); background:var(--surface)">
+      <sc-if value="{{ railClosed }}"><button onClick="{{ toggleRail }}" title="Show projects" style="width:1.7rem; height:1.7rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="chevron-bar-right" hint-size="0.72rem,0.72rem"></x-import></button></sc-if>
+      <span style="font-weight:var(--weight-semibold); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ convTitle }}</span>
+      <span style="font-family:var(--font-mono); font-size:0.58rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.3rem">{{ convOrigin }}</span>
+      <span style="flex:1"></span>
+      <div style="display:inline-flex; gap:0; padding:2px; background:var(--surface-subtle); border:1px solid var(--border); border-radius:var(--radius-sm)">
+        <sc-for list="{{ lenses }}" as="l" hint-placeholder-count="3">
+          <button onClick="{{ l.onPick }}" style="padding:0.2rem 0.6rem; border:none; border-radius:var(--radius-xs); background:{{ l.bg }}; color:{{ l.color }}; cursor:pointer; font:inherit; font-size:0.72rem; font-weight:{{ l.weight }}">{{ l.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.7rem">
+      <sc-for list="{{ feed }}" as="b" hint-placeholder-count="5">
+        <!-- message -->
+        <sc-if value="{{ b.isMessage }}">
+          <div style="align-self:{{ b.align }}; max-width:30rem; display:flex; flex-direction:column; gap:0.2rem">
+            <div style="display:flex; align-items:center; gap:0.4rem"><span style="font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.3rem">{{ b.channel }}</span><span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ b.author }} · {{ b.at }}</span></div>
+            <div style="padding:0.5rem 0.7rem; border-radius:0.8rem; background:{{ b.bubbleBg }}; border:1px solid {{ b.bubbleBorder }}; color:var(--text); font-size:var(--text-md); line-height:1.5">{{ b.body }}</div>
+          </div>
+        </sc-if>
+        <!-- note (internal) -->
+        <sc-if value="{{ b.isNote }}">
+          <div style="align-self:flex-start; max-width:30rem; border:1px dashed var(--warning); background:var(--warning-tint); border-radius:var(--radius-sm); padding:0.45rem 0.7rem">
+            <div style="font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--warning); font-weight:var(--weight-bold); margin-bottom:0.2rem">internal note · {{ b.author }}</div>
+            <div style="font-size:var(--text-sm); color:var(--text)">{{ b.body }}</div>
+          </div>
+        </sc-if>
+        <!-- step -->
+        <sc-if value="{{ b.isStep }}">
+          <div style="align-self:flex-start; max-width:28rem; display:flex; align-items:center; gap:0.5rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); padding:0.4rem 0.7rem; font-family:var(--font-mono); font-size:var(--text-sm)"><span style="color:var(--text-subtle)">›</span><span style="color:var(--accent); font-weight:var(--weight-semibold)">{{ b.qir }}</span><span style="flex:1"></span><span style="font-size:0.66rem; color:var(--text-muted)">{{ b.impact }}</span></div>
+        </sc-if>
+        <!-- artifact (file / chart) — click to open in Context Panel -->
+        <sc-if value="{{ b.isArtifact }}">
+          <button onClick="{{ b.onOpen }}" style="align-self:flex-start; max-width:30rem; width:100%; display:flex; align-items:center; gap:0.6rem; border:1px solid {{ b.cardBorder }}; border-radius:var(--radius-sm); background:var(--surface); padding:0.55rem 0.7rem; cursor:pointer; font:inherit; text-align:left">
+            <span style="display:inline-flex; color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="{{ b.icon }}" hint-size="1rem,1rem"></x-import></span>
+            <span style="display:flex; flex-direction:column; min-width:0"><span style="font-size:var(--text-md); font-weight:var(--weight-semibold)">{{ b.title }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ b.meta }}</span></span>
+            <span style="flex:1"></span>
+            <span style="font-family:var(--font-mono); font-size:0.56rem; color:var(--text-subtle)">open ›</span>
+          </button>
+        </sc-if>
+        <!-- chart block (nacl-produced) -->
+        <sc-if value="{{ b.isChartBlock }}">
+          <div style="align-self:flex-start; max-width:32rem; width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden">
+            <div style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border-subtle); font-family:var(--font-mono); font-size:0.66rem; color:var(--accent)">{{ b.title }}</div>
+            <div style="height:13rem; padding:0.4rem"><dc-import name="Chart" cats="{{ b.cats }}" type="{{ b.chartType }}" hint-size="100%,100%"></dc-import></div>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+
+    <!-- nacl composer -->
+    <div style="flex:none; display:flex; align-items:flex-end; gap:0.5rem; padding:0.55rem 0.85rem; border-top:1px solid var(--border); background:var(--surface)">
+      <span style="font-family:var(--font-mono); color:var(--accent); font-weight:var(--weight-bold); font-size:var(--text-md); padding-bottom:0.4rem">nacl›</span>
+      <textarea ref="{{ composerRef }}" value="{{ composerText }}" onInput="{{ onCompose }}" onKeyDown="{{ onComposeKey }}" placeholder="{{ composerPlaceholder }}" spellcheck="false" rows="1" style="flex:1; min-width:0; min-height:2.2rem; max-height:11rem; resize:none; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-subtle); color:var(--text); font:inherit; font-family:var(--font-mono); font-size:var(--text-sm); line-height:1.5; padding:0.45rem 0.6rem"></textarea>
+      <sc-if value="{{ activeSourceLabel }}"><span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem; margin-bottom:0.45rem">{{ activeSourceLabel }}</span></sc-if>
+    </div>
+  </div>
+
+  <!-- CONTEXT PANEL — archetype registry (R2) -->
+  <sc-if value="{{ ctxOpen }}">
+    <div style="width:24rem; flex:none; display:flex; flex-direction:column; border-left:1px solid var(--border); background:var(--surface-subtle); overflow:hidden">
+      <div style="flex:none; display:flex; align-items:center; gap:0.5rem; height:3rem; padding:0 0.85rem; border-bottom:1px solid var(--border)">
+        <span style="font-weight:var(--weight-semibold); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ ctxTitle }}</span>
+        <span style="flex:1"></span>
+        <span style="font-family:var(--font-mono); font-size:0.56rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.3rem">{{ ctxArchetype }}</span>
+        <button onClick="{{ closeCtx }}" style="width:1.6rem; height:1.6rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.72rem,0.72rem"></x-import></button>
+      </div>
+      <div style="flex:1; overflow:auto">
+        <sc-if value="{{ ctxTable }}">
+          <table style="width:100%; border-collapse:collapse; font-size:var(--text-sm)"><thead><tr><th style="text-align:left; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.56rem; text-transform:uppercase; color:var(--text-subtle)">column</th><th style="text-align:left; padding:0.3rem 0.5rem; border-bottom:1px solid var(--border); font-size:0.56rem; text-transform:uppercase; color:var(--text-subtle)">type</th><th style="text-align:right; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.56rem; text-transform:uppercase; color:var(--text-subtle)">null</th></tr></thead><tbody><sc-for list="{{ ctxCols }}" as="c" hint-placeholder-count="5"><tr style="border-bottom:1px solid var(--border-subtle)"><td style="padding:0.28rem 0.85rem; font-family:var(--font-mono); color:var(--text)">{{ c.name }}</td><td style="padding:0.28rem 0.5rem; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-subtle)">{{ c.dtype }}</td><td style="padding:0.28rem 0.85rem; text-align:right; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted)">{{ c.nullPct }}</td></tr></sc-for></tbody></table>
+        </sc-if>
+        <sc-if value="{{ ctxChart }}">
+          <div style="padding:0.7rem 0.85rem; height:15rem"><dc-import name="Chart" cats="{{ ctxCats }}" type="{{ ctxChartType }}" hint-size="100%,100%"></dc-import></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:760}}">
+class Component extends DCLogic {
+  state = { convos: [], activeConv: null, convMeta: null, lens: "all", feed: [], ctx: null, composerText: "", added: [], activeData: null, live: null, railOpen: true };
+  composerRef = React.createRef();
+
+  componentDidMount() {
+    this.client = window.NUMU_CLIENT.makeClient("auto");
+    if (this.client.isLive) this.client.isLive().then((live) => this.setState({ live: !!live }));
+    this.client.conversations().then((cs) => {
+      this.setState({ convos: cs });
+      const first = cs.find((c) => c.id === "PRJ_3f21") || cs[0];
+      if (first) this.openConv(first);
+    });
+  }
+  openConv(c) { this.setState({ activeConv: c.id, convMeta: c, ctx: null, added: [], activeData: null }); this.loadFeed(c.id, this.state.lens); }
+  loadFeed(id, lens) { this.client.feed(id, { lens }).then((res) => this.setState({ feed: res.items || res.blocks || [] })); }
+  setLens = (lens) => { this.setState({ lens }); this.loadFeed(this.state.activeConv, lens); };
+  openArtifact = (ref) => {
+    Promise.all([this.client.options(ref.type), this.client.get(ref.type, ref.id)]).then((r) => {
+      this.setState({ ctx: { archetype: r[0].contextView, entity: r[1], options: r[0] } });
+    });
+  };
+  closeCtx = () => this.setState({ ctx: null });
+  toggleRail = () => this.setState((s) => ({ railOpen: !s.railOpen }));
+
+  onCompose = (e) => { const el = e.target; this.setState({ composerText: el.value }); if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 176) + "px"; } };
+  onComposeKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      this.runNacl((this.state.composerText || "").trim());
+      const el = this.composerRef.current; if (el) el.style.height = "auto";
+    }
+    // Shift+Enter falls through → textarea inserts a newline
+  };
+  runNacl = (line) => {
+    if (!line) return;
+    this.setState({ composerText: "" });
+    const om = /^open(?::csv|\s+csv)\s+([\w.-]+)/i.exec(line);
+    if (om) {
+      const D = (typeof window !== "undefined" && window.NUMU_DATA) || {};
+      const src = D[om[1]] || D[om[1].toLowerCase()];
+      // Real shape: the file block is driven by the UploadOutcome from the seam
+      // (cleanness/encoding/columns); the engine's rows come from the client data store.
+      this.client.upload(om[1]).then((out) => {
+        this.pushBlock({ kind: "file", visibility: "public", filename: out.filename,
+          cleanness: out.cleanness, col_count: (out.columns || []).length });
+      }).catch(() => {
+        this.pushBlock({ kind: "event", visibility: "internal", data: { payload: { qir: line, impact: "no source “" + om[1] + "”" } } });
+      });
+      if (src) {
+        const cols = src.columns || [], rows = src.rows || [], sm = src.summary || {};
+        this.setState((s) => ({ activeData: { name: om[1], columns: cols, rows: rows, summary: sm } }));
+      }
+      return;
+    }
+    const ad = this.state.activeData;
+    if (ad && window.NUMU_NACL) {
+      const r = window.NUMU_NACL.parseOp(ad, line);
+      if (r && r.ok) {
+        if (r.chart) { this.pushBlock({ kind: "chartblock", visibility: "public", title: r.qir, cats: r.cats || [], chartType: r.type || "bar" }); return; }
+        if (r.query) { this.pushBlock({ kind: "step", visibility: "internal", qir: r.qir, impact: r.impact }); return; }
+        const nd = Object.assign({}, ad, { columns: r.result.columns, rows: r.result.rows });
+        this.setState((s) => ({ activeData: nd }));
+        this.pushBlock({ kind: "step", visibility: "internal", qir: r.qir, impact: r.impact + " · " + r.step.kind });
+        return;
+      }
+    }
+    this.pushBlock({ kind: "message", direction: "out", visibility: "public", channel: "chat", author: "jordan", at: "now", body: line });
+  };
+  pushBlock(b) { this.setState((s) => ({ added: [...s.added, Object.assign({ id: "x" + s.added.length }, b)] })); }
+
+  renderVals() {
+    const cm = this.state.convMeta;
+    // group conversations by channel
+    const byCh = {};
+    (this.state.convos || []).forEach((c) => { (byCh[c.channel] = byCh[c.channel] || []).push(c); });
+    const ORIGIN_ICON = { email: "envelope", case: "kanban", manual: "chat-square-text", connector: "plug" };
+    const channels = Object.keys(byCh).map((name) => ({
+      name, items: byCh[name].map((c) => ({
+        title: c.title, icon: ORIGIN_ICON[c.origin] || "chat-square-text",
+        onSelect: () => this.openConv(c),
+        bg: c.id === this.state.activeConv ? "var(--accent-tint)" : "transparent",
+        color: c.id === this.state.activeConv ? "var(--accent)" : "var(--text)",
+        iconColor: c.id === this.state.activeConv ? "var(--accent)" : "var(--text-subtle)",
+        weight: c.id === this.state.activeConv ? "var(--weight-semibold)" : "var(--weight-medium)"
+      }))
+    }));
+    const lenses = [["all", "Everything"], ["customer", "Customer"], ["mine", "My work"]].map((l) => ({
+      label: l[1], onPick: () => this.setLens(l[0]),
+      bg: this.state.lens === l[0] ? "var(--surface)" : "transparent",
+      color: this.state.lens === l[0] ? "var(--accent)" : "var(--text-muted)",
+      weight: this.state.lens === l[0] ? "var(--weight-semibold)" : "var(--weight-medium)"
+    }));
+    const feed = (this.state.feed || []).concat(this.state.added || []).map((raw) => {
+      // real feed item: {id, kind, at, visibility, author, data:{…}}. Flatten data for the template,
+      // and derive the render variant: a NOTE is a message with data.channel='note'; a STEP is an event.
+      const d = raw.data || raw;
+      const isEvent = raw.kind === "event";
+      const isNote = raw.kind === "message" && d.channel === "note";
+      const isMsg = raw.kind === "message" && !isNote;
+      const out = d.direction === "out";
+      const evPayload = (d.payload) || {};
+      return {
+        id: raw.id, kind: raw.kind, at: raw.at, author: raw.author, visibility: raw.visibility,
+        isMessage: isMsg, isNote: isNote, isStep: isEvent,
+        isArtifact: raw.kind === "file" || raw.kind === "chart",
+        channel: d.channel, body: d.body,
+        qir: evPayload.qir || d.qir, impact: evPayload.impact || d.impact,
+        title: d.title || d.filename || raw.id,
+        meta: raw.kind === "file" ? ((d.col_count != null ? d.col_count + " cols" : "") + (d.cleanness != null ? " · cleanness " + d.cleanness : "")) : "",
+        align: out ? "flex-end" : "flex-start",
+        bubbleBg: out ? "var(--accent-tint)" : "var(--surface-subtle)",
+        bubbleBorder: out ? "var(--accent-border)" : "var(--border)",
+        icon: raw.kind === "file" ? "filetype-csv" : "bar-chart",
+        cardBorder: "var(--border)",
+        onOpen: (raw.kind === "file" || raw.kind === "chart") ? () => this.openArtifact({ type: raw.kind, id: raw.id }) : null
+      };
+    });
+    const ctx = this.state.ctx;
+    let ctxCols = [], ctxCats = [], ctxChartType = "bar";
+    if (ctx) {
+      if (ctx.archetype === "table") ctxCols = (ctx.entity.columns_meta || []).map((c) => ({ name: c.name, dtype: (c.semantic_dtype && c.semantic_dtype !== c.dtype) ? (c.dtype + " → " + c.semantic_dtype) : c.dtype, nullPct: (c.null_pct || 0) + "%" }));
+      if (ctx.archetype === "chart") { ctxCats = (ctx.entity.spec && ctx.entity.spec.cats) || []; ctxChartType = ctx.entity.chart_type || "bar"; }
+    }
+    return {
+      setRoot: (el) => { this.rootEl = el; },
+      channels, lenses, feed,
+      railOpen: this.state.railOpen !== false, railClosed: this.state.railOpen === false, toggleRail: this.toggleRail,
+      connColor: this.state.live ? "var(--success)" : "var(--text-subtle)",
+      connTitle: this.state.live ? "live · HttpClient" : "offline · FixtureClient (fallback)",
+      composerText: this.state.composerText, onCompose: this.onCompose, onComposeKey: this.onComposeKey, composerRef: this.composerRef,
+      composerPlaceholder: "open:csv dossier · clean · chart bar count by Formule",
+      activeSourceLabel: this.state.activeData ? this.state.activeData.name : null,
+      convTitle: cm ? cm.title : "—", convOrigin: cm ? cm.origin : "",
+      ctxOpen: !!ctx, ctxArchetype: ctx ? ctx.archetype : "",
+      ctxTitle: ctx ? (ctx.entity.title || ctx.entity.filename || ctx.entity.id) : "",
+      ctxTable: ctx && ctx.archetype === "table", ctxChart: ctx && ctx.archetype === "chart",
+      ctxCols, ctxCats, ctxChartType, closeCtx: this.closeCtx
+    };
+  }
+}
+</script>
+</body>
+</html>

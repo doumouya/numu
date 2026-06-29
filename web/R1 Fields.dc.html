@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/elevation.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/styles.css">
+  <script src="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/_ds_bundle.js"></script>
+  <script src="numu-data-client.js"></script>
+</helmet>
+<div ref="{{ setRoot }}" style="height:100vh; display:flex; flex-direction:column; background:var(--surface); color:var(--text); font:var(--font-body); overflow:hidden">
+
+  <div style="flex:none; display:flex; align-items:center; gap:0.6rem; height:3rem; padding:0 1rem; border-bottom:1px solid var(--border); background:var(--surface-subtle)">
+    <span style="width:0.9rem; height:0.9rem; border-radius:3px; background:var(--accent); flex:none"></span>
+    <span style="font-weight:var(--weight-semibold); letter-spacing:-0.01em">numu · R1 field layer</span>
+    <span style="font-family:var(--font-mono); font-size:0.62rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem">{{ clientLabel }}</span>
+    <span style="flex:1"></span>
+    <span style="font-size:var(--text-sm); color:var(--text-muted)">list · record · form — all from field metadata, no per-type code</span>
+  </div>
+
+  <div style="flex:none; display:flex; align-items:stretch; border-bottom:1px solid var(--border); background:var(--surface)">
+    <sc-for list="{{ types }}" as="t" hint-placeholder-count="4">
+      <button onClick="{{ t.onPick }}" style="display:flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; border:none; border-bottom:2px solid {{ t.underline }}; background:none; color:{{ t.color }}; cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:{{ t.weight }}">{{ t.label }}<span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:999px; padding:0 0.3rem">{{ t.prefix }}</span></button>
+    </sc-for>
+    <span style="flex:1"></span>
+    <div style="display:flex; align-items:center; padding:0 0.6rem"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Button" leading-icon="plus-lg" variant="secondary" on-click="{{ startCreate }}" hint-size="auto,2rem">New {{ activeSingular }}</x-import></div>
+  </div>
+
+  <div style="flex:1; display:flex; min-height:0; overflow:hidden">
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border)">
+      <div style="flex:none; padding:0.4rem 0.8rem; border-bottom:1px solid var(--border); background:var(--surface-subtle); font-family:var(--font-mono); font-size:0.66rem; color:var(--text-muted)">{{ rowCount }} {{ activeLabelLower }}</div>
+      <div style="flex:1; overflow:auto">
+        <table style="width:100%; border-collapse:collapse; font-size:var(--text-sm)">
+          <thead><tr><sc-for list="{{ columns }}" as="c" hint-placeholder-count="4"><th style="position:sticky; top:0; text-align:left; padding:0.35rem 0.7rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-strong); font-size:0.6rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-subtle); font-weight:var(--weight-semibold); white-space:nowrap">{{ c.label }}</th></sc-for></tr></thead>
+          <tbody>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+              <tr onClick="{{ r.onSelect }}" style="cursor:pointer; background:{{ r.bg }}; border-bottom:1px solid var(--border-subtle)"><sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="4"><td style="padding:0.35rem 0.7rem; white-space:nowrap; color:{{ cell.color }}; font-family:{{ cell.font }}">{{ cell.text }}</td></sc-for></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="width:23rem; flex:none; display:flex; flex-direction:column; overflow:hidden; background:var(--surface-subtle)">
+      <sc-if value="{{ panelOpen }}">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ panelTitle }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ panelMeta }}</span>
+        </div>
+
+        <!-- VIEW mode -->
+        <sc-if value="{{ isView }}">
+          <div style="flex:1; overflow:auto; padding:0.5rem 0.85rem; display:flex; flex-direction:column; gap:0.1rem">
+            <sc-for list="{{ recordFields }}" as="f" hint-placeholder-count="4">
+              <div style="display:flex; align-items:baseline; gap:0.6rem; padding:0.32rem 0; border-bottom:1px solid var(--border-subtle)">
+                <span style="width:7rem; flex:none; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+                <sc-if value="{{ f.isStatus }}"><span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.35rem">{{ f.value }}</span></sc-if>
+                <sc-if value="{{ f.isPlain }}"><span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); font-family:{{ f.font }}">{{ f.value }}</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:none; padding:0.55rem 0.85rem; border-top:1px solid var(--border); display:flex; gap:0.4rem">
+            <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Button" leading-icon="pencil" variant="secondary" on-click="{{ startEdit }}" hint-size="auto,2rem">Edit</x-import>
+          </div>
+        </sc-if>
+
+        <!-- EDIT / CREATE form -->
+        <sc-if value="{{ isForm }}">
+          <div style="flex:1; overflow:auto; padding:0.7rem 0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+            <sc-for list="{{ formFields }}" as="f" hint-placeholder-count="4">
+              <label style="display:flex; flex-direction:column; gap:0.25rem">
+                <span style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+                <sc-if value="{{ f.isEnum }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Select" value="{{ f.value }}" options="{{ f.enumOptions }}" on-change="{{ f.onChange }}" hint-size="100%,2.1rem"></x-import></sc-if>
+                <sc-if value="{{ f.isBool }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Checkbox" checked="{{ f.checked }}" on-change="{{ f.onToggle }}" hint-size="auto,1.4rem">{{ f.label }}</x-import></sc-if>
+                <sc-if value="{{ f.isText }}"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Input" value="{{ f.value }}" type="{{ f.inputType }}" on-input="{{ f.onInput }}" hint-size="100%,2.1rem"></x-import></sc-if>
+              </label>
+            </sc-for>
+          </div>
+          <div style="flex:none; padding:0.55rem 0.85rem; border-top:1px solid var(--border); display:flex; gap:0.4rem">
+            <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Button" variant="primary" on-click="{{ save }}" hint-size="auto,2rem">{{ saveLabel }}</x-import>
+            <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Button" variant="ghost" on-click="{{ cancel }}" hint-size="auto,2rem">Cancel</x-import>
+          </div>
+        </sc-if>
+      </sc-if>
+      <sc-if value="{{ panelClosed }}">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem; text-align:center; font-size:var(--text-sm); color:var(--text-subtle)">Select a row to view its record, or create a new one — both render from the same field metadata.</div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { types: [], activeType: null, options: null, rows: [], selected: null, mode: "view", draft: null, client: "fixture" };
+
+  componentDidMount() {
+    this.client = window.NUMU_CLIENT.makeClient(this.state.client);
+    this.client.types().then((ts) => { this.setState({ types: ts }); if (ts[0]) this.loadType(ts[0].type); });
+  }
+  loadType(type) {
+    Promise.all([this.client.options(type), this.client.list(type, {})]).then((res) => {
+      this.setState({ activeType: type, options: res[0], rows: res[1].rows, selected: null, mode: "view", draft: null });
+    });
+  }
+  refresh() { this.client.list(this.state.activeType, {}).then((res) => this.setState({ rows: res.rows })); }
+  pick = (type) => { if (type !== this.state.activeType) this.loadType(type); };
+  select = (id) => { this.client.get(this.state.activeType, id).then((rec) => this.setState({ selected: rec, mode: "view", draft: null })); };
+
+  startEdit = () => { this.setState({ mode: "edit", draft: Object.assign({}, this.state.selected) }); };
+  startCreate = () => {
+    const o = this.state.options; const d = {};
+    (o.fields || []).forEach((f) => { const def = f.options && f.options.default; if (def != null) d[f.field] = def; });
+    this.setState({ mode: "create", draft: d, selected: null });
+  };
+  cancel = () => { this.setState({ mode: "view", draft: null }); };
+  setField(field, v) { this.setState((s) => ({ draft: Object.assign({}, s.draft, { [field]: v }) })); }
+  save = () => {
+    const t = this.state.activeType, d = this.state.draft;
+    const p = this.state.mode === "create"
+      ? this.client.create(t, d)
+      : this.client.update(t, this.state.selected.id, d, this.state.selected._version);
+    p.then((row) => { this.refresh(); this.setState({ selected: row, mode: "view", draft: null }); });
+  };
+
+  editableFields() { return (this.state.options.fields || []).filter((f) => f.editable); }
+
+  renderVals() {
+    const o = this.state.options;
+    const cols = o ? o.fields.slice(0, 4) : [];
+    const activeMeta = (this.state.types || []).find((t) => t.type === this.state.activeType);
+    const types = (this.state.types || []).map((t) => ({
+      label: t.displayNamePlural, prefix: t.idPrefix, onPick: () => this.pick(t.type),
+      underline: t.type === this.state.activeType ? "var(--accent)" : "transparent",
+      color: t.type === this.state.activeType ? "var(--text)" : "var(--text-muted)",
+      weight: t.type === this.state.activeType ? "var(--weight-semibold)" : "var(--weight-medium)"
+    }));
+    const rows = (this.state.rows || []).map((r) => ({
+      onSelect: () => this.select(r.id),
+      bg: this.state.selected && this.state.selected.id === r.id ? "var(--accent-tint)" : "transparent",
+      cells: cols.map((c) => ({ text: r[c.field] == null || r[c.field] === "" ? "—" : String(r[c.field]),
+        color: c.options && c.options.role === "title" ? "var(--text)" : "var(--text-muted)",
+        font: c.kind === "int" || c.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit" })) }));
+
+    const sel = this.state.selected, mode = this.state.mode, draft = this.state.draft;
+    let recordFields = [], formFields = [], panelTitle = "", panelMeta = "";
+    if (sel && o) {
+      const tf = o.fields.find((f) => f.options && f.options.role === "title");
+      panelTitle = tf ? (sel[tf.field] || sel.id) : sel.id; panelMeta = sel.id;
+      recordFields = o.fields.map((f) => {
+        const isStatus = !!(f.options && f.options.role === "status"); const v = sel[f.field];
+        return { label: f.label, value: v == null || v === "" ? "—" : String(v), isStatus, isPlain: !isStatus,
+          font: f.kind === "int" || f.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit" };
+      });
+    }
+    if ((mode === "edit" || mode === "create") && o) {
+      if (mode === "create") { panelTitle = "New " + (activeMeta ? activeMeta.displayName : "record"); panelMeta = "draft"; }
+      formFields = this.editableFields().map((f) => {
+        const v = draft ? draft[f.field] : "";
+        const isEnum = f.kind === "enum", isBool = f.kind === "bool";
+        return {
+          label: f.label, value: v == null ? "" : String(v),
+          isEnum, isBool, isText: !isEnum && !isBool,
+          inputType: f.kind === "int" ? "number" : "text",
+          enumOptions: isEnum ? (f.options.enum || []).map((e) => ({ value: e, label: e })) : [],
+          checked: !!v,
+          onChange: (val) => this.setField(f.field, val && val.target ? val.target.value : val),
+          onInput: (e) => this.setField(f.field, e && e.target ? e.target.value : e),
+          onToggle: (e) => this.setField(f.field, e && e.target ? e.target.checked : !v)
+        };
+      });
+    }
+
+    return {
+      setRoot: (el) => { this.rootEl = el; },
+      clientLabel: this.state.client === "http" ? "HttpClient" : "FixtureClient",
+      types, columns: cols.map((c) => ({ label: c.label })), rows, rowCount: rows.length,
+      activeLabelLower: activeMeta ? activeMeta.displayNamePlural.toLowerCase() : "rows",
+      activeSingular: activeMeta ? activeMeta.displayName.toLowerCase() : "record",
+      panelOpen: !!(sel || mode === "create"), panelClosed: !(sel || mode === "create"),
+      isView: mode === "view" && !!sel, isForm: mode === "edit" || mode === "create",
+      panelTitle, panelMeta, recordFields, formFields,
+      saveLabel: mode === "create" ? "Create" : "Save changes",
+      startEdit: this.startEdit, startCreate: this.startCreate, save: this.save, cancel: this.cancel
+    };
+  }
+}
+</script>
+</body>
+</html>

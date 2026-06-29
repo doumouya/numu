@@ -1,0 +1,61 @@
+/* ============================================================
+   Datacore — Typography
+   ------------------------------------------------------------
+   The brand is a privacy / local-first developer tool: by design
+   it ships ZERO webfonts (the front-end brief mandates "no
+   external CDN fonts/scripts ... keep assets inlineable"). So the
+   type system is the platform's own UI font + a system monospace
+   for data, identifiers, code and JSON. No @font-face exists in
+   this design system — that absence is intentional and on-brand.
+
+   Base size is 0.875rem / 14px with a 1.5 rhythm, lifted directly
+   from the source UI. Numeric data is rendered with tabular-nums.
+   ============================================================ */
+
+:root {
+  /* --- families --- */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco,
+               Consolas, "Liberation Mono", monospace;
+
+  /* --- type scale (rem; relative-units-only is a brand rule) --- */
+  --text-2xs: 0.7rem;    /* 11.2px — column-kind chips, dense meta */
+  --text-xs:  0.75rem;   /* 12px   — table filter inputs, fine print */
+  --text-sm:  0.8rem;    /* 12.8px — muted captions, row counts */
+  --text-md:  0.875rem;  /* 14px   — BODY DEFAULT */
+  --text-lg:  1rem;      /* 16px   — H1 / view title */
+  --text-xl:  1.125rem;  /* 18px   — empty-state lead */
+  --text-2xl: 1.375rem;  /* 22px   — section heading */
+  --text-3xl: 1.75rem;   /* 28px   — page hero (sparingly) */
+
+  /* --- line-height --- */
+  --leading-tight: 1.25;
+  --leading:       1.5;   /* source default */
+  --leading-loose: 1.7;
+
+  /* --- weight (system fonts carry these reliably) --- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* --- tracking --- */
+  --tracking-tight:  -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;   /* small-caps-ish labels */
+  --tracking-mono:   0;        /* mono stays at 0 */
+
+  /* --- numerics: opt-in tabular figures for all data surfaces --- */
+  --numeric-tabular: tabular-nums;  /* @kind other */
+
+  /* --- composed shorthands (font: shorthand, matching source) --- */
+  --font-body:  var(--weight-regular) var(--text-md)/var(--leading) var(--font-sans);
+  --font-title: var(--weight-semibold) var(--text-lg)/var(--leading-tight) var(--font-sans);
+  --font-code:  var(--weight-regular) var(--text-sm)/var(--leading) var(--font-mono);
+}
+
+/* Utility classes kept minimal — components reference the tokens directly.
+   These exist so specimen cards and ad-hoc HTML can opt into the data look. */
+.dc-tabular { font-variant-numeric: var(--numeric-tabular); }
+.dc-mono    { font-family: var(--font-mono); font-variant-numeric: var(--numeric-tabular); }

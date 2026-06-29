@@ -1,0 +1,51 @@
+/* ============================================================
+   Datacore — Base layer
+   ------------------------------------------------------------
+   A minimal, token-driven reset. Mirrors the source UI's
+   `* { box-sizing }` + body font/color/background, plus sensible
+   defaults for the elements components and kits rely on. Kept
+   deliberately small — this is a foundation, not a normalize.
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font: var(--font-body);
+  color: var(--text);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--selection-bg); }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+/* Data surfaces get tabular figures by default */
+table { font-variant-numeric: var(--numeric-tabular); }
+
+/* Consistent, visible focus everywhere (accessibility is a brand value) */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+hr {
+  border: 0;
+  border-top: var(--border-line);
+  margin: var(--space-4) 0;
+}
+
+::placeholder { color: var(--text-subtle); }

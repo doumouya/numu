@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/elevation.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/base.css">
+  <script src="numu-data-client.js"></script>
+</helmet>
+<div ref="{{ setRoot }}" style="height:100vh; display:flex; flex-direction:column; background:var(--surface); color:var(--text); font:var(--font-body); overflow:hidden">
+
+  <div style="flex:none; display:flex; align-items:center; gap:0.6rem; height:3rem; padding:0 1rem; border-bottom:1px solid var(--border); background:var(--surface-subtle)">
+    <span style="width:0.9rem; height:0.9rem; border-radius:3px; background:var(--accent); flex:none"></span>
+    <span style="font-weight:var(--weight-semibold); letter-spacing:-0.01em">numu · R2 archetype registry</span>
+    <span style="flex:1"></span>
+    <span style="font-size:var(--text-sm); color:var(--text-muted)">the Context Panel is chosen by each type's <span style="font-family:var(--font-mono); color:var(--text)">context_view</span></span>
+  </div>
+
+  <div style="flex:none; display:flex; border-bottom:1px solid var(--border); background:var(--surface)">
+    <sc-for list="{{ types }}" as="t" hint-placeholder-count="6">
+      <button onClick="{{ t.onPick }}" style="display:flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; border:none; border-bottom:2px solid {{ t.underline }}; background:none; color:{{ t.color }}; cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:{{ t.weight }}">{{ t.label }}<span style="font-family:var(--font-mono); font-size:0.58rem; color:var(--accent); border:1px solid var(--border); border-radius:999px; padding:0 0.3rem">{{ t.archetype }}</span></button>
+    </sc-for>
+  </div>
+
+  <div style="flex:1; display:flex; min-height:0; overflow:hidden">
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border)">
+      <div style="flex:none; padding:0.4rem 0.8rem; border-bottom:1px solid var(--border); background:var(--surface-subtle); font-family:var(--font-mono); font-size:0.66rem; color:var(--text-muted)">{{ rowCount }} {{ activeLabelLower }} · context_view = <span style="color:var(--accent)">{{ activeArchetype }}</span></div>
+      <div style="flex:1; overflow:auto">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <div onClick="{{ r.onSelect }}" style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.8rem; cursor:pointer; background:{{ r.bg }}; border-bottom:1px solid var(--border-subtle)">
+            <span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.title }}</span>
+            <span style="font-family:var(--font-mono); font-size:0.62rem; color:var(--text-subtle)">{{ r.id }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- CONTEXT PANEL — dispatches on archetype -->
+    <div style="width:24rem; flex:none; display:flex; flex-direction:column; overflow:hidden; background:var(--surface-subtle)">
+      <sc-if value="{{ hasSel }}">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-bottom:1px solid var(--border)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ selTitle }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:var(--font-mono); font-size:0.58rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.35rem">{{ activeArchetype }}</span>
+        </div>
+        <div style="flex:1; overflow:auto">
+
+          <!-- record archetype -->
+          <sc-if value="{{ archRecord }}">
+            <div style="padding:0.5rem 0.85rem; display:flex; flex-direction:column; gap:0.1rem">
+              <sc-for list="{{ recordFields }}" as="f" hint-placeholder-count="4">
+                <div style="display:flex; align-items:baseline; gap:0.6rem; padding:0.32rem 0; border-bottom:1px solid var(--border-subtle)">
+                  <span style="width:6.5rem; flex:none; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ f.label }}</span>
+                  <span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); font-family:{{ f.font }}">{{ f.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- table archetype (file columns) -->
+          <sc-if value="{{ archTable }}">
+            <table style="width:100%; border-collapse:collapse; font-size:var(--text-sm)">
+              <thead><tr><th style="text-align:left; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">column</th><th style="text-align:left; padding:0.3rem 0.5rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">type</th><th style="text-align:right; padding:0.3rem 0.85rem; border-bottom:1px solid var(--border); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle)">null</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ tableCols }}" as="c" hint-placeholder-count="5">
+                  <tr style="border-bottom:1px solid var(--border-subtle)"><td style="padding:0.28rem 0.85rem; font-family:var(--font-mono); color:var(--text)">{{ c.name }}</td><td style="padding:0.28rem 0.5rem; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-subtle)">{{ c.dtype }}</td><td style="padding:0.28rem 0.85rem; text-align:right; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted)">{{ c.nullPct }}</td></tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </sc-if>
+
+          <!-- chart archetype (Chart.dc.html) -->
+          <sc-if value="{{ archChart }}">
+            <div style="padding:0.7rem 0.85rem; height:15rem"><dc-import name="Chart" cats="{{ chartCats }}" type="{{ chartType }}" hint-size="100%,100%"></dc-import></div>
+          </sc-if>
+
+          <!-- dashboard archetype (grid of Chart minis) -->
+          <sc-if value="{{ archDashboard }}">
+            <div style="padding:0.6rem 0.7rem; display:grid; grid-template-columns:1fr; gap:0.6rem">
+              <sc-for list="{{ dashTiles }}" as="tile" hint-placeholder-count="2">
+                <div style="border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden">
+                  <div style="padding:0.3rem 0.55rem; border-bottom:1px solid var(--border-subtle); font-size:0.66rem; color:var(--text-muted); font-family:var(--font-mono)">{{ tile.title }}</div>
+                  <div style="height:9rem; padding:0.3rem"><dc-import name="Chart" cats="{{ tile.cats }}" type="{{ tile.type }}" hint-size="100%,100%"></dc-import></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- media archetype (audio player) -->
+          <sc-if value="{{ archMedia }}">
+            <div style="padding:1rem 0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+              <div style="display:flex; align-items:center; gap:0.7rem">
+                <div style="width:3.5rem; height:3.5rem; border-radius:var(--radius-sm); background:var(--accent-tint); border:1px solid var(--accent-border); display:grid; place-items:center; flex:none; color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="music-note-beamed" hint-size="1.4rem,1.4rem"></x-import></div>
+                <div style="display:flex; flex-direction:column; min-width:0"><span style="font-weight:var(--weight-semibold)">{{ mediaTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ mediaArtist }} · {{ mediaDuration }}</span></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.6rem">
+                <button onClick="{{ noop }}" style="width:2.4rem; height:2.4rem; border-radius:999px; border:none; background:var(--accent); color:#fff; display:grid; place-items:center; cursor:pointer; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="play-fill" hint-size="1rem,1rem"></x-import></button>
+                <div style="flex:1; height:0.35rem; border-radius:999px; background:var(--surface-sunken); overflow:hidden"><span style="display:block; width:34%; height:100%; background:var(--accent)"></span></div>
+                <span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle)">1:16</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- collection archetype (cover + child list) -->
+          <sc-if value="{{ archCollection }}">
+            <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.7rem">
+              <div style="display:flex; gap:0.7rem; align-items:center">
+                <div style="width:4.5rem; height:4.5rem; border-radius:var(--radius-sm); background:linear-gradient(135deg, var(--accent), var(--chart-5, #7c5cff)); flex:none"></div>
+                <div style="display:flex; flex-direction:column"><span style="font-weight:var(--weight-semibold); font-size:var(--text-md)">{{ collTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ collCount }} tracks</span></div>
+              </div>
+              <div style="display:flex; flex-direction:column">
+                <sc-for list="{{ collItems }}" as="it" hint-placeholder-count="3">
+                  <div style="display:flex; align-items:center; gap:0.6rem; padding:0.35rem 0.2rem; border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle); width:1.2rem">{{ it.n }}</span><span style="flex:1; font-size:var(--text-sm)">{{ it.title }}</span><span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle)">{{ it.duration }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- calendar archetype -->
+          <sc-if value="{{ archCalendar }}">
+            <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.6rem">
+              <div style="display:flex; align-items:stretch; gap:0.7rem">
+                <div style="width:3.2rem; flex:none; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; text-align:center"><div style="background:var(--accent); color:#fff; font-size:0.56rem; text-transform:uppercase; letter-spacing:0.05em; padding:0.15rem">{{ calMonth }}</div><div style="font-size:1.3rem; font-weight:var(--weight-bold); padding:0.2rem 0">{{ calDay }}</div></div>
+                <div style="display:flex; flex-direction:column; justify-content:center"><span style="font-weight:var(--weight-semibold)">{{ calTitle }}</span><span style="font-size:var(--text-sm); color:var(--text-muted)">{{ calTime }} · {{ calLocation }}</span></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- board archetype (status column) -->
+          <sc-if value="{{ archBoard }}">
+            <div style="padding:0.85rem; display:flex; flex-direction:column; gap:0.5rem">
+              <div style="display:flex; align-items:center; gap:0.5rem"><span style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); font-weight:var(--weight-semibold)">status</span><span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 0.4rem">{{ boardStatus }}</span></div>
+              <div style="display:flex; gap:0.3rem">
+                <sc-for list="{{ boardLane }}" as="s" hint-placeholder-count="4">
+                  <div style="flex:1; text-align:center; padding:0.3rem 0.1rem; border-radius:var(--radius-xs); background:{{ s.bg }}; color:{{ s.color }}; font-size:0.58rem; font-family:var(--font-mono)">{{ s.label }}</div>
+                </sc-for>
+              </div>
+              <div style="font-size:var(--text-sm); color:var(--text-muted); margin-top:0.3rem">{{ boardTitle }}</div>
+            </div>
+          </sc-if>
+
+          <!-- preview archetype (render as it ships) -->
+          <sc-if value="{{ archPreview }}">
+            <div style="padding:0.85rem">
+              <div style="border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden">
+                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.65rem; border-bottom:1px solid var(--border-subtle)"><span style="width:1.6rem; height:1.6rem; border-radius:999px; background:var(--accent-tint); flex:none"></span><span style="font-size:var(--text-sm); font-weight:var(--weight-semibold)">{{ prevHandle }}</span><span style="flex:1"></span><span style="font-family:var(--font-mono); font-size:0.56rem; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.3rem">{{ prevStatus }}</span></div>
+                <div style="padding:0.7rem 0.65rem; font-size:var(--text-md); line-height:1.5">{{ prevBody }}</div>
+                <div style="height:9rem; background:linear-gradient(135deg, var(--surface-sunken), var(--surface-subtle)); border-top:1px solid var(--border-subtle); display:grid; place-items:center; color:var(--text-subtle)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="image" hint-size="1.4rem,1.4rem"></x-import></div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+      <sc-if value="{{ noSel }}">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem; text-align:center; font-size:var(--text-sm); color:var(--text-subtle)">Select a row — its Context Panel renders via the archetype its type declares.</div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { types: [], activeType: null, options: null, rows: [], selected: null, dashTiles: [] };
+
+  componentDidMount() {
+    this.client = window.NUMU_CLIENT.makeClient("fixture");
+    this.client.types().then((ts) => { this.setState({ types: ts }); if (ts[0]) this.loadType(ts[0].type); });
+  }
+  loadType(type) {
+    Promise.all([this.client.options(type), this.client.list(type, {})]).then((res) => {
+      this.setState({ activeType: type, options: res[0], rows: res[1].rows, selected: null, dashTiles: [] });
+    });
+  }
+  pick = (type) => { if (type !== this.state.activeType) this.loadType(type); };
+  select = (id) => {
+    this.client.get(this.state.activeType, id).then((rec) => {
+      this.setState({ selected: rec, dashTiles: [] });
+      // dashboard archetype: resolve tile chart_ids → chart entities
+      if (this.state.options && this.state.options.contextView === "dashboard" && rec.spec && rec.spec.tiles) {
+        Promise.all(rec.spec.tiles.map((t) => this.client.get("chart", t.chart_id))).then((charts) => {
+          this.setState({ dashTiles: charts.map((c) => ({ title: c.title, cats: (c.spec && c.spec.cats) || [], type: c.chart_type })) });
+        });
+      }
+    });
+  };
+
+  titleOf(rec, opts) { const tf = (opts.fields || []).find((f) => f.options && f.options.role === "title"); return tf ? (rec[tf.field] || rec.id) : rec.id; }
+
+  renderVals() {
+    const o = this.state.options, sel = this.state.selected;
+    const arch = o ? o.contextView : "record";
+    const activeMeta = (this.state.types || []).find((t) => t.type === this.state.activeType);
+    const types = (this.state.types || []).map((t) => ({
+      label: t.displayNamePlural, archetype: t.contextView, onPick: () => this.pick(t.type),
+      underline: t.type === this.state.activeType ? "var(--accent)" : "transparent",
+      color: t.type === this.state.activeType ? "var(--text)" : "var(--text-muted)",
+      weight: t.type === this.state.activeType ? "var(--weight-semibold)" : "var(--weight-medium)"
+    }));
+    const rows = (this.state.rows || []).map((r) => ({
+      onSelect: () => this.select(r.id),
+      bg: sel && sel.id === r.id ? "var(--accent-tint)" : "transparent",
+      title: o ? this.titleOf(r, o) : r.id, id: r.id
+    }));
+
+    let recordFields = [], tableCols = [], chartCats = [], chartType = "bar", selTitle = "";
+    if (sel && o) {
+      selTitle = this.titleOf(sel, o);
+      recordFields = o.fields.filter((f) => f.kind !== "json").map((f) => ({
+        label: f.label, value: sel[f.field] == null || sel[f.field] === "" ? "—" : String(sel[f.field]),
+        font: f.kind === "int" || f.field.indexOf("_id") >= 0 ? "var(--font-mono)" : "inherit"
+      }));
+      if (arch === "table") tableCols = (sel.columns_meta || []).map((c) => ({ name: c.name, dtype: c.dtype, nullPct: (c.null_pct || 0) + "%" }));
+      if (arch === "chart") { chartCats = (sel.spec && sel.spec.cats) || []; chartType = sel.chart_type || (sel.spec && sel.spec.type) || "bar"; }
+    }
+
+    // R5 archetypes
+    const m = {};
+    if (sel) {
+      if (arch === "media") { m.mediaTitle = sel.title; m.mediaArtist = sel.artist || "—"; m.mediaDuration = sel.duration || ""; }
+      if (arch === "collection") { m.collTitle = sel.title; const tr = sel.tracks || []; m.collCount = tr.length; m.collItems = tr.map((t, i) => ({ n: i + 1, title: t.title, duration: t.duration || "" })); }
+      if (arch === "calendar") {
+        const dt = String(sel.starts_at || ""); const parts = dt.split(/[ \-]/);
+        const MON = ["JAN","FÉV","MAR","AVR","MAI","JUN","JUL","AOÛ","SEP","OCT","NOV","DÉC"];
+        m.calMonth = MON[(parseInt(parts[1], 10) || 1) - 1] || ""; m.calDay = parts[2] || ""; m.calTitle = sel.title; m.calTime = (dt.split(" ")[1] || ""); m.calLocation = sel.location || "";
+      }
+      if (arch === "board") {
+        const lanes = ["backlog", "in_review", "blocked", "done"]; m.boardStatus = sel.status;
+        m.boardTitle = sel.title;
+        m.boardLane = lanes.map((l) => ({ label: l, bg: l === sel.status ? "var(--accent)" : "var(--surface-sunken)", color: l === sel.status ? "#fff" : "var(--text-subtle)" }));
+      }
+      if (arch === "preview") { m.prevHandle = sel.platform || "post"; m.prevStatus = sel.status; m.prevBody = sel.body || ""; }
+    }
+
+    return {
+      setRoot: (el) => { this.rootEl = el; },
+      types, rows, rowCount: rows.length,
+      activeLabelLower: activeMeta ? activeMeta.displayNamePlural.toLowerCase() : "rows",
+      activeArchetype: arch,
+      hasSel: !!sel, noSel: !sel, selTitle,
+      archRecord: arch === "record" || arch === "thread", archTable: arch === "table",
+      archChart: arch === "chart", archDashboard: arch === "dashboard",
+      archMedia: arch === "media", archCollection: arch === "collection", archCalendar: arch === "calendar",
+      archBoard: arch === "board", archPreview: arch === "preview",
+      mediaTitle: m.mediaTitle, mediaArtist: m.mediaArtist, mediaDuration: m.mediaDuration,
+      collTitle: m.collTitle, collCount: m.collCount, collItems: m.collItems || [],
+      calMonth: m.calMonth, calDay: m.calDay, calTitle: m.calTitle, calTime: m.calTime, calLocation: m.calLocation,
+      boardStatus: m.boardStatus, boardTitle: m.boardTitle, boardLane: m.boardLane || [],
+      prevHandle: m.prevHandle, prevStatus: m.prevStatus, prevBody: m.prevBody,
+      recordFields, tableCols, chartCats, chartType,
+      dashTiles: this.state.dashTiles
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/datacore-design-system-a460c7ab-fd9f-4f15-85d3-6bfeda2cb4ed/tokens/charts.css">
+  <script src="vendor/echarts.min.js"></script>
+</helmet>
+<div ref="{{ setNode }}" style="width:100%; height:100%; min-height:12rem"></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:240},&quot;cats&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{label:string;value:number}&gt;&quot;},&quot;type&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bar&quot;,&quot;line&quot;,&quot;area&quot;,&quot;pie&quot;,&quot;donut&quot;],&quot;default&quot;:&quot;bar&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  // A child DC owns its own DOM subtree, so ECharts mounted here survives the
+  // parent's re-renders (the fix for the imperative-mount race noted in P2b).
+  componentDidMount() { this.mount(); }
+  componentDidUpdate() { this.draw(); }
+  componentWillUnmount() {
+    if (this.inst) { try { this.inst.dispose(); } catch (e) {} this.inst = null; }
+    if (this._poll) { clearInterval(this._poll); this._poll = null; }
+    if (this._onResize) window.removeEventListener("resize", this._onResize);
+  }
+  mount() {
+    if (this.inst || !this.node) return;
+    if (typeof window === "undefined" || !window.echarts) {
+      if (!this._poll) this._poll = setInterval(() => { if (window.echarts) { clearInterval(this._poll); this._poll = null; this.mount(); } }, 120);
+      return;
+    }
+    this.inst = window.echarts.init(this.node);
+    this._onResize = () => { if (this.inst) this.inst.resize(); };
+    window.addEventListener("resize", this._onResize);
+    this.draw();
+  }
+  draw() {
+    if (!this.inst) { this.mount(); return; }
+    try { this.inst.setOption(this.option(), true); this.inst.resize(); } catch (e) {}
+  }
+  option() {
+    var cs = this.node ? getComputedStyle(this.node) : null;
+    var accent = (cs && cs.getPropertyValue("--accent").trim()) || "#2563eb";
+    var grid = (cs && cs.getPropertyValue("--border").trim()) || "#e5e7eb";
+    var text = (cs && cs.getPropertyValue("--text-muted").trim()) || "#8a8f98";
+    var cats = (this.props.cats || []).slice(0, 12);
+    var labels = cats.map(function (c) { return c.label; });
+    var vals = cats.map(function (c) { return c.value; });
+    var ty = this.props.type || "bar";
+    if (ty === "pie" || ty === "donut") {
+      return { textStyle: { color: text }, tooltip: { trigger: "item" },
+        series: [{ type: "pie", radius: ty === "donut" ? ["42%", "70%"] : "66%", center: ["50%", "52%"],
+          data: cats.map(function (c) { return { name: c.label, value: c.value }; }),
+          label: { color: text, fontSize: 10 } }] };
+    }
+    var t = (ty === "line" || ty === "area") ? "line" : "bar";
+    return {
+      textStyle: { color: text }, tooltip: { trigger: "axis" },
+      grid: { left: 48, right: 14, top: 14, bottom: 52 },
+      xAxis: { type: "category", data: labels, axisLine: { lineStyle: { color: grid } }, axisLabel: { color: text, rotate: labels.length > 6 ? 38 : 0, fontSize: 10, hideOverlap: true } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: grid } }, axisLabel: { color: text, fontSize: 10 } },
+      series: [{ type: t, data: vals, itemStyle: { color: accent }, areaStyle: ty === "area" ? { opacity: 0.18 } : undefined, smooth: ty === "line" || ty === "area", barMaxWidth: 28 }]
+    };
+  }
+  renderVals() {
+    return { setNode: (el) => { this.node = el; if (el && !this.inst) this.mount(); } };
+  }
+}
+</script>
+</body>
+</html>
