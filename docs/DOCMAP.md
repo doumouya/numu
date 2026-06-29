@@ -41,6 +41,7 @@ docs-currency gate); until then, the doc *is* the contract.
 | [`.claude/skills/enforcement-gates/`](../.claude/skills/enforcement-gates/SKILL.md) | How-to: author a `tools/*-audit` gate (`ci.sh` auto-discovery, the ratchet) + the Rust-gate/DB-backstop doubling — *applies* `tools/README.md` | `tools/ci.sh` · `tools/*-audit/` · `migrations/0008` | **shipped** |
 | [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
 | [`decisions/0001-data-app-catalog.md`](decisions/0001-data-app-catalog.md) | The reconciliation ADR: D-CNV, file-as-typed-table, canonical names, note/report, the presentation layer, data_class-with-the-plane | the data-app plane below | accepted |
+| [`decisions/0002-frontend-same-origin-serving.md`](decisions/0002-frontend-same-origin-serving.md) | The same-origin serving ADR: `ServeDir` fallback + `NUMU_WEB_DIR` so the `SameSite=Lax` session cookie works with zero CORS; the G1–G7 contract gaps (CASE 0013) | `web/` frontend · `crates/api/src/{lib,config}.rs` | accepted |
 
 ## Data-app plane (LIVE — README §3 Buckets 1–2, the numu-Console data layer)
 
@@ -54,6 +55,7 @@ frontend's job (deferred). Rationale: [`decisions/0001-data-app-catalog.md`](dec
 | [`numu-csv-flow-and-datatypes.md`](numu-csv-flow-and-datatypes.md) | the CSV typing engine + `pipeline::upload_csv` + `POST /api/files` (`UploadOutcome`) | `crates/{data,shared}` · `crates/api/src/{pipeline,files}.rs` · `migrations/0017_project_files.sql` | **LIVE** (upload; connectors deferred) |
 | [`numu-gluesql-postgres.md`](numu-gluesql-postgres.md) | the Postgres side of the split (registry + `project_files` projection + `project_steps` recipe + the on-disk blob); GlueSQL stays client | `crates/api/src/pipeline.rs` · `migrations/0017` | **LIVE** (server side) |
 | feed + seed | `GET /api/conversations/:id/feed?lens=` + the demo R0 seed | `crates/api/src/conversations.rs` · `tools/seed-demo.sh` | **LIVE** |
+| [`decisions/0002-frontend-same-origin-serving.md`](decisions/0002-frontend-same-origin-serving.md) | the bundled frontend served same-origin (`ServeDir` fallback + `NUMU_WEB_DIR`) + the `numu-data-client.js` shape normalization (G3–G6: `flatten()`/snake→camel) binding the Datacore rewrite to the live backend | `web/` (R-stage pages, `numu-data-client.js`, `_ds/`, `vendor/`) · `crates/api/src/{lib,config}.rs` · `web/tests/shapes.test.mjs` | **LIVE** (CASE 0013 — bound-live on R3 Shell; Console cutover deferred) |
 
 ## Foundation / planning docs (the numu frontend + customer data)
 
