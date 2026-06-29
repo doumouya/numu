@@ -1248,8 +1248,45 @@ class Component extends DCLogic {
     channel: "chat", composerText: "", thumbs: 0, added: [], feedMode: "chat", activeSource: null, activeProject: null,
     notif: { cases: true, messages: true, deploys: true, payouts: false, digest: true },
     connSel: null, connToggles: {}, flowOff: {},
-    lang: null, railCollapsed: false, surfaceTone: null, naclInfoOpen: false, nacllang: null, naclCustom: null
+    lang: null, railCollapsed: false, surfaceTone: null, naclInfoOpen: false, nacllang: null, naclCustom: null,
+    // SEAM GRAFT (Slice 3): live data-plane state, sourced from the seam (not fixtures/localStorage).
+    live: null, convos: [], feedItems: [], lens: "all", seamError: null, conflict: null
   };
+
+  // ===== SEAM GRAFT (CASE 0019 console-cutover, Slice 3) =======================
+  // The live data plane. Every entity read/write goes through this client — NOT
+  // window.NUMU_DATA / TENANTS / persistFeed-loadFeed. makeClient("auto") probes
+  // /api/health and delegates to HttpClient (live) or FixtureClient (offline).
+  // localStorage is kept ONLY for pins + channel-grouping (the "this device"
+  // client-state exception per AC15/AC22). isLive() is resolved on mount (AC24).
+  client = (typeof window !== "undefined" && window.NUMU_CLIENT)
+    ? window.NUMU_CLIENT.makeClient("auto") : null;
+
+  // Resolve isLive() on mount → state.live drives the offline indicator + write gating (Slice 5).
+  resolveLive() {
+    if (!this.client || !this.client.isLive) { this.setState({ live: false }); return; }
+    this.client.isLive().then((v) => this.setState({ live: !!v }))
+      .catch(() => this.setState({ live: false }));
+  }
+  // Rail ← client.conversations() — the invariant context navigator's data source (AC3/AC4/AC14).
+  loadConversations() {
+    if (!this.client) { this.setState({ convos: [] }); return; }
+    this.client.conversations()
+      .then((rows) => this.setState({ convos: Array.isArray(rows) ? rows : [] }))
+      .catch((e) => this.setState({ convos: [], seamError: this.seamErr("conversations", e) }));
+  }
+  // Feed ← client.feed(convId,{lens}) — the ONE typed-message renderer's source (AC5/AC6).
+  // Replaces loadFeed(): the timeline is server-derived (reach+visibility filtered), not localStorage.
+  loadFeedFromSeam(convId, lens) {
+    if (!this.client || !convId) { this.setState({ feedItems: [] }); return; }
+    this.client.feed(convId, { lens: lens || this.state.lens || "all" })
+      .then((resp) => this.setState({ feedItems: (resp && resp.items) || [] }))
+      .catch((e) => this.setState({ feedItems: [], seamError: this.seamErr("feed", e) }));
+  }
+  // Normalize a rejected seam call into a visible, non-throwing error affordance (AC23).
+  // 412/428 are routed to the conflict-reload UX (Slice 5) by the caller; this is the generic surface.
+  seamErr(op, e) { return { op: op, message: (e && e.message) || String(e), at: Date.now() }; }
+  // ============================================================================
 
   ORDER = ["platform", "studio", "commerce", "social"];
   DESIGNED_LIGHT = { platform: "#3f5573", studio: "#b13c5f", commerce: "#9a6518", social: "#2a7d63" };
@@ -1640,19 +1677,34 @@ class Component extends DCLogic {
     for (const k in v) this.rootEl.style.setProperty(k, v[k]);
     this.rootEl.style.colorScheme = this.rTheme();
   }
-  componentDidMount() { this.applyTheme(); this._onKey = (e) => { if (e.key === "Escape" && this.state.naclInfoOpen) this.closeNaclInfo(); }; if (typeof document !== "undefined") document.addEventListener("keydown", this._onKey); if (typeof location !== "undefined" && location.hash === "#connectors") { this.setState({ page: "connectors" }); } const k0 = this.feedKey(); const loaded0 = this.loadFeed(k0); this._lastKey = k0; if (loaded0.length) this.setState({ added: loaded0 }); requestAnimationFrame(() => this.syncCharts()); if (typeof window !== "undefined" && !window.echarts) { this._chartPoll = setInterval(() => { if (window.echarts) { clearInterval(this._chartPoll); this.syncCharts(); } }, 150); } }
+  componentDidMount() {
+    this.applyTheme();
+    this._onKey = (e) => { if (e.key === "Escape" && this.state.naclInfoOpen) this.closeNaclInfo(); };
+    if (typeof document !== "undefined") document.addEventListener("keydown", this._onKey);
+    if (typeof location !== "undefined" && location.hash === "#connectors") { this.setState({ page: "connectors" }); }
+    // SEAM GRAFT (Slice 3): the data plane bootstraps off the seam, not localStorage.
+    // Resolve isLive() (AC24), load the rail's conversations (AC3/AC4), and source the
+    // active conversation's feed (AC5/AC6). The localStorage feed bootstrap is retired.
+    this.resolveLive();
+    this.loadConversations();
+    this._lastKey = this.feedKey();
+    if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens);
+    requestAnimationFrame(() => this.syncCharts());
+    if (typeof window !== "undefined" && !window.echarts) { this._chartPoll = setInterval(() => { if (window.echarts) { clearInterval(this._chartPoll); this.syncCharts(); } }, 150); }
+  }
   componentDidUpdate() {
     this.applyTheme(); requestAnimationFrame(() => this.syncCharts());
+    // SEAM GRAFT (Slice 3): when the active conversation changes, re-source its feed from
+    // the seam (server-derived, lens-filtered) instead of localStorage. Session-local
+    // composer blocks (`added`) are reset for the new conversation; they are NOT persisted.
     const key = this.feedKey();
     if (this._lastKey === undefined) this._lastKey = key;
     if (key !== this._lastKey) {
-      this.persistFeed(this._lastKey, this.state.added);
-      const loaded = this.loadFeed(key);
       this._lastKey = key;
-      this.setState({ added: loaded, feedMode: "chat", activeData: null, activeSource: null });
+      this.setState({ added: [], feedMode: "chat", activeData: null, activeSource: null });
+      if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens);
       return;
     }
-    this.persistFeed(key, this.state.added);
   }
   componentWillUnmount() { if (this._onKey && typeof document !== "undefined") document.removeEventListener("keydown", this._onKey); if (this.timer) clearInterval(this.timer); if (this._chartPoll) clearInterval(this._chartPoll); if (this.charts) Object.keys(this.charts).forEach((id) => { try { this.charts[id].dispose(); } catch (e) {} }); }
 
@@ -1793,10 +1845,12 @@ class Component extends DCLogic {
     this._lastKey = "proj." + id;
     this.setState({ activeProject: id, page: "workspace", feedMode: "chat", activeData: null, activeSource: null, added: [], projMenu: null });
   };
+  // SEAM GRAFT (Slice 3): selecting a conversation morphs the three regions and re-sources
+  // the feed from the seam (AC3) — no localStorage feed. Session-local composer blocks reset.
   selectUserProject = (id) => {
-    try { this.persistFeed(this._lastKey != null ? this._lastKey : this.feedKey(), this.state.added); } catch (e) {}
     this._lastKey = "proj." + id;
-    this.setState({ activeProject: id, page: "workspace", feedMode: "chat", activeData: null, activeSource: null, added: this.loadFeed("proj." + id), projMenu: null });
+    this.setState({ activeProject: id, page: "workspace", feedMode: "chat", activeData: null, activeSource: null, added: [], projMenu: null });
+    this.loadFeedFromSeam(id, this.state.lens);
   };
   selectTenant = (t) => { this.setState({ activeProject: null, projMenu: null }); this.setTenant(t); };
 
@@ -1839,7 +1893,9 @@ class Component extends DCLogic {
       this.appendBlock({ kind: "system", isDecision: true, ok: true, audience: "all", icon: "check-circle-fill", code: "200 case_closed", text: c.caseId + " · open → closed" });
     }
   };
-  setLens = (l) => this.setState({ lens: l });
+  // SEAM GRAFT (Slice 3): the lens is a server-side WHERE on visibility (AC6). Setting it
+  // re-sources the active conversation's feed from the seam with ?lens=<all|customer|mine>.
+  setLens = (l) => { this.setState({ lens: l }); if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, l); };
   caseView() {
     const c = this.activeCase(); if (!c) return null;
     const met = c.met || {}; const total = this.CASE_CHECKS.length;
@@ -2005,15 +2061,15 @@ class Component extends DCLogic {
             decBorder: b.ok ? "color-mix(in srgb, var(--success) 35%, transparent)" : (bad ? "color-mix(in srgb, var(--danger) 35%, transparent)" : "var(--border)") }); }
       return b;
     });
-    const lens = this.state.lens || "everything";
+    const lens = this.state.lens || "all";
     if (lens === "customer") return all.filter((b) => (b.audience || "all") !== "operator");
     if (lens === "mine") return all.filter((b) => (b.audience || "all") === "operator");
     return all;
   }
   lensOptionsView() {
-    const cur = this.state.lens || "everything";
+    const cur = this.state.lens || "all";
     const opts = [
-      { id: "everything", label: "Everything", icon: "layers", title: "Everything in this case" },
+      { id: "all", label: "Everything", icon: "layers", title: "Everything in this case" },
       { id: "customer", label: "Customer", icon: "person", title: "What the customer sees — operator notes & queries hidden" },
       { id: "mine", label: "My queries", icon: "lock-fill", title: "Operator-only — your notes & log queries" }
     ];
