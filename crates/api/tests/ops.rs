@@ -3,34 +3,39 @@
 //! 503s when no reloader is installed (no subscriber in tests). See CASE 0008 (B4).
 #![cfg(feature = "db-tests")]
 
-use std::time::Duration;
-
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use axum::{middleware, Router};
-use numu_api::ratelimit::RateLimiter;
+use axum::Router;
+use numu_api::config::Config;
 use numu_api::registry::TypeDefCache;
 use numu_api::state::AppState;
 use numu_api::workflow::WorkflowCache;
-use numu_api::{auth, debug, members, objects, ratelimit, request_id};
 use sqlx::PgPool;
 use tower::ServiceExt;
 
+/// Case 0017 / AC7 — drive the REAL layered stack via the one canonical `build_router`. The per-client
+/// `/auth` rate-limit `route_layer` now lives INSIDE `build_router` (AC6), driven by `cfg.auth_rate_limit`,
+/// so `rate_max` flows through the config rather than a hand-built limiter.
 async fn build_app(pool: &PgPool, rate_max: u32) -> Router {
     let registry = TypeDefCache::load(pool).await.unwrap();
     let workflows = WorkflowCache::load(pool).await.unwrap();
     let state = AppState::new(pool.clone(), registry, workflows);
-    let limiter = RateLimiter::new(rate_max, Duration::from_secs(60));
-    let auth_routes = auth::router().route_layer(middleware::from_fn(move |req, next| {
-        let limiter = limiter.clone();
-        async move { ratelimit::enforce(limiter, req, next).await }
-    }));
-    Router::new()
-        .nest("/api/objects", objects::router().merge(members::router()))
-        .merge(auth_routes)
-        .merge(debug::router())
-        .layer(middleware::from_fn(request_id::request_id_layer))
-        .with_state(state)
+    numu_api::build_router(state, &test_cfg(rate_max))
+}
+
+fn test_cfg(rate_max: u32) -> Config {
+    Config {
+        bind: "127.0.0.1:0".to_string(),
+        database_url: "postgres://localhost/never".to_string(),
+        debug: false,
+        // the rate-limit window max under test flows through the config now that the `/auth` route_layer
+        // lives inside build_router (AC6).
+        auth_rate_limit: rate_max,
+        auth_rate_window_secs: 60,
+        cors_origins: vec!["https://app.example".to_string()],
+        data_dir: std::path::PathBuf::from("."),
+        web_dir: std::path::PathBuf::from("."),
+    }
 }
 
 async fn dev_login_status(app: &Router) -> StatusCode {

@@ -7,26 +7,35 @@
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use axum::{middleware, Router};
+use axum::Router;
+use numu_api::config::Config;
 use numu_api::registry::TypeDefCache;
 use numu_api::state::AppState;
 use numu_api::workflow::WorkflowCache;
-use numu_api::{auth, members, objects, request_id, types};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
 
+/// Case 0017 / AC7 — drive the REAL layered stack (CORS + trace + request-id + fallback) via the one
+/// canonical `build_router`, not a hand-rebuilt partial router.
 async fn build_app(pool: &PgPool) -> Router {
     let registry = TypeDefCache::load(pool).await.unwrap();
     let workflows = WorkflowCache::load(pool).await.unwrap();
     let state = AppState::new(pool.clone(), registry, workflows);
-    // mirror production routing: objects nested under /api/objects, types merged at /api/types.
-    Router::new()
-        .nest("/api/objects", objects::router().merge(members::router()))
-        .merge(types::router())
-        .merge(auth::router())
-        .layer(middleware::from_fn(request_id::request_id_layer))
-        .with_state(state)
+    numu_api::build_router(state, &test_cfg())
+}
+
+fn test_cfg() -> Config {
+    Config {
+        bind: "127.0.0.1:0".to_string(),
+        database_url: "postgres://localhost/never".to_string(),
+        debug: false,
+        auth_rate_limit: 30,
+        auth_rate_window_secs: 60,
+        cors_origins: vec!["https://app.example".to_string()],
+        data_dir: std::path::PathBuf::from("."),
+        web_dir: std::path::PathBuf::from("."),
+    }
 }
 
 async fn login(app: &Router, actor_id: &str) -> String {
