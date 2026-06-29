@@ -26,14 +26,30 @@ chain). Each is a `tools/<name>-audit/audit.sh` that `ci.sh` picks up automatica
 **Domain audits (live).** Beyond the spine, `ci.sh` auto-discovers code-correctness audits under
 `tools/*-audit/`: **debuggability-audit** (above) and **rbac-audit** (slice B2) — every entity handler
 gates via `require_action`, every create grants an owner edge, `context_role` stays cosmetic, and an
-object-gate denial is a leak-free 404 (not a 403). Both fail on any finding today; both ride the ratchet.
+object-gate denial is a leak-free 404 (not a 403). Both fail on any finding today (binary).
 
-## Ratchet (follow-on)
+**Assessment gates (live, ratcheted).** Six more audits, added from the 2026-06 codebase assessment + its
+review, each carrying a committed per-audit `baseline` of its known/triaged findings — **green today, red on
+a NEW violation**:
 
-The audits currently fail on **any** finding (the tree starts clean). When a real codebase accumulates
-known/triaged findings, each audit will diff against a committed `baseline.json` and fail only on **new**
-violations — the same ratchet pattern proven in the sibling build-engine. v0 keeps it simple: zero
-findings = green.
+| Gate | What it checks |
+|---|---|
+| **mask-unenforced** | the data-plane **seal**: a handler that writes entity rows must consult `masked_verbs` before it writes (the C1 seal-bypass — 4 handlers baselined pending the 405-on-masked Rust gate + an `entity_data` trigger backstop) |
+| **config-safety** | no `*SECRET/KEY/TOKEN/PASS` env var falls back to a value, and the `dev-insecure-secret-change-me` literal isn't reachable (S-1 — pair with a boot-time guard + a `#[cfg(not(debug_assertions))]` test that `Config::from_env()` Errs when `NUMU_SECRET` is unset) |
+| **ssrf-parity** | no `reqwest::` outside `http_client.rs` — generalizes the SSRF gate (clean ⇒ binary) |
+| **upload-limit** | a `Multipart` surface declares an explicit `DefaultBodyLimit` (S-2) |
+| **caller-dev** | `Caller::dev()` (admin) is `cfg`-gated and never called on a prod path (S-4) |
+| **stale-staging** | staging/"v0" comments (`always allows` · `until A2` · `until auth lands`) don't outlive their slice (docs-drift) |
+
+## Ratchet (per-audit baseline)
+
+The spine + the older domain audits (debuggability · rbac · case-first · docs-currency) stay **binary** — the
+tree is clean for them, so any finding is a real regression. The **assessment gates** ride a **per-audit
+baseline**: each `tools/<name>-audit/baseline` lists that gate's known, triaged findings as line-number-free
+fingerprints, and the audit diffs its current findings against it, failing only on a **NEW** one. Fix a
+finding → the gate prints a `resolved — drop from baseline` note → shrink the baseline (it only ratchets
+*down*, never up). This is the per-audit form of the `baseline.json` pattern proven in the sibling
+build-engine; a unified JSON baseline can fold these in later.
 
 ## Conventions
 

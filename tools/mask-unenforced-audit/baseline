@@ -1,0 +1,4 @@
+[mask-unenforced] mutating handler 'coll_create' writes entity rows without consulting masked_verbs (the verb seal is advisory)
+[mask-unenforced] mutating handler 'item_delete' writes entity rows without consulting masked_verbs (the verb seal is advisory)
+[mask-unenforced] mutating handler 'item_patch' writes entity rows without consulting masked_verbs (the verb seal is advisory)
+[mask-unenforced] mutating handler 'item_put' writes entity rows without consulting masked_verbs (the verb seal is advisory)

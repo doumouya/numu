@@ -1,0 +1,3 @@
+[stale-staging] a staging phrase ("always allows") survives in caller.rs — reconcile it (the slice landed)
+[stale-staging] a staging phrase ("until A2") survives in members.rs — reconcile it (the slice landed)
+[stale-staging] a staging phrase ("until auth lands") survives in caller.rs — reconcile it (the slice landed)

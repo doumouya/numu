@@ -1,0 +1,2 @@
+[dev-secret] the 'dev-insecure-secret-change-me' fallback literal is reachable as a key (oauth.rs)
+[secret-fallback] a secret env var (*SECRET/KEY/TOKEN/PASS) falls back to a value instead of failing boot (oauth.rs)

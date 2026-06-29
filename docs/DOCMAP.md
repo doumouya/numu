@@ -82,7 +82,7 @@ follow-on list. They get a DOCMAP row the moment they land:
 |---|---|---|
 | `migrations/` | the SYSTEM tables (`OBJECTS.md` G1–G6 `[SYSTEM]`) | `OBJECTS.md` |
 | `seed/` | builtin `type_definitions` + `type_fields` rows + the `default` workflow | `OBJECTS.md` |
-| `tools/` + `ci.sh` | the five gate audits + the ratchet | (a `tools/` README, next slice) |
+| `tools/` + `ci.sh` | the gate audits (the 5-gate spine + `rbac-audit` + the 6 assessment gates, CASE 0014) + the per-audit baseline ratchet | [`../tools/README.md`](../tools/README.md) |
 | `.claude/agents/` | the 5-role orchestrator (architect→tester→coder→reviewer→ops), project-agnostic | `OBJECTS.md` G5 |
 | `CLAUDE.md` | the baked-in conventions (the gates as standing rules) | itself |
 | `docs/decisions/`, `docs/runbooks/` | locked decisions + fixed-bug records | per the redpash cadence |
@@ -98,6 +98,10 @@ numu's identity is that its disciplines are **queries, not prompts** — harness
 | **capability-ledger** | no capability lives only in memory (anti-amnesia) | `OBJECTS.md` G6 (`capability` `[TYPE]`) |
 | **agent-refs** | every orchestrator reference resolves to a real artifact | `tools/` (planned) |
 | **debuggability** | no bare 500, no dropped request-id | [`OBSERVABILITY.md`](OBSERVABILITY.md) §6 |
+
+Beyond the spine, `ci.sh` auto-discovers **domain audits** — `rbac-audit` (CASE 0005) and the six
+**assessment gates** (CASE 0014: `mask-unenforced` · `config-safety` · `ssrf-parity` · `upload-limit` ·
+`caller-dev` · `stale-staging`), which ride a per-audit baseline ratchet. See [`../tools/README.md`](../tools/README.md).
 
 ## Rules for this map
 
