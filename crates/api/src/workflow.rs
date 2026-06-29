@@ -72,6 +72,15 @@ impl WorkflowCache {
         Ok(Self { by_id })
     }
 
+    /// A no-DB constructor (empty workflow set). Test/self-check seam (Case 0017): the no-DB
+    /// `build_router` path (the `options_routing.rs` regression + the cookieless-OPTIONS self-check)
+    /// 401s in the `Caller` extractor BEFORE any workflow lookup, so an empty map suffices.
+    pub fn empty() -> Self {
+        Self {
+            by_id: HashMap::new(),
+        }
+    }
+
     pub fn get(&self, id: &str) -> Option<&Workflow> {
         self.by_id.get(id)
     }

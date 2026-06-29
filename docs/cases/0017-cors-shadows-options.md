@@ -2,12 +2,21 @@
 
 > (Renumbered 0016→0017 — `0016` collided with `docs/cases/0016-postgres-ha-docs.md` from a parallel effort.)
 
-- **Status:** backlog
-- **Type:** bug
+- **Status:** in_progress
+- **Type:** bug (+ hardening)
 - **Opened:** 2026-06-29
-- **Owner:** (unassigned)
+- **Owner:** Torv (for Em)
+- **Branch:** `feat/numu-frontend-integration`
 - **Severity:** medium (feature-dead over real HTTP; no data/security exposure)
 - **Found by:** Case 0013 live E2E (ops), 2026-06-29.
+- **Spec:** [`../internal/specs/cors-contract-safety.md`](../internal/specs/cors-contract-safety.md) — full
+  spec + numbered acceptance criteria (AC1–AC11, Parts A–F) + exact contracts.
+- **Chosen fix:** **Option 1 — custom/narrowed, preflight-accurate, explicit-allowlist CORS** (a new
+  `crates/api/src/cors.rs` replacing the blanket `tower_http::cors::CorsLayer`). Keep CORS for prod; deny by
+  default; only short-circuit TRUE preflights; pass all other OPTIONS to the router. Plus the breach-class
+  monitor (`build_router` single source of truth + a startup self-check + a no-DB regression test) and a
+  reusable `numu-http-contract-safety` skill. (Options 2 "remove CORS" and 3 "move OPTIONS to a GET verb"
+  REJECTED — see Em decisions below.)
 
 ## Symptom
 
@@ -34,30 +43,86 @@ The integration tests exercise the **router directly** (`tower::ServiceExt::ones
 `crates/api/tests/types.rs`) — without the CORS layer in the stack — so OPTIONS self-description passes in
 tests but is dead in production. Pre-existing since the CORS layer landed (Case 0009, operational-cors).
 
-## Fix options (decide on pickup)
+## Fix options (DECIDED — Option 1)
 
-1. **Custom/narrowed CORS** — only short-circuit TRUE preflights (`OPTIONS` carrying
+1. **[CHOSEN] Custom/narrowed CORS** — only short-circuit TRUE preflights (`OPTIONS` carrying
    `Access-Control-Request-Method` + `Origin`) and pass other OPTIONS through to the router. Preserves
    cross-origin + restores self-description. (Most correct; most work.)
-2. **Remove the CorsLayer** — Case 0013 chose same-origin serving (ADR 0002), which makes CORS unnecessary for
-   the bundled frontend. Simplest; drops cross-origin support for any other API consumer.
-3. **Move OPTIONS self-description to a non-OPTIONS verb** (e.g. `GET /api/types/:type` already returns the
-   static schema; promote per-caller verbs/RBAC there). Larger API change.
+2. **[REJECTED] Remove the CorsLayer** — Case 0013 chose same-origin serving (ADR 0002), which makes CORS
+   unnecessary for the *bundled* frontend, but Em's directive is to keep CORS for a customer-serving,
+   possibly cross-origin deployment. Dropping it would lose cross-origin support for any other API consumer.
+3. **[REJECTED] Move OPTIONS self-description to a non-OPTIONS verb** — larger API change; the self-description
+   belongs on OPTIONS by contract (HTTP.md).
+
+## Em decisions (settled)
+
+- **Keep CORS for production** — deactivating CORS is acceptable only in localhost/dev → do NOT remove the
+  layer.
+- **Allow explicitly in code, deny-by-default** — mandatory: credentialed (cookie-session) requests forbid
+  `*` anywhere. Credentialed-correct: exact `Origin` echo, `Access-Control-Allow-Credentials: true`,
+  `Vary: Origin`, explicit method/header/expose lists, `Access-Control-Max-Age: 7200`.
+- **Preflight = OPTIONS + `Access-Control-Request-Method`**; non-preflight OPTIONS must reach the router.
+- **Optional localhost dev mode** (a config flag, working name `NUMU_CORS_DEV`) — still exact-origin, never `*`.
+- **Monitor reaction = warn + `db::record_event(kind:"startup.contract_violation")` + KEEP SERVING** (not
+  fail-fast).
+- **Add-on = the live contract probe** in `tools/e2e-0013.sh` — NO static-grep audit.
+- **Build a reusable numu skill** (`numu-http-contract-safety`) capturing the CORS policy + the
+  contract-monitor discipline.
 
 ## Already in place (do not redo)
 
 `options_body` already emits `"context_view": td.context_view` (`objects.rs:327`, added by Case 0013) — it is
 correct and forward-compatible. Once the CORS layer is fixed, OPTIONS will carry `context_view` automatically;
-this Case need only fix the layer + add a **full-stack** regression test (build the real app/router WITH the
-layer stack and assert a non-preflight `OPTIONS /api/objects/:type` returns the self-description) — note the
-OOM constraint: a state-free `oneshot` over a Router that includes the CORS layer, not the db-tests suite.
+this Case need only fix the layer + add the regression tests (the no-DB `options_routing.rs` over the real
+`build_router`, NOT the db-tests suite — note the OOM constraint).
 
 ## Verification
 
-- A test that drives the layered router (CORS included) and asserts `OPTIONS /api/objects/file` body carries
-  `type`/`fields`/`context_view` (not empty). Plus a live curl re-check.
+- **No-DB** `crates/api/tests/options_routing.rs` (plain `cargo test`): non-preflight OPTIONS → 401 non-empty
+  (routed, not shadowed); true preflight → 204 + the credentialed header set. The test that would have caught
+  this Case.
+- **db-tests parity** (real CI only): `OPTIONS /api/objects/file` → 200 with `fields` + `context_view`.
+- **Startup self-check** (every boot): cookieless OPTIONS routed (401) not shadowed (200 empty) → else warn +
+  `startup.contract_violation` event, keep serving.
+- **Live** `tools/e2e-0013.sh`: OPTIONS parity promoted SKIP→hard-check + a per-type loop.
 - `tools/ci.sh` safe gates green. Do NOT run `cargo test --features db-tests` (OOMs the box — Case 0012 env).
 
 ## Log
 
 - **2026-06-29 — opened** from Case 0013's live E2E. Em descoped the OPTIONS parity from 0013 → here.
+- **2026-06-29 — Torv (architect):** Formalized the approved plan
+  (`plans/hi-i-need-you-fizzy-nest.md`) into the spec doc
+  [`../internal/specs/cors-contract-safety.md`](../internal/specs/cors-contract-safety.md) with 11 numbered
+  acceptance criteria (AC1–AC11) mapped to Parts A–F, each tagged with a verification path
+  (`[CARGO]`/`[DB-TESTS]`/`[LIVE]`/`[BOOT]`/`[REVIEW]`). Set chosen fix = Option 1; status backlog →
+  in_progress; logged the Em decisions. Confirmed every contract against source (lib.rs:81-159 inline
+  router; auth.rs:74-79 the pre-DB 401 self-check signal; objects.rs:324-337/508-513 the OPTIONS handler +
+  `context_view`; db.rs:10-32 `record_event` + `RequestCtx`; config.rs:14/34/50 `cors_origins`/`web_dir`;
+  catalog.rs:18-27 the partial `build_app` to be adopted onto `build_router`). Two contract choices I had to
+  make (flagged for Em in the spec's Risks): (b) `Access-Control-Allow-Headers` = the **fixed** 0009 set
+  (not reflect-requested); (a) `NUMU_CORS_DEV` = boolean echo-localhost (never `*`). → awaiting Checkpoint 1
+  (Em); then tester.
+- **2026-06-29 — coder (Claude Opus 4.8):** Implemented Parts A–C + the docs. Landed the custom
+  `crates/api/src/cors.rs` (preflight-accurate, explicit-allowlist, credentialed-correct — `CorsCfg` +
+  `cors_layer` via `from_fn`; fixed 0009 header sets; deny-by-default; `NUMU_CORS_DEV` localhost echo)
+  REPLACING the blanket `tower_http::cors::CorsLayer`. Extracted `pub fn build_router(state, &cfg) -> Router`
+  as the ONE assembly point (folds `.with_state`; the `/auth` rate-limit `route_layer` + the always-merged
+  `debug::router()` now live inside it; layer order TraceLayer → request_id → cors). Added
+  `assert_options_routed` startup self-check (cookieless OPTIONS via `oneshot`: routed=401 / shadowed=2xx
+  empty → `tracing::error!` + `db::record_event(kind:"startup.contract_violation")`, KEEP SERVING). Added
+  no-DB seams `TypeDefCache::empty()` / `WorkflowCache::empty()`. **GREEN:** `tests/options_routing.rs` 4/4
+  under plain `cargo test`; full `cargo test -p numu-api` (no db-tests) green incl. 11 lib unit tests;
+  `cargo fmt` + `cargo clippy -p numu-api --tests -- -D warnings` clean; `web/tests/shapes.test.mjs` 5/5.
+  **ADR numbered 0004** (`decisions/0004-build-router-and-startup-self-check.md`) — `0003` was taken by the
+  parallel consent-sharing ADR (same collision that renamed this Case 0016→0017). Reconciled HTTP.md (§2a
+  CORS+preflight contract), RUNNING.md (`NUMU_CORS_DEV` + the CORS policy box), OBSERVABILITY.md (the
+  `startup.contract_violation` system-event kind), DOCMAP.md (ADR 0004 + the spec rows).
+  **DEVIATION (flag for Em / tester):** the spec's config.rs directive said add `pub cors_dev: bool` to
+  `Config`, but the tester's `tests/options_routing.rs::test_cfg()` builds a `Config { … }` literal that
+  OMITS `cors_dev` (it is the ONLY `Config` literal that compiles under plain `cargo test` — every other
+  test file is `#![cfg(feature="db-tests")]`-gated). Adding a required field would break the RED test's
+  compilation, which I cannot edit. To keep the green gate, the dev flag is read inside `build_router` via
+  `config::env_flag("NUMU_CORS_DEV")` (still env-driven, exactly the named var) instead of as a `Config`
+  field. If Em wants it on `Config` per the spec, the tester must add `cors_dev: false` to that literal
+  first (TEST-DRIFT on the literal, not on an AC — AC5 is `[REVIEW]`/`[CARGO]` and has no literal assertion).
+  → Parts D-test/AC8-test green; Part E (e2e probe) + Part F (skill) remain. → reviewer.

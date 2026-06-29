@@ -152,6 +152,15 @@ impl TypeDefCache {
         Ok(Self { by_id })
     }
 
+    /// A no-DB constructor (empty registry). Test/self-check seam (Case 0017): the no-DB
+    /// `build_router` path (the `options_routing.rs` regression + the cookieless-OPTIONS self-check)
+    /// 401s in the `Caller` extractor BEFORE any registry lookup, so an empty map suffices.
+    pub fn empty() -> Self {
+        Self {
+            by_id: HashMap::new(),
+        }
+    }
+
     pub fn get(&self, type_id: &str) -> Option<&TypeDef> {
         self.by_id.get(type_id)
     }

@@ -140,6 +140,31 @@ JSON body:
   *collection* the caller has no reach into returns `200` with the type schema but `rbac.GET.allowed:false`
   — schema is public-within-tenant; *instances* are not.
 
+### 2a. CORS + preflight — why OPTIONS self-description survives cross-origin (Case 0017)
+
+OPTIONS self-description lives **over real HTTP** because the CORS layer (`crates/api/src/cors.rs`) is
+preflight-accurate: it only short-circuits a **true preflight** and passes every other OPTIONS to the
+router. A blanket `tower_http::cors::CorsLayer` used to short-circuit *every* OPTIONS `200`+empty before the
+router (Case 0017 — the self-description was dead over the binary); the custom layer fixes that.
+
+- **True preflight** = `OPTIONS` carrying `Access-Control-Request-Method` **and** an allowlisted `Origin`.
+  → short-circuit **`204 No Content`**, empty body, with the credentialed header set (cookie sessions, so
+  **never `*`** anywhere): `Access-Control-Allow-Origin: <the exact request Origin>`,
+  `Access-Control-Allow-Credentials: true`,
+  `Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`,
+  `Access-Control-Allow-Headers: content-type, if-match, if-none-match, cookie`,
+  `Access-Control-Max-Age: 7200`, `Vary: Origin`. The router handler does NOT run.
+- **Non-preflight OPTIONS** (no `Access-Control-Request-Method`) is **not** a preflight → it reaches the
+  router and runs `coll_options`/`item_options` (the self-description above). A cookieless one `401`s in the
+  `Caller` extractor — that 401 (vs a `2xx` empty) is the "routed, not shadowed" signal the startup
+  self-check + the `tests/options_routing.rs` regression assert (ADR 0004).
+- **Actual cross-origin response** (a non-OPTIONS request, or a non-preflight OPTIONS) from an allowlisted
+  origin is stamped `Access-Control-Allow-Origin: <exact Origin>`, `Access-Control-Allow-Credentials: true`,
+  `Vary: Origin`, `Access-Control-Expose-Headers: etag, location`.
+- **Deny-by-default:** an `Origin` not in the allowlist gets **no** `Access-Control-Allow-Origin` (the
+  browser blocks the read); no `Origin` at all = a plain non-CORS request (no CORS headers). The allowlist
+  is `NUMU_CORS_ORIGINS` (+ `NUMU_CORS_DEV` for localhost — see `RUNNING.md`); it is **explicit**, never `*`.
+
 ## 3. Conditional requests — lost-update protection
 
 Multi-agent coordination (numu's whole premise — five orchestrator roles can touch one Case) makes

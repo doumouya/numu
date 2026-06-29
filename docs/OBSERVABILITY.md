@@ -86,6 +86,21 @@ One span taxonomy, four boundaries, all auto-instrumented at the framework layer
 insert failure it logs a `warn` with the request-id rather than failing the user's request — observability
 must not become a new failure mode.
 
+**System / boot events (`actor_id = "system"`).** Not every event is a per-request domain action — the
+engine also audits its own boot-time contract checks. The greppable taxonomy gains:
+
+| `kind` | when | payload | reaction |
+|---|---|---|---|
+| `startup.contract_violation` | a startup self-check found a live contract breach | `{ contract, route, observed_status, observed_empty_body, case, detail }` | `tracing::error!` + the event, then **KEEP SERVING** (warn + audit, not fail-fast) |
+
+The first such check (Case 0017, [ADR 0004](decisions/0004-build-router-and-startup-self-check.md)):
+`assert_options_routed` drives a cookieless `OPTIONS /api/objects/<type>` through the real `build_router`
+app at boot — **routed** = `401` (the `Caller` extractor's pre-DB reject), **shadowed** = a `2xx` with an
+empty body (a middleware layer short-circuiting the route). A shadow emits
+`startup.contract_violation`; a pass logs `startup self-check: OPTIONS routing OK`. The probe synthesizes a
+`RequestCtx` (minted request/trace ids) since there is no real request at boot, and uses the `"system"`
+actor sentinel.
+
 **Ops hardening — LIVE (CASE 0008 B4).** `POST /api/_debug/echo` (the TRACE replacement, §4) and `PATCH
 /api/_debug/log-level` are wired; plus a typed `Config::from_env` (one place reads env), a per-client
 `/auth` rate limit (→ **429**, brute-force backstop), and **graceful shutdown** (drain in-flight requests on
