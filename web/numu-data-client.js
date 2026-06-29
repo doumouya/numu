@@ -249,6 +249,23 @@
       fully_null_rows: f.fully_null_rows || 0, size_bytes: f.size_bytes || 0, columns: clone(f.columns_meta || []) });
   };
   FixtureClient.prototype.run = function () { return Promise.reject(new Error("run: fixture stub — see R4")); };
+  // ── search: offline stand-in for GET /api/search?q= → {query,results:[{entity_id,type,title,rank}]} ──
+  // (CASE 0019 console-cutover, AC21). Scans the seeded ENTITIES for a substring match on the title-ish
+  // fields and returns the live result shape so the TopBar can route via AC7's archetype dispatch.
+  FixtureClient.prototype.search = function (q) {
+    var s = String(q || "").trim().toLowerCase();
+    if (!s) return delay({ query: "", results: [] });
+    var results = [];
+    Object.keys(ENTITIES).forEach(function (type) {
+      (ENTITIES[type] || []).forEach(function (r) {
+        var title = r.title || r.filename || r.body || r.id;
+        if (String(title).toLowerCase().indexOf(s) >= 0) {
+          results.push({ entity_id: r.id, type: type, title: title, rank: 0.5 });
+        }
+      });
+    });
+    return delay({ query: s, results: results });
+  };
 
   // ── HttpClient — the live impl (maps 1:1 to CONTRACT.md/HTTP.md) ───────────
   // Won't reach a server inside a sandboxed preview (cross-origin); it documents
@@ -337,7 +354,17 @@
     return fetch(this.base + "/api/files", { method: "POST", credentials: "include", body: fd })
       .then(function (r) { if (!r.ok) throw new Error(r.status + " /api/files"); return r.json(); });
   };
-  HttpClient.prototype.run = function (id, args) { return Promise.reject(new Error("run: wire POST /api/connectors/:id/run at R4")); };
+  // POST /api/connectors/:id/run — the http_json connector run path (connectors.rs:23).
+  // `args` is the run payload; returns the connector's run result envelope as-is.
+  HttpClient.prototype.run = function (id, args) { return this._send("POST", "/api/connectors/" + id + "/run", args || {}); };
+  // GET /api/search?q=<term> → {query, results:[{entity_id,type,title,rank}]} (search.rs:78–85).
+  // (CASE 0019 console-cutover, AC21). Surfaces the results array for TopBar → AC7 archetype routing.
+  // An empty/blank q is NOT sent (the backend 400s on blank — search.rs:47); returns an empty result set.
+  HttpClient.prototype.search = function (q) {
+    var s = String(q || "").trim();
+    if (!s) return Promise.resolve({ query: "", results: [] });
+    return this._get("/api/search?q=" + encodeURIComponent(s));
+  };
 
   window.NUMU_CLIENT = {
     makeClient: function (mode) { return mode === "http" ? new HttpClient() : new FixtureClient(); },
@@ -355,7 +382,7 @@
     this.ready = fetch((base || "") + "/api/health", { credentials: "include" })
       .then(function (r) { self.live = r.ok; }).catch(function () { self.live = false; });
   }
-  ["types", "options", "list", "get", "create", "update", "feed", "conversations", "upload", "run"].forEach(function (m) {
+  ["types", "options", "list", "get", "create", "update", "feed", "conversations", "upload", "run", "search"].forEach(function (m) {
     AutoClient.prototype[m] = function () {
       var args = arguments, self = this;
       return this.ready.then(function () {
