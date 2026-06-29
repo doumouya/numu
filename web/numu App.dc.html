@@ -932,6 +932,32 @@
                   <span style="color:var(--text-subtle)">·</span>
                   <span style="display:inline-flex; align-items:center; gap:0.3rem"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="shield-lock" hint-size="0.78rem,0.78rem"></x-import>{{ ui.tokensOnDevice }}</span>
                 </div>
+                <!-- AC18 — live connector catalog from client.list("connector"); Run via client.run() -->
+                <sc-if value="{{ hasLiveConnectors }}">
+                  <div style="display:flex; flex-direction:column; gap:0.4rem">
+                    <div style="display:flex; align-items:center; gap:0.4rem; padding:0 0.1rem">
+                      <span style="display:inline-flex; color:var(--accent)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plug-fill" hint-size="0.9rem,0.9rem"></x-import></span>
+                      <span style="font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-subtle); font-weight:var(--weight-semibold)">{{ liveConnLabel }}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:0.4rem">
+                      <sc-for list="{{ liveConnectors }}" as="lc" hint-placeholder-count="2">
+                        <div style="display:flex; align-items:center; gap:0.7rem; padding:0.6rem 0.7rem 0.6rem 0.85rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface)">
+                          <span style="width:2.2rem; height:2.2rem; border-radius:var(--radius-xs); background:var(--accent-tint); color:var(--accent); display:grid; place-items:center; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plug" hint-size="1.1rem,1.1rem"></x-import></span>
+                          <span style="display:flex; flex-direction:column; min-width:0; gap:0.05rem; flex:1">
+                            <span style="display:flex; align-items:center; gap:0.4rem"><span style="font-size:var(--text-md); font-weight:var(--weight-semibold)">{{ lc.name }}</span><span style="font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); border:1px solid var(--border); border-radius:4px; padding:0 0.3rem">{{ lc.kind }}</span></span>
+                            <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ lc.id }}</span>
+                          </span>
+                          <sc-if value="{{ lc.runnable }}">
+                            <button onClick="{{ lc.onRun }}" disabled="{{ lc.runDisabled }}" style="display:flex; align-items:center; gap:0.35rem; height:1.95rem; padding:0 0.7rem; border:1px solid var(--accent); background:{{ lc.runBg }}; color:{{ lc.runColor }}; border-radius:var(--radius-xs); cursor:{{ lc.runCursor }}; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold); flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="play-fill" hint-size="0.75rem,0.75rem"></x-import>{{ lc.runLabel }}</button>
+                          </sc-if>
+                          <sc-if value="{{ lc.gated }}">
+                            <span style="display:flex; align-items:center; gap:0.3rem; font-family:var(--font-mono); font-size:0.56rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-subtle); border:1px dashed var(--border-strong); border-radius:4px; padding:0.1rem 0.4rem; flex:none"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="cone-striped" hint-size="0.7rem,0.7rem"></x-import>{{ comingSoonLabel }}</span>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
                 <sc-for list="{{ connGroups }}" as="g" hint-placeholder-count="6">
                   <div style="display:flex; flex-direction:column; gap:0.4rem">
                     <div style="display:flex; align-items:center; gap:0.4rem; padding:0 0.1rem">
@@ -1024,17 +1050,26 @@
 
               <span style="flex:1; min-height:0.5rem"></span>
 
+              <!-- AC19 — OAuth Connect + scheduled sync are GATED → the shared coming-soon affordance.
+                   The catalog read + http_json run (the live-connectors group above) stay live. -->
+              <div style="display:flex; align-items:flex-start; gap:0.5rem; border:1px dashed var(--border-strong); border-radius:var(--radius-sm); padding:0.5rem 0.6rem; background:var(--surface-subtle)">
+                <span style="display:inline-flex; color:var(--text-subtle); margin-top:0.05rem"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="cone-striped" hint-size="0.8rem,0.8rem"></x-import></span>
+                <div style="display:flex; flex-direction:column; gap:0.1rem; min-width:0">
+                  <span style="font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text)">{{ ui.connect }} / {{ ui.syncNow }} · {{ comingSoonLabel }}</span>
+                  <span style="font-size:var(--text-xs); color:var(--text-muted); line-height:1.45">{{ connGatedNote }}</span>
+                </div>
+              </div>
+
               <div style="display:flex; align-items:center; gap:0.5rem">
                 <sc-if value="{{ connAvailable }}">
-                  <button onClick="{{ connConnect }}" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem; height:2.2rem; border:1px solid var(--accent); background:var(--accent); color:var(--text-on-accent); border-radius:var(--radius-sm); cursor:pointer; font:inherit; font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plug-fill" hint-size="0.85rem,0.85rem"></x-import>{{ ui.connect }}</button>
+                  <button onClick="{{ connConnect }}" disabled="true" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem; height:2.2rem; border:1px solid var(--border-strong); background:var(--surface-sunken); color:var(--text-subtle); border-radius:var(--radius-sm); cursor:not-allowed; font:inherit; font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plug-fill" hint-size="0.85rem,0.85rem"></x-import>{{ ui.connect }}</button>
                 </sc-if>
                 <sc-if value="{{ connConnectedMode }}">
-                  <button onClick="{{ connSyncNow }}" style="display:flex; align-items:center; gap:0.4rem; height:2.2rem; padding:0 0.8rem; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); border-radius:var(--radius-sm); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-clockwise" hint-size="0.8rem,0.8rem"></x-import>{{ ui.syncNow }}</button>
+                  <button onClick="{{ noop }}" disabled="true" style="display:flex; align-items:center; gap:0.4rem; height:2.2rem; padding:0 0.8rem; border:1px solid var(--border-strong); background:var(--surface-sunken); color:var(--text-subtle); border-radius:var(--radius-sm); cursor:not-allowed; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-clockwise" hint-size="0.8rem,0.8rem"></x-import>{{ ui.syncNow }}</button>
                   <span style="flex:1"></span>
-                  <button onClick="{{ connDisconnect }}" style="display:flex; align-items:center; gap:0.4rem; height:2.2rem; padding:0 0.8rem; border:1px solid var(--danger); background:var(--danger-tint); color:var(--danger); border-radius:var(--radius-sm); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)">{{ ui.disconnect }}</button>
                 </sc-if>
                 <sc-if value="{{ connAttentionShow }}">
-                  <button onClick="{{ connConnect }}" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem; height:2.2rem; border:1px solid var(--accent); background:var(--accent); color:var(--text-on-accent); border-radius:var(--radius-sm); cursor:pointer; font:inherit; font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-clockwise" hint-size="0.85rem,0.85rem"></x-import>{{ ui.reconnect }}</button>
+                  <button onClick="{{ noop }}" disabled="true" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem; height:2.2rem; border:1px solid var(--border-strong); background:var(--surface-sunken); color:var(--text-subtle); border-radius:var(--radius-sm); cursor:not-allowed; font:inherit; font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-clockwise" hint-size="0.85rem,0.85rem"></x-import>{{ ui.reconnect }}</button>
                 </sc-if>
               </div>
               <div style="display:flex; align-items:flex-start; gap:0.4rem">
@@ -1488,7 +1523,9 @@ class Component extends DCLogic {
     // SEAM GRAFT (Slice 8): live object-type counts (AC14) + a live list drill (opens entities in AC7).
     // typeCounts maps type → live row count (client.list); typeList = { type, options, rows } for the
     // drill overlay. profileLive = { memberships, activity, identity } sourced live (AC16).
-    typeCounts: {}, typeList: null, profileLive: null
+    typeCounts: {}, typeList: null, profileLive: null,
+    // SEAM GRAFT (Slice 9): live connector catalog (AC18) + the http_json run state.
+    connectors: null, connRunBusy: null, connRunResult: null
   };
 
   // ===== SEAM GRAFT (CASE 0019 console-cutover, Slice 3) =======================
@@ -2033,7 +2070,24 @@ class Component extends DCLogic {
     Database: ["Ran sync query", "Schema check ok", "Connection healthy"],
     "On-device": ["Loaded local tables", "Indexed rows", "Ready"]
   };
-  goConnectors = () => { this.setState({ page: "connectors" }); };
+  goConnectors = () => { this.setState({ page: "connectors" }); this.loadConnectors(); };
+  // SEAM GRAFT (Slice 9): the connector catalog from client.list("connector") (AC18). Loaded on
+  // entering the Connectors page; falls back silently to the fixture catalog (AC23-safe). connectors
+  // is [{id,...flat}]; connRun records a run via client.run(id,args) → POST /api/connectors/:id/run.
+  loadConnectors() {
+    if (!this.client || !this.client.list) return;
+    this.client.list("connector", { limit: 50 })
+      .then((res) => this.setState({ connectors: (res && res.rows) || [] }))
+      .catch(() => {}); // unregistered offline → keep the fixture catalog
+  }
+  connRun = (id) => {
+    if (!this.client || !this.client.run) { this.setState({ seamError: this.seamErr("run", new Error("no data client")) }); return; }
+    if (!this.canWrite()) { this.setState({ seamError: this.seamErr("run", new Error("Offline — connector run is disabled until the server is reachable.")) }); return; }
+    this.setState({ connRunBusy: id });
+    this.client.run(id, {})
+      .then((r) => this.setState({ connRunBusy: null, connRunResult: { id: id, ok: true, msg: (r && (r.status || r.message)) || "Run started" } }))
+      .catch((e) => this.setState({ connRunBusy: null, connRunResult: null, seamError: this.seamErr("run " + id, e) }));
+  };
   selectConn = (id) => { this.setState({ connSel: id }); };
   connectConn = (id) => { this.setState((s) => ({ connToggles: Object.assign({}, s.connToggles, { [this.rTenant() + "/" + id]: true }), connSel: id })); };
   disconnectConn = (id) => { this.setState((s) => ({ connToggles: Object.assign({}, s.connToggles, { [this.rTenant() + "/" + id]: false }) })); };
@@ -3098,8 +3152,24 @@ class Component extends DCLogic {
       // profile
       profileWorkspaces, profileActivity, profileSchema, profileSecurity,
 
-      // connectors
+      // connectors — AC18 live catalog + http_json run; AC19 OAuth/sync gated
       isConnectors: page === "connectors", goConnectors: this.goConnectors,
+      hasLiveConnectors: Array.isArray(this.state.connectors) && this.state.connectors.length > 0,
+      liveConnLabel: this.t("Live connectors"),
+      comingSoonLabel: this.notBuiltTagLabel(),
+      connGatedNote: this.t("OAuth sign-in and scheduled sync aren't built yet — they're on the roadmap. http_json connectors run from the Live connectors list above."),
+      liveConnectors: (Array.isArray(this.state.connectors) ? this.state.connectors : []).map((lc) => {
+        const kind = lc.kind || lc.connector_type || lc.type || "connector";
+        const runnable = String(kind).toLowerCase().indexOf("http") >= 0 || kind === "http_json";
+        const busy = this.state.connRunBusy === lc.id, writable = this.canWrite();
+        return { id: lc.id, name: lc.title || lc.name || lc.id, kind: kind,
+          runnable: runnable, gated: !runnable,
+          runLabel: busy ? this.t("Running…") : this.t("Run"),
+          runDisabled: busy || !writable, runCursor: (busy || !writable) ? "not-allowed" : "pointer",
+          runBg: (busy || !writable) ? "var(--surface-sunken)" : "var(--accent)",
+          runColor: (busy || !writable) ? "var(--text-subtle)" : "#fff",
+          onRun: () => this.connRun(lc.id) };
+      }),
       connectorsBg: page === "connectors" ? "var(--accent-tint)" : "var(--surface)",
       connectorsBorder: page === "connectors" ? "var(--accent)" : "var(--border)",
       connectorsFg: page === "connectors" ? "var(--accent)" : "var(--text-muted)",
