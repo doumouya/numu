@@ -134,8 +134,11 @@ else
 fi
 
 # ── AC9c: chart create round-trips ───────────────────────────────────────────
+# Settable fields on the registered `chart` type = project_id/file_id/title/spec.
+# The chart KIND lives INSIDE spec (spec.type), NOT as a top-level chart_type field
+# — sending chart_type → 400 unknown field: chart_type (ops-confirmed).
 req POST "/api/objects/chart" \
-  "{\"title\":\"e2e-0019 chart\",\"chart_type\":\"bar\",\"spec\":{\"type\":\"bar\",\"cats\":[{\"label\":\"A\",\"value\":3}]},\"project_id\":\"$PRJ\"}"
+  "{\"title\":\"e2e-0019 chart\",\"spec\":{\"type\":\"bar\",\"cats\":[{\"label\":\"A\",\"value\":3}]},\"project_id\":\"$PRJ\"}"
 CHART_ID="$(jget '.id')"
 if { [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; } && [ -n "$CHART_ID" ] && [ "$CHART_ID" != "null" ]; then
   ok "AC9c  create POST /api/objects/chart → $HTTP_CODE (id=$CHART_ID)"
