@@ -30,12 +30,12 @@ Full approved plan: `/home/mansa/.claude/plans/hi-i-need-you-fizzy-nest.md`. Thr
 - [x] CHECKPOINT 2 — Em: "run live E2E first, push if green"
 - [x] Step 5 — ops LIVE-GREEN: Part E (e2e promote + per-type loop) + build + live E2E (boot self-check OK;
       OPTIONS self-describes; e2e 28/28; CORS allow/deny correct) → pushing on green
-- [ ] Part F — skill via skill-creator (as-built)
+- [x] Part F — skill landed: `.claude/skills/http-contract-safety/SKILL.md` + http pointer. **Case 0017 DONE.**
 - [ ] Step 3 — coder: green
 - [ ] Step 4 — reviewer: gates + security
 - [ ] CHECKPOINT 2 — Em approves push
 - [ ] Step 5 — ops: build + live E2E + push on green
-- [ ] Part F — skill via skill-creator (as-built)
+- [x] Part F — skill landed: `.claude/skills/http-contract-safety/SKILL.md` + http pointer. **Case 0017 DONE.**
 
 ## Retry counters
 

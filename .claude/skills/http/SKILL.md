@@ -39,6 +39,7 @@ trust boundary** (connectors). Get it wrong once and every type / every connecto
 - **The error envelope** → [`references/error-envelope.md`](references/error-envelope.md)
 - **Reviewing an HTTP surface** → [`references/review.md`](references/review.md)
 - **DEBUGGING a live request** → [`references/debugging.md`](references/debugging.md) + [`scripts/curl-trace.sh`](scripts/curl-trace.sh)
+- **CORS, a middleware that might shadow a route, or "passes tests but fails live"** → the [`http-contract-safety`](../http-contract-safety/SKILL.md) skill (build_router single-source + startup self-check + the credentialed-CORS policy)
 
 ## The 8 non-negotiables
 1. **Method semantics are an enforceable contract** (safe / idempotent / cacheable — table below). A GET

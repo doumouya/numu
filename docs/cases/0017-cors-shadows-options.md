@@ -2,7 +2,7 @@
 
 > (Renumbered 0016→0017 — `0016` collided with `docs/cases/0016-postgres-ha-docs.md` from a parallel effort.)
 
-- **Status:** in_review (fix + monitor green via ci.sh; pending live E2E + push + Part F skill)
+- **Status:** done (fix + monitor LIVE-GREEN + pushed `65f43c0..14d975e`; Part F skill landed)
 - **Type:** bug (+ hardening)
 - **Opened:** 2026-06-29
 - **Owner:** Torv (for Em)
@@ -164,3 +164,8 @@ this Case need only fix the layer + add the regression tests (the no-DB `options
   → 200 with `context_view`+`fields` (THE FIX — was 200-empty); `e2e-0013.sh` **28/28** (incl. the per-type
   loop over 22 types); CORS preflight allow → 204 exact-origin ACAO+ACAC+max-age 7200+vary; non-allowlisted →
   no ACAO. → push (Em pre-authorized "push if green").
+- **2026-06-29 — pushed `65f43c0..14d975e`** (5 Case-0017 commits, no contamination). Fix + monitor live.
+- **2026-06-29 — Part F: skill landed.** Authored `.claude/skills/http-contract-safety/SKILL.md` (the two
+  disciplines: middleware-shadows-route → build_router single-source + startup self-check + no-DB full-stack
+  regression; AND the credentialed-CORS policy) + a discovery pointer from `.claude/skills/http/SKILL.md`.
+  Cross-links `http` + `enforcement-gates`. **Case 0017 → done.**
