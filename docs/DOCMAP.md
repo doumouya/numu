@@ -73,6 +73,18 @@ real contract status as its slice lands.
 | [`numu-rbac-membership-design.md`](numu-rbac-membership-design.md) | RBAC/membership **today** (the two planes, reach resolver, roles-as-data, SEV-0 guards) + the **operator/customer-data** access design (`operator_access`, `access_audit`, purpose-limit) | `crates/api/src/{rbac,caller,members,field_perms}.rs` (Part 1 LIVE) + proposed tables (Parts 2–4) | Part 1 LIVE · Parts 2–4 design |
 | [`numu-legal-privacy-data-compliance.md`](numu-legal-privacy-data-compliance.md) | Legal/privacy/GDPR posture: controller/processor, the privacy-audit ratchet, data-subject rights, the Article control-map + roadmap (claude-for-legal) | redpash privacy machinery (`tools/privacy-audit`, `me.rs`, `crypto.rs`) to port + legal artifacts | planning |
 
+## Ops — running numu's own database in production (infrastructure)
+
+How numu's **own** backing Postgres is run with redundancy, automatic failover, PITR, and monitoring on GCP
+(distinct from the Postgres *connector*, which is a data-source conduit). Design docs landed 2026-06-29 from a
+review-approved HA deliverable; the configs/monitoring/scripts (`ops/postgres/`) + the `postgres-ha` skill are
+the follow-on phase. Six review open-items are tracked in the landing Case.
+
+| Doc | Governs | Code area it's the contract for | Status |
+|---|---|---|---|
+| [`ops/postgres-ha.md`](ops/postgres-ha.md) | HA + monitoring for numu's own DB: 1+2 Patroni/etcd/HAProxy topology, quorum-sync RPO/RTO, pgBackRest→GCS PITR, the numu-aware monitoring (reach-CTE/`upload_csv`/`events`) + `db-health`→`audit_runs` | `ops/postgres/` (configs + monitoring) — follow-on phase | design (landed) |
+| [`ops/postgres-ha-runbook.md`](ops/postgres-ha-runbook.md) | operational procedures: switchover, unplanned failover, replica rebuild/re-seed, PITR, backups, disk-fill, etcd-quorum-loss, drills | `ops/postgres/` + the runbook | design (landed) |
+
 ## Not-yet-written (planned slices, each its own Case)
 
 These appear in [`README.md`](../README.md)'s layout and the [catalog case](cases/0001-object-catalog.md)'s
