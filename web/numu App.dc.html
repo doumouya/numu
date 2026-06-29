@@ -875,6 +875,10 @@
                     <span style="font-size:var(--text-md); font-weight:var(--weight-semibold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ profileDetailView.title }}</span>
                     <span style="font-family:var(--font-mono); font-size:0.66rem; color:var(--text-subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ profileDetailView.sub }}</span>
                   </div>
+                  <span style="flex:1"></span>
+                  <sc-if value="{{ profileDetailView.comingSoonTag }}">
+                    <span style="font-family:var(--font-mono); font-size:0.58rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--warning); border:1px solid var(--warning); border-radius:999px; padding:0.1rem 0.6rem; white-space:nowrap">{{ profileDetailView.comingSoonTag }}</span>
+                  </sc-if>
                 </div>
                 <div style="border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); display:flex; flex-direction:column">
                   <sc-for list="{{ profileDetailView.rows }}" as="r" hint-placeholder-count="4">
@@ -1233,6 +1237,44 @@
           <button onClick="{{ closeNaclInfo }}" title="Close" style="width:1.9rem; height:1.9rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.85rem,0.85rem"></x-import></button>
         </div>
         <iframe src="{{ naclRefSrc }}" title="nacl language reference" style="flex:1; width:100%; border:none; background:var(--surface)"></iframe>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== SEAM: OFFLINE / ERROR / CONFLICT LAYER (CASE 0019, Slice 5) ===================== -->
+  <!-- AC24 — prominent offline indicator (a persistent, non-modal top strip; reads still render off the
+       FixtureClient fallback, writes are disabled by the controller's canWrite() gate). -->
+  <sc-if value="{{ offline }}">
+    <div style="position:fixed; top:0; left:0; right:0; z-index:60; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.4rem 0.85rem; background:var(--warning-tint); color:var(--warning); border-bottom:1px solid var(--warning); font-size:var(--text-sm); font-weight:var(--weight-semibold)">
+      <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="wifi-off" hint-size="0.85rem,0.85rem"></x-import>
+      <span>{{ offlineLabel }}</span>
+    </div>
+  </sc-if>
+
+  <!-- AC23 — generic seam-error toast: any rejected read/write surfaces here, never a console-only throw. -->
+  <sc-if value="{{ seamError }}">
+    <div style="position:fixed; bottom:1.1rem; right:1.1rem; z-index:62; max-width:24rem; display:flex; align-items:flex-start; gap:0.55rem; padding:0.7rem 0.85rem; background:var(--surface); border:1px solid var(--danger, var(--warning)); border-left:3px solid var(--danger, var(--warning)); border-radius:var(--radius); box-shadow:var(--shadow-popover); color:var(--text)">
+      <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="exclamation-triangle-fill" hint-size="1rem,1rem"></x-import>
+      <div style="flex:1; min-width:0">
+        <div style="font-weight:var(--weight-semibold); font-size:var(--text-sm)">{{ seamErrorTitle }}</div>
+        <div style="font-size:var(--text-xs); color:var(--text-muted); word-break:break-word">{{ seamErrorMsg }}</div>
+      </div>
+      <button onClick="{{ dismissSeamError }}" title="Dismiss" style="width:1.6rem; height:1.6rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.75rem,0.75rem"></x-import></button>
+    </div>
+  </sc-if>
+
+  <!-- AC13 — 412/428 conflict-reload affordance (non-dismissable; Reload re-gets and re-opens). -->
+  <sc-if value="{{ conflict }}">
+    <div style="position:fixed; inset:0; z-index:64; background:rgba(2,6,23,0.55); display:flex; align-items:center; justify-content:center; padding:2rem">
+      <div style="width:min(28rem, 92vw); display:flex; flex-direction:column; gap:0.85rem; padding:1.2rem 1.3rem; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow-popover); color:var(--text)">
+        <div style="display:flex; align-items:center; gap:0.55rem">
+          <x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="arrow-repeat" hint-size="1.05rem,1.05rem"></x-import>
+          <span style="font-weight:var(--weight-bold); font-size:var(--text-lg)">{{ conflictTitle }}</span>
+        </div>
+        <p style="margin:0; font-size:var(--text-md); line-height:1.55; color:var(--text-muted)">{{ conflictNote }}</p>
+        <div style="display:flex; justify-content:flex-end">
+          <button onClick="{{ reloadConflict }}" style="height:2.1rem; padding:0 1rem; border:none; border-radius:var(--radius-xs); background:var(--accent); color:#fff; font-weight:var(--weight-semibold); cursor:pointer">{{ conflictReloadLabel }}</button>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -1741,10 +1783,13 @@ class Component extends DCLogic {
         note: this.t("A real record, not a writeup — every action is an append-only event.") };
     }
     if (sel.kind === "security") {
-      return { icon: "shield-lock", color: "var(--accent)", title: this.t("Security"), sub: this.t("active") + " · TOTP",
-        rows: [ { k: "MFA", v: this.t("enabled") + " · TOTP" }, { k: "sessions", v: "2" }, { k: "API tokens", v: "1" }, { k: "last active", v: this.t("now") } ],
-        itemsLabel: this.t("Active sessions"),
-        items: [ { icon: "laptop", text: "MacBook Pro · Paris", meta: this.t("this device") }, { icon: "phone", text: "iPhone · Paris", meta: "2h" } ] };
+      // AC17 — profile security (MFA / sessions / tokens) is a "coming soon" stub: the backend
+      // is GATED (its own future Case). No fake data, no dead toggle/button — just the uniform
+      // coming-soon affordance (NotBuilt model) carried as a tag + informative note.
+      return { icon: "shield-lock", color: "var(--text-subtle)", title: this.t("Security"),
+        sub: this.t("MFA · sessions · API tokens"), comingSoonTag: this.notBuiltTagLabel(),
+        rows: [],
+        note: this.t("Account security (MFA, active sessions, API tokens) isn't built yet — it's on the roadmap. Nothing here is configurable yet.") };
     }
     const localeMap = { en: "en-US", fr: "fr-FR" };
     return { icon: "person-badge", color: "var(--accent)", title: this.meFullName || "Jordan Mensah", sub: "@jordan · actor",
@@ -1754,6 +1799,21 @@ class Component extends DCLogic {
   }
   openNaclInfo = () => { this.setState({ naclInfoOpen: true }); };
   closeNaclInfo = () => { this.setState({ naclInfoOpen: false }); };
+  // SEAM (Slice 5): dismiss the generic error toast (AC23).
+  dismissSeamError = () => this.setState({ seamError: null });
+  // AC25 — the ONE consistent "coming soon" label, shared by every gated surface (NotBuilt model).
+  notBuiltTagLabel() { return this.rLang() === "fr" ? "Bientôt disponible" : "Coming soon"; }
+  // AC13 — Reload re-gets the conflicted entity on its fresh version and clears the conflict.
+  reloadConflict = () => {
+    const cf = this.state.conflict; if (!cf) return;
+    if (this.client && cf.type && cf.id) {
+      this.client.get(cf.type, cf.id)
+        .then(() => { this.setState({ conflict: null }); if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens); })
+        .catch((e) => this.setState({ conflict: null, seamError: this.seamErr("reload", e) }));
+    } else {
+      this.setState({ conflict: null });
+    }
+  };
   setTheme = (t) => { try{ localStorage.setItem("numu.theme", t); }catch(e){} this.setState({ theme: t }); };
   toggleTheme = () => { const t = this.rTheme() === "light" ? "dark" : "light"; try{ localStorage.setItem("numu.theme", t); }catch(e){} this.setState({ theme: t }); };
   setDensity = (d) => { this.setState({ density: d }); };
@@ -2430,7 +2490,7 @@ class Component extends DCLogic {
       isCase: !!cv, caseView: cv || { stepper: [], checks: [] }, lensOptions: this.lensOptionsView(),
       railActivePage: page === "connectors" ? "connectors" : page === "settings" ? "settings" : page === "profile" ? "profile" : null,
       hasNotif: true, modeContextLabel: T.name,
-      isNotBuilt: page === "notbuilt", notBuiltLabel: this.state.notBuiltLabel || this.t("This view"), notBuiltTag: this.rLang() === "fr" ? "Pas encore construit" : "Not built yet", notBuiltNote: this.rLang() === "fr" ? "Cette partie de numu n'est pas encore construite — elle est au programme." : "This part of numu hasn't been built yet — it's on the roadmap.",
+      isNotBuilt: page === "notbuilt", notBuiltLabel: this.state.notBuiltLabel || this.t("This view"), notBuiltTag: this.notBuiltTagLabel(), notBuiltNote: this.rLang() === "fr" ? "Cette partie de numu n'est pas encore construite — elle est au programme." : "This part of numu hasn't been built yet — it's on the roadmap.",
       themeIcon: theme === "light" ? "moon-stars" : "brightness-high",
       themeToggleTitle: theme === "light" ? "Switch to night" : "Switch to day",
       settingsBg: page === "settings" ? "var(--accent-tint)" : "var(--surface)",
@@ -2439,6 +2499,17 @@ class Component extends DCLogic {
       profileBorder: page === "profile" ? "var(--accent)" : "var(--border)",
       goSettings: this.goSettings, goProfile: this.goProfile, toggleTheme: this.toggleTheme,
       naclInfoOpen: this.state.naclInfoOpen, openNaclInfo: this.openNaclInfo, closeNaclInfo: this.closeNaclInfo,
+      // SEAM (Slice 5): offline indicator (AC24), error toast (AC23), 412/428 conflict UX (AC13).
+      offline: this.state.live === false,
+      offlineLabel: this.t("Offline — showing cached data; writing is disabled until the server is reachable."),
+      seamError: !!this.state.seamError,
+      seamErrorTitle: this.state.seamError ? (this.t("Couldn't complete") + " " + this.state.seamError.op) : "",
+      seamErrorMsg: this.state.seamError ? this.state.seamError.message : "",
+      dismissSeamError: this.dismissSeamError,
+      conflict: !!this.state.conflict,
+      conflictTitle: this.t("This record changed"),
+      conflictNote: this.t("This record changed since you opened it — reload to see the latest before saving again."),
+      conflictReloadLabel: this.t("Reload"), reloadConflict: this.reloadConflict,
       naclRefSrc: "nacl Reference.dc.html?theme=" + (theme === "light" ? "light" : "dark") + "&tone=" + this.rTone(),
       toggleRail: this.toggleRail, setLang: this.setLang,
       panelW: this.state.railCollapsed ? "0rem" : "15.5rem", panelBorder: this.state.railCollapsed ? "0px solid transparent" : "1px solid var(--border)",
