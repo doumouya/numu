@@ -250,6 +250,7 @@ async fn list_types(State(st): State<AppState>, _caller: Caller) -> AppResult<Re
                 "display_name_plural": t.display_name_plural,
                 "scope_parents": t.scope_parents,
                 "is_builtin": t.is_builtin,
+                "context_view": t.context_view,
                 "field_count": t.fields.len(),
             })
         })

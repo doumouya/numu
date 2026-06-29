@@ -45,6 +45,7 @@ pub struct TypeDef {
     pub scope_parents: Vec<String>,
     pub is_builtin: bool,
     pub method_policy: serde_json::Value,
+    pub context_view: String, // mirrors type_definitions.context_view (0016); 'none' default
     pub fields: Vec<FieldDef>,
 }
 
@@ -94,7 +95,7 @@ impl TypeDefCache {
         let mut by_id: HashMap<String, TypeDef> = HashMap::new();
 
         let type_rows = sqlx::query(
-            "select type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, method_policy \
+            "select type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, method_policy, context_view \
              from type_definitions order by ordinal",
         )
         .fetch_all(pool)
@@ -118,6 +119,7 @@ impl TypeDefCache {
                     .unwrap_or_default(),
                 is_builtin: r.try_get("is_builtin")?,
                 method_policy: r.try_get("method_policy")?,
+                context_view: r.try_get("context_view")?,
                 fields: Vec::new(),
             };
             by_id.insert(type_id, td);
@@ -158,5 +160,70 @@ impl TypeDefCache {
     /// `type_id`/`id_prefix` aren't already taken (`crate::types`).
     pub fn all(&self) -> impl Iterator<Item = &TypeDef> {
         self.by_id.values()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! CASE 0013 / AC1 (G1 — context_view on the wire). RED CONTRACT NOTE:
+    //! `TypeDef` does NOT yet have a `context_view` field. This module therefore
+    //! FAILS TO COMPILE today — a compile error IS the TDD red here. To make it
+    //! green the coder adds `pub context_view: String` to `TypeDef` (registry.rs)
+    //! and populates it from `type_definitions.context_view` in `TypeDefCache::load`.
+    //! `get_type` serializes the whole `TypeDef` via `type_descriptor` (types.rs:372-377),
+    //! so once the field exists this is the contract proof for `GET /api/types/:type`.
+    //! (The `list_types`-JSON + `OPTIONS options_body` halves of AC1 need a running
+    //! app/DB and are covered by tools/e2e-0013.sh, not here — DB tests OOM this box.)
+    use super::*;
+
+    /// Build a minimal `TypeDef` with a non-default `context_view` and assert the
+    /// serialized wire descriptor (what `GET /api/types/:type` returns) carries the
+    /// `context_view` key with that exact value.
+    #[test]
+    fn typedef_serializes_context_view_key() {
+        let td = TypeDef {
+            type_id: "file".to_string(),
+            id_prefix: "FIL".to_string(),
+            display_name: "File".to_string(),
+            display_name_plural: "Files".to_string(),
+            scope_parents: vec!["project_id".to_string()],
+            is_builtin: true,
+            method_policy: serde_json::json!({}),
+            context_view: "table".to_string(),
+            fields: Vec::new(),
+        };
+
+        let wire = serde_json::to_value(&td).expect("TypeDef serializes");
+
+        assert_eq!(
+            wire.get("context_view").and_then(|v| v.as_str()),
+            Some("table"),
+            "GET /api/types/:type must carry context_view with the type's value (AC1)"
+        );
+    }
+
+    /// A no-archetype type carries the `'none'` default — still present on the wire,
+    /// never omitted (the column is non-null since migration 0016).
+    #[test]
+    fn typedef_serializes_context_view_default_none() {
+        let td = TypeDef {
+            type_id: "workspace".to_string(),
+            id_prefix: "WSP".to_string(),
+            display_name: "Workspace".to_string(),
+            display_name_plural: "Workspaces".to_string(),
+            scope_parents: Vec::new(),
+            is_builtin: true,
+            method_policy: serde_json::json!({}),
+            context_view: "none".to_string(),
+            fields: Vec::new(),
+        };
+
+        let wire = serde_json::to_value(&td).expect("TypeDef serializes");
+
+        assert_eq!(
+            wire.get("context_view").and_then(|v| v.as_str()),
+            Some("none"),
+            "context_view must be present (default 'none') even for no-archetype types (AC1)"
+        );
     }
 }

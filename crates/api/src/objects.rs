@@ -324,6 +324,7 @@ async fn options_body(
     let mut body = json!({
         "type": td.type_id,
         "id_prefix": td.id_prefix,
+        "context_view": td.context_view,
         "resource": if is_item { "item" } else { "collection" },
         "allow": caller::permitted_verbs(pool, caller, td, object_id, is_item).await?,
         "rbac": caller::rbac_verdict(pool, caller, td, object_id, is_item).await?,

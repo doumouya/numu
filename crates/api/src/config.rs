@@ -14,6 +14,8 @@ pub struct Config {
     pub cors_origins: Vec<String>,
     /// where uploaded file blobs live on disk (`<data_dir>/files/<FIL>.bin`). Default `./data`.
     pub data_dir: std::path::PathBuf,
+    /// static frontend root served same-origin via `ServeDir`; `NUMU_WEB_DIR`, default `./web`.
+    pub web_dir: std::path::PathBuf,
 }
 
 impl Config {
@@ -45,6 +47,9 @@ impl Config {
             data_dir: std::env::var("NUMU_DATA_DIR")
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|_| std::path::PathBuf::from("./data")),
+            web_dir: std::env::var("NUMU_WEB_DIR")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| std::path::PathBuf::from("./web")),
         })
     }
 }

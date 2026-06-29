@@ -124,7 +124,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .merge(oauth::router())
         .merge(debug::router())
         .route("/healthz", get(health::healthz))
+        .route("/api/health", get(health::healthz))
         .route("/readyz", get(health::readyz))
+        // Same-origin static frontend: only paths no `/api/*` + `/auth` + health route matched fall
+        // through here, so the API always wins by construction (AC3). Serving the bundled frontend from
+        // the binary makes the SameSite=Lax; HttpOnly session cookie work with zero CORS (see ADR 0002).
+        .fallback_service(tower_http::services::ServeDir::new(&cfg.web_dir))
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(middleware::from_fn(request_id::request_id_layer))
