@@ -99,19 +99,19 @@ else
   bad "AC1  GET /api/types catalog missing context_view (code=$HTTP_CODE)"
 fi
 
-# ── AC1-OPTIONS-parity: KNOWN ISSUE (Case 0016), DESCOPED from 0013 ──────────
+# ── AC1-OPTIONS-parity: KNOWN ISSUE (Case 0017), DESCOPED from 0013 ──────────
 # OPTIONS /api/objects/:type SHOULD echo context_view in its options_body
 # (objects.rs emits it at the handler), but tower_http::cors::CorsLayer (lib.rs,
 # outermost) short-circuits ALL OPTIONS as CORS preflight before the router, so
 # coll_options/item_options never run → empty 200. Pre-existing (CORS landed Case
-# 0009), filed as Case 0016. Em descoped OPTIONS-parity from 0013; the frontend
+# 0009), filed as Case 0017. Em descoped OPTIONS-parity from 0013; the frontend
 # reads context_view from GET /api/types/:type (above, LIVE-GREEN). This is a
 # SKIP, NOT a FAIL — it does not count toward the failure exit.
 http_options_auth "/api/objects/file"
 if printf '%s' "$HTTP_BODY" | grep -q '"context_view"'; then
-  ok 'AC1  OPTIONS /api/objects/file → options_body has "context_view" (parity, Case 0016 fixed)'
+  ok 'AC1  OPTIONS /api/objects/file → options_body has "context_view" (parity, Case 0017 fixed)'
 else
-  note 'AC1-OPTIONS-parity — blocked by Case 0016 (CorsLayer shadows OPTIONS); frontend uses GET /api/types/:type'
+  note 'AC1-OPTIONS-parity — blocked by Case 0017 (CorsLayer shadows OPTIONS); frontend uses GET /api/types/:type'
 fi
 
 # ── AC3: sentinel static served by ServeDir (mounted AFTER /api/*) ───────────

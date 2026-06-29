@@ -135,7 +135,7 @@ CORS for a truly cross-site deploy (moot while same-origin).
   → escalate the fix-direction decision to Em (drop OPTIONS-parity from 0013 + file CORS bug separately, vs
   fix CORS now, vs remove CORS for same-origin).
 - **2026-06-29 — Em decision: "Drop OPTIONS-parity from 0013, file CORS bug separately."** AC1 descoped to the
-  GET endpoints (both LIVE-GREEN). OPTIONS parity + the CORS-shadows-OPTIONS fix → new **Case 0016**. The
+  GET endpoints (both LIVE-GREEN). OPTIONS parity + the CORS-shadows-OPTIONS fix → new **Case 0017**. The
   `options_body` context_view line stays (forward-compatible). 0013 is now **LIVE-GREEN**. → tester cleans up
-  `tools/e2e-0013.sh` (cookie auth + OPTIONS check → skip-with-0016-ref) and the AC1 `'none'`→`'record'` test
+  `tools/e2e-0013.sh` (cookie auth + OPTIONS check → skip-with-0017-ref) and the AC1 `'none'`→`'record'` test
   flag; then push (Em pre-authorized "push if green"). → tester starts (Step 2).

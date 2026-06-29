@@ -1,4 +1,6 @@
-# CASE 0016 — CorsLayer shadows the OPTIONS self-description over HTTP
+# CASE 0017 — CorsLayer shadows the OPTIONS self-description over HTTP
+
+> (Renumbered 0016→0017 — `0016` collided with `docs/cases/0016-postgres-ha-docs.md` from a parallel effort.)
 
 - **Status:** backlog
 - **Type:** bug

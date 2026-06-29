@@ -21,10 +21,10 @@ on the R3 Shell proof page; the `numu Console.dc.html` cutover is deferred.
   `type_definitions.context_view` is non-default (e.g. `file` → `"table"`, `project` → `"thread"`) returns a
   body containing the `context_view` key with that value. `GET /api/types` returns each catalog entry with a
   `context_view` key. (Both verified **LIVE-GREEN** by ops 2026-06-29.) **OPTIONS parity DESCOPED (Em,
-  Checkpoint 2):** the Checkpoint-1 `OPTIONS /api/objects/:type` parity is moved to **Case 0016** — ops found
+  Checkpoint 2):** the Checkpoint-1 `OPTIONS /api/objects/:type` parity is moved to **Case 0017** — ops found
   `tower_http::cors::CorsLayer` short-circuits ALL OPTIONS before the router, a pre-existing bug (Case 0009)
   that shadows the whole OPTIONS self-description feature, not just 0013. The `options_body` `context_view`
-  line (objects.rs:327) STAYS in place (correct + forward-compatible — it'll surface once Case 0016 fixes the
+  line (objects.rs:327) STAYS in place (correct + forward-compatible — it'll surface once Case 0017 fixes the
   CORS layer). The frontend reads `context_view` from `GET /api/types/:type`, so 0013 needs nothing from
   OPTIONS.
 
