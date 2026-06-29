@@ -135,6 +135,11 @@ analytics, trackers, CDNs, or LLM calls.** This is the strongest privacy control
 never has to leave the
 device") — make it an *enforceable* operator control, not just an architecture property
 ([RBAC doc](numu-rbac-membership-design.md) §3.7).
+**Sharing extends this posture ([decision 0003](decisions/0003-consent-sharing-aggregate.md) / CASE 0018):** a shared
+chart/dashboard carries its materialized **aggregate** `source_file` (PII-stripped), never the raw rows; sharing is
+**pure-consent** with the *narrowest* grant (the object + its derived data only — never other records, closing the
+field-perm over-grant + IDOR). `is_public` becomes explicit, audience-named **visibility scopes** so consent is
+**informed** — which is the `notice/consent` surface this doc tracks as **F-D** (go-live).
 
 ### 3.6 Observability privacy ✅ (numu has this)
 `docs/OBSERVABILITY.md`: **no secret/PII in spans** — DB spans log `table`/`rows`, never bound values;

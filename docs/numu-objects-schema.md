@@ -392,3 +392,7 @@ The §3 contexts are a planning lens. They line up with the real surfaces so not
 - **Client-website angle:** the **Public / Content** context (file/chart/dashboard/note + published
   project content) is what a client site renders; `is_public` on `project_files` is the existing publish flag.
   New public-facing objects should join this context and carry an explicit visibility/publish field.
+  → **Settled in [decision 0003](decisions/0003-consent-sharing-aggregate.md) / [CASE 0018](cases/0018-consent-sharing-aggregate-source.md):**
+  the `is_public` boolean becomes explicit visibility scopes (`private`·`organization`·`public`) reconciled with the
+  `visibility` enum; sharing is **pure-consent** and carries the materialized **aggregate** `source_file` (PII-stripped),
+  never the raw — so a shared chart/dashboard exposes only what it was built to show.

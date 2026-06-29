@@ -42,6 +42,7 @@ docs-currency gate); until then, the doc *is* the contract.
 | [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
 | [`decisions/0001-data-app-catalog.md`](decisions/0001-data-app-catalog.md) | The reconciliation ADR: D-CNV, file-as-typed-table, canonical names, note/report, the presentation layer, data_class-with-the-plane | the data-app plane below | accepted |
 | [`decisions/0002-frontend-same-origin-serving.md`](decisions/0002-frontend-same-origin-serving.md) | The same-origin serving ADR: `ServeDir` fallback + `NUMU_WEB_DIR` so the `SameSite=Lax` session cookie works with zero CORS; the G1–G7 contract gaps (CASE 0013) | `web/` frontend · `crates/api/src/{lib,config}.rs` | accepted |
+| [`decisions/0003-consent-sharing-aggregate.md`](decisions/0003-consent-sharing-aggregate.md) | The sharing ADR: **pure-consent** sharing (no privacy gate), share the materialized **aggregate** `source_file` not the raw, the narrowest-grant vs the field-perm over-grant anti-pattern, **informed-consent** visibility scopes (CASE 0018) | the object reach/sharing model · the data-app plane · legal/privacy | accepted (design; impl deferred) |
 
 ## Data-app plane (LIVE — README §3 Buckets 1–2, the numu-Console data layer)
 
