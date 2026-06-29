@@ -329,9 +329,10 @@ No entity types — append-only telemetry tables.
 - **`perm_class`** — the field's permission tier: `system` (engine-managed) · `readonly` (visible, never
   user-set) · `standard` (normal edit) · `owner_grade` (only owner-rank may write) · `personal` (the owner's
   own data; redpash). Drives the `OPTIONS`/field-gate (403) plane.
-- **`data_class`** (redpash) — privacy tag: `none` · `personal` · `sensitive`. Feeds export-scoping, log
-  redaction, and the proposed operator read-audit ([RBAC](numu-rbac-membership-design.md) §3.5). **numu has no
-  `data_class` column yet — porting it is the first privacy step** ([legal](numu-legal-privacy-data-compliance.md) §3.1).
+- **`data_class`** (privacy tag: `none` · `personal` · `sensitive`) — **LIVE in numu** as of migration
+  `0016` (landed with the data plane; tags message.body, file.columns_meta, actor.email, case.title/
+  description, comment.body, note.body). Feeds export-scoping, log redaction, and the proposed operator
+  read-audit ([RBAC](numu-rbac-membership-design.md) §3.5, [ADR 0001](decisions/0001-data-app-catalog.md)).
 - **`kind`/`data_type`** — the value shape: `text/string` · `int` · `float` · `bool` · `date`/`datetime` ·
   `json` · `ref` (FK to another type by prefix) · `enum` (vocab in `options`).
 - **`required` / `editable`** (numu) — create-mandatory / mutable-after-create (`editable=false` ⇒ set-once).
@@ -377,9 +378,9 @@ The §3 contexts are a planning lens. They line up with the real surfaces so not
 - **Add a field** = 1 `type_fields` row. It surfaces to the front automatically via `GET /api/types` and the
   per-object `OPTIONS` response — no client change to *see* it; the client just renders the new field meta.
 - **Gaps to fill before front work:**
-  - `chart`, `dashboard`, `connection` (redpash) have **0 seeded `type_fields`** — the registry can't
-    describe them to a generic grid/form. Seed their field catalogs (or keep them as opaque `spec`-driven
-    objects and document that explicitly). **Trade-off:** an opaque object has **no `field_permissions` and
+  - `chart` + `dashboard` now have **seeded `type_fields`** in numu (migration `0016`: project_id/title/
+    spec, +file_id on chart) — the 0-field gap is closed for them; **`connection` is still 0-field**. The
+    `spec` stays opaque (recipe-only). **Trade-off:** an opaque object has **no `field_permissions` and
     no `data_class`** coverage — yet chart/dashboard `spec` is exactly where customer-derived data can leak
     (the closed F-E finding, [legal](numu-legal-privacy-data-compliance.md) §3.2). If kept opaque, enforce
     the "recipe-only, no customer data in `spec`" invariant another way (a spec-content check).

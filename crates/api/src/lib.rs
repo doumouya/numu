@@ -6,10 +6,12 @@ pub mod auth;
 pub mod caller;
 pub mod config;
 pub mod connectors;
+pub mod conversations;
 pub mod db;
 pub mod debug;
 pub mod error;
 pub mod field_perms;
+pub mod files;
 pub mod health;
 pub mod http_client;
 pub mod ids;
@@ -17,6 +19,7 @@ pub mod members;
 pub mod oauth;
 pub mod objects;
 pub mod orchestrator;
+pub mod pipeline;
 pub mod ratelimit;
 pub mod rbac;
 pub mod registry;
@@ -67,7 +70,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     sqlx::migrate!("../../migrations").run(&pool).await?;
     let registry = registry::TypeDefCache::load(&pool).await?;
     let workflows = workflow::WorkflowCache::load(&pool).await?;
-    let state = AppState::new(pool, registry, workflows);
+    let mut state = AppState::new(pool, registry, workflows);
+    state.data_dir = std::sync::Arc::new(cfg.data_dir.clone());
 
     // brute-force backstop on /auth ONLY (not the object surface): a per-client fixed window.
     let limiter = RateLimiter::new(
@@ -114,6 +118,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .merge(search::router())
         .merge(orchestrator::router())
         .merge(connectors::router())
+        .merge(files::router())
+        .merge(conversations::router())
         .merge(auth_routes)
         .merge(oauth::router())
         .merge(debug::router())

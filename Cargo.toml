@@ -1,9 +1,9 @@
 # numu — workspace.
-# crates/api is the HTTP edge. The `data` crate (pure compute → wasm) and `shared` (DTOs) are added
-# when the first compute / cross-crate type lands — the workspace grows; we don't ship empty crates.
+# crates/api is the HTTP edge. `shared` (DTOs) + `data` (pure-compute CSV typing engine, the server-typing
+# subset ported from redpash) land with the frontend data plane (README §3 Bucket 1 / migrations 0016+0017).
 [workspace]
 resolver = "2"
-members = ["crates/api"]
+members = ["crates/api", "crates/shared", "crates/data"]
 
 [workspace.package]
 edition = "2021"
@@ -11,7 +11,7 @@ license = "MIT"
 rust-version = "1.80"
 
 [workspace.dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors"] }
@@ -30,6 +30,10 @@ hmac = "0.12"
 jsonwebtoken = "9"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 arc-swap = "1"
+# data plane (CSV typing engine — native server build; stock polars, no wasm fork needed here)
+polars = { version = "0.54", features = ["lazy", "csv", "strings", "dtype-full"] }
+chardetng = "0.1"
+encoding_rs = "0.8"
 
 [profile.release]
 opt-level = 2

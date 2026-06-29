@@ -15,6 +15,9 @@ pub struct AppState {
     /// (crate::types) reloads + swaps it, so an API-registered type is live with no restart.
     pub registry: Arc<ArcSwap<TypeDefCache>>,
     pub workflows: Arc<WorkflowCache>,
+    /// Where uploaded file blobs live (`<data_dir>/files/<FIL>.bin`). `new()` defaults it; `run()` sets the
+    /// configured path. Arc so cloning AppState per-request stays cheap.
+    pub data_dir: Arc<std::path::PathBuf>,
 }
 
 impl AppState {
@@ -26,6 +29,7 @@ impl AppState {
             pool,
             registry: Arc::new(ArcSwap::from_pointee(registry)),
             workflows: Arc::new(workflows),
+            data_dir: Arc::new(std::path::PathBuf::from("./data")),
         }
     }
 }
