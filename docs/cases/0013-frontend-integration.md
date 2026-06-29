@@ -1,6 +1,6 @@
 # CASE 0013 — frontend integration (bind the Datacore rewrite to the live numu backend)
 
-- **Status:** in_progress
+- **Status:** in_review (LIVE-GREEN; pushed to `origin/feat/numu-frontend-integration`, pending PR/merge)
 - **Type:** feature
 - **Opened:** 2026-06-29
 - **Owner:** Torv (for Em)
@@ -138,4 +138,11 @@ CORS for a truly cross-site deploy (moot while same-origin).
   GET endpoints (both LIVE-GREEN). OPTIONS parity + the CORS-shadows-OPTIONS fix → new **Case 0017**. The
   `options_body` context_view line stays (forward-compatible). 0013 is now **LIVE-GREEN**. → tester cleans up
   `tools/e2e-0013.sh` (cookie auth + OPTIONS check → skip-with-0017-ref) and the AC1 `'none'`→`'record'` test
-  flag; then push (Em pre-authorized "push if green"). → tester starts (Step 2).
+  flag; then push (Em pre-authorized "push if green").
+- **2026-06-29 — SHIPPED.** Renumbered the CORS case 0016→0017 (collision with a parallel
+  `0016-postgres-ha-docs`). Em confirmed the bundled push; pushed `2ea37c7..9557d7c` to
+  `origin/feat/numu-frontend-integration` (4 0013 commits + 1 parallel postgres-ha docs commit). 0013
+  complete: the Datacore seam binds the live numu backend same-origin — context_view archetype dispatch,
+  shape-normalized HttpClient, feed/lens/upload all LIVE-GREEN on a seeded Postgres. Follow-ups: **Case 0017**
+  (CorsLayer shadows OPTIONS self-description); the deferred bind-live limitations (AutoClient probe
+  representativeness, R3 read-path `.catch`, `list ?q=`); and the `numu Console.dc.html` cutover (separate). → tester starts (Step 2).
