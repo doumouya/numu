@@ -1,4 +1,6 @@
 // CASE 0013 — HttpClient shape-normalization unit tests (AC4–AC8 unit halves).
+// CASE 0019 (console-cutover) — appended [JS-UNIT] seam guards for AC4 / AC11 /
+//   AC12 / AC21 (see the "CASE 0019" block near the bottom of this file).
 // =============================================================================
 // Verification path per spec: [JS-UNIT] for the HttpClient shape maps (G3–G7) +
 // the makeClient("auto") regression guard. No Rust test exists for these.
@@ -280,10 +282,145 @@ await ac("AC8 unit — makeClient(\"auto\") returns an AutoClient [GUARD]", asyn
   assert.ok(NUMU.makeClient("fixture") instanceof FixtureClient, "makeClient('fixture') is a FixtureClient");
 });
 
+// =============================================================================
+// CASE 0019 — console-cutover [JS-UNIT] seam guards
+// =============================================================================
+// The cutover App's data layer relies on these seam contracts. Most are already
+// green above (0013/0017); the additions below pin the cutover-specific ACs:
+//   AC4  — conversations() flat projection incl. the data:null robustness row.
+//          (Already asserted as "AC7" above against {items}; this re-pins it
+//          under the cutover's AC number against an {items}-shaped envelope, the
+//          live GET /api/objects/project shape the rail consumes.)  GUARD.
+//   AC11 — create() returns a FLAT entity (no nested data/version leaks) so a
+//          field-metadata form can read fields back directly.                GUARD.
+//   AC12 — update(type,id,patch,version) sends If-Match: W/"<version>" and
+//          returns a flat entity (the [LIVE] half round-trips on a server).  GUARD.
+//   AC21 — search() result-shape mapping. NOTE: the seam (numu-data-client.js)
+//          has NO `search()` method today — this is a CODER GAP flagged here.
+//          The assertion documents the REQUIRED shape so when the coder adds
+//          search() it lands green; until then it is RED (a real failing test).
+//
+// A recording _send: captures (method, path, body, version) so AC12 can assert
+// the If-Match wire header without a live fetch.
+function recordingHttp(sendResponse) {
+  const c = new HttpClient();
+  c.sent = [];
+  c._send = function (method, path, body, version) {
+    c.sent.push({ method, path, body, version });
+    return Promise.resolve(sendResponse);
+  };
+  return c;
+}
+
+// ── AC4 (cutover) — conversations() flat projection from the live envelope ────
+await ac("AC4 conversations — {items} project envelope ⇒ [{id,title,origin,channel,status}] (cutover)", async () => {
+  const projectBackend = {
+    items: [
+      { id: "PRJ_kx01", type: "project", data: { name: "Aria Vex — Midnight Run", origin: "email", status: "active" }, version: 1, etag: 'W/"1"' },
+      { id: "PRJ_kx02", type: "project", data: { title: "Fleet health", name: "ignored", origin: "manual", status: "active", channel_group: "Internal" }, version: 7, etag: 'W/"7"' },
+      { id: "PRJ_kx03", type: "project", data: null, version: 2, etag: 'W/"2"' },
+    ],
+    limit: 50, offset: 0,
+  };
+  const c = stubbedHttp({ getByPath: { "/api/objects/project": projectBackend } });
+  const convos = await c.conversations();
+  assert.ok(Array.isArray(convos) && convos.length === 3, "one flat projection per project item");
+  // shape: exactly the five rail keys, no envelope/data leak.
+  assert.deepEqual(Object.keys(convos[0]).sort(), ["channel", "id", "origin", "status", "title"], "row carries exactly {id,title,origin,channel,status}");
+  assert.equal(convos[0].title, "Aria Vex — Midnight Run", "title = data.title || data.name");
+  assert.equal(convos[0].channel, "Clients", "channel falls back to \"Clients\" when no channel_group");
+  assert.equal(convos[1].channel, "Internal", "channel passes through when channel_group present");
+  assert.equal(convos[2].channel, "Clients", "data:null yields a sane row, not a throw");
+  assert.equal(convos[0].data, undefined, "no nested data leaks");
+  assert.equal(convos[0].items, undefined, "no raw items leaks");
+});
+
+// ── AC11 — create() returns a FLAT entity (field-metadata form reads it back) ─
+await ac("AC11 create — flat entity back (no nested data/version leak)", async () => {
+  const envelope = {
+    id: "CAS_new1", type: "case",
+    data: { title: "Encoding garbled", status: "backlog", type: "bug", priority: "urgent" },
+    version: 1, etag: 'W/"1"',
+  };
+  const c = recordingHttp(envelope);
+  const created = await c.create("case", { title: "Encoding garbled", status: "backlog", type: "bug", priority: "urgent" });
+  // POST to the generic /api/objects/:type, no version header on create.
+  assert.equal(c.sent.length, 1, "create issues one _send");
+  assert.equal(c.sent[0].method, "POST", "create uses POST");
+  assert.equal(c.sent[0].path, "/api/objects/case", "create POSTs /api/objects/:type");
+  assert.equal(c.sent[0].version, undefined, "create sends no If-Match version");
+  // flat entity back: fields hoisted, _version a string, no data/version envelope keys.
+  assert.equal(created.id, "CAS_new1", "id hoisted");
+  assert.equal(created.title, "Encoding garbled", "field hoisted out of data");
+  assert.equal(created.priority, "urgent", "field hoisted out of data");
+  assert.equal(created._version, "1", "_version is the stringified version");
+  assert.equal(created.data, undefined, "no nested data leaks");
+  assert.equal(created.version, undefined, "no numeric version leaks");
+});
+
+// ── AC12 — update() sends If-Match: W/"<version>" + returns a flat entity ─────
+// Contract (spec §seam :307,:310): update(type,id,patch,version) ⇒
+//   PATCH /api/objects/:type/:id  with  If-Match: W/"<version>"  ⇒ flat entity.
+await ac("AC12 update — PATCH /api/objects/:type/:id with If-Match: W/\"<version>\", flat back", async () => {
+  const envelope = {
+    id: "CAS_277d", type: "case",
+    data: { title: "Encoding garbled", status: "in_review", type: "bug", priority: "urgent" },
+    version: 7, etag: 'W/"7"',
+  };
+  const c = recordingHttp(envelope);
+  const updated = await c.update("case", "CAS_277d", { status: "in_review" }, "6");
+  assert.equal(c.sent.length, 1, "update issues one _send");
+  assert.equal(c.sent[0].method, "PATCH", "update uses PATCH");
+  assert.equal(c.sent[0].path, "/api/objects/case/CAS_277d", "update PATCHes /api/objects/:type/:id");
+  assert.deepEqual(c.sent[0].body, { status: "in_review" }, "update body is the patch");
+  // the version reaches _send, which builds If-Match: W/"<version>" (seam :310).
+  assert.equal(c.sent[0].version, "6", "update forwards the prior _version to _send (becomes If-Match: W/\"6\")");
+  // flat entity back with the bumped version.
+  assert.equal(updated.status, "in_review", "field hoisted out of data");
+  assert.equal(updated._version, "7", "_version reflects the bumped server version (string)");
+  assert.equal(updated.data, undefined, "no nested data leaks on update");
+});
+
+// Direct proof that _send emits the If-Match wire header from `version` (seam :309–310).
+// We monkeypatch the global `fetch` the IIFE captured? No — the loader's sandboxFetch is
+// fixed. Instead we re-run the header-builder logic the seam uses, by intercepting at the
+// fetch boundary via a fresh HttpClient whose _send we DON'T override but whose `fetch`
+// we can't reach. So we assert the OBSERVABLE contract (version forwarded) above; the raw
+// header string is exercised by the [LIVE] probe (tools/e2e-0019-console.sh, AC12).
+
+// ── AC21 — search() result shape  [CODER GAP: no search() method on the seam] ─
+// REQUIRED contract (spec AC21 + search.rs:78–85): the backend returns
+//   { query, results:[{entity_id,type,title,rank}] }
+// The App's TopBar needs a seam method (e.g. client.search(q)) that surfaces
+// `results` (ideally as a normalized list it can route to AC7's dispatch via
+// {entity_id,type}). The seam has NO search() today → this test is RED and
+// stands as the coder's red-to-green target. If the coder names it differently,
+// the test is updated to the agreed name (adjudicate against the Case).
+await ac("AC21 search — client.search(q) ⇒ results:[{entity_id,type,title,rank}]  [RED: seam lacks search()]", async () => {
+  assert.equal(typeof HttpClient.prototype.search, "function",
+    "HttpClient must expose a search(q) method (CODER GAP: numu-data-client.js has no search() — see report)");
+  const backend = {
+    query: "encoding",
+    results: [
+      { entity_id: "CAS_277d", type: "case", title: "Encoding garbled on import", rank: 0.91 },
+      { entity_id: "FIL_d055", type: "file", title: "dossier.csv", rank: 0.42 },
+    ],
+  };
+  // search() must hit GET /api/search?q=<term>; assert it surfaces the results array.
+  const c = stubbedHttp({ getByPath: { "/api/search": backend } });
+  const out = await c.search("encoding");
+  const rows = Array.isArray(out) ? out : (out && out.results);
+  assert.ok(Array.isArray(rows) && rows.length === 2, "search() surfaces the results array");
+  assert.equal(rows[0].entity_id, "CAS_277d", "result carries entity_id (for AC7 archetype routing)");
+  assert.equal(rows[0].type, "case", "result carries type (selects the archetype)");
+  assert.equal(rows[0].title, "Encoding garbled on import", "result carries title");
+  assert.equal(rows[0].rank, 0.91, "result carries rank");
+});
+
 // ── summary + exit code ──────────────────────────────────────────────────────
 const failed = results.filter((r) => !r.ok);
 console.log("");
-console.log("CASE 0013 shapes: " + (results.length - failed.length) + "/" + results.length + " passed");
+console.log("numu seam shapes (0013 + 0019 cutover): " + (results.length - failed.length) + "/" + results.length + " passed");
 if (failed.length) {
   console.log("FAILED: " + failed.map((r) => r.label).join(" | "));
   process.exit(1);
