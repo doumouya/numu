@@ -1435,6 +1435,36 @@
       </div>
     </div>
   </sc-if>
+
+  <!-- ===================== SEAM: LIVE OBJECT-TYPE LIST DRILL (CASE 0019, Slice 8) =====================
+       AC14/AC7 — an objects-tree object type drills to a live list (client.list); each row opens the
+       entity in its archetype (AC7); "+ New" opens the create form (AC11/AC12). -->
+  <sc-if value="{{ typeListOpen }}">
+    <div onClick="{{ closeTypeList }}" style="position:fixed; inset:0; z-index:56; background:rgba(2,6,23,0.5); display:flex; align-items:stretch; justify-content:flex-end">
+      <div onClick="{{ stopRow }}" style="width:min(26rem, 96vw); height:100%; display:flex; flex-direction:column; background:var(--surface-subtle); border-left:1px solid var(--border-strong); box-shadow:var(--shadow-popover); overflow:hidden">
+        <div style="flex:none; display:flex; align-items:center; gap:0.5rem; padding:0.65rem 0.85rem; border-bottom:1px solid var(--border); background:var(--surface)">
+          <span style="font-weight:var(--weight-semibold); font-size:var(--text-md)">{{ typeListTitle }}</span>
+          <span style="font-family:var(--font-mono); font-size:0.62rem; color:var(--text-subtle)">{{ typeListCount }}</span>
+          <span style="flex:1"></span>
+          <sc-if value="{{ typeListCanCreate }}">
+            <button onClick="{{ typeListCreate }}" title="New" style="display:flex; align-items:center; gap:0.35rem; height:1.85rem; padding:0 0.6rem; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:var(--radius-xs); cursor:pointer; font:inherit; font-size:var(--text-sm); font-weight:var(--weight-semibold)"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="plus-lg" hint-size="0.72rem,0.72rem"></x-import>New</button>
+          </sc-if>
+          <button onClick="{{ closeTypeList }}" title="Close" style="width:1.7rem; height:1.7rem; display:grid; place-items:center; border:1px solid var(--border); border-radius:var(--radius-xs); background:var(--surface); color:var(--text-muted); cursor:pointer"><x-import component-from-global-scope="DatacoreDesignSystem_a460c7.Icon" name="x-lg" hint-size="0.78rem,0.78rem"></x-import></button>
+        </div>
+        <div style="flex:1; overflow:auto">
+          <sc-for list="{{ typeListRows }}" as="r" hint-placeholder-count="6">
+            <div onClick="{{ r.onOpen }}" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.85rem; border-bottom:1px solid var(--border-subtle); cursor:pointer">
+              <span style="flex:1; min-width:0; font-size:var(--text-sm); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.title }}</span>
+              <span style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-subtle)">{{ r.id }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ typeListEmpty }}">
+            <div style="padding:2rem 1rem; text-align:center; font-size:var(--text-sm); color:var(--text-subtle)">{{ typeListEmptyLabel }}</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;surfaceTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;slate&quot;,&quot;options&quot;:[&quot;slate&quot;,&quot;graphite&quot;,&quot;carbon&quot;,&quot;sandstone&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;startWorkspace&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;platform&quot;,&quot;options&quot;:[&quot;platform&quot;,&quot;studio&quot;,&quot;commerce&quot;,&quot;social&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;en&quot;,&quot;options&quot;:[&quot;en&quot;,&quot;fr&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;platformAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3f5573&quot;,&quot;options&quot;:[&quot;#3f5573&quot;,&quot;#46607f&quot;,&quot;#3a5a8c&quot;,&quot;#54627a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;studioAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#b13c5f&quot;,&quot;options&quot;:[&quot;#b13c5f&quot;,&quot;#a8466a&quot;,&quot;#9d3b6e&quot;,&quot;#c24a63&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;commerceAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#9a6518&quot;,&quot;options&quot;:[&quot;#9a6518&quot;,&quot;#a96f1e&quot;,&quot;#8a5a2a&quot;,&quot;#9c6b3a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;socialAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2a7d63&quot;,&quot;options&quot;:[&quot;#2a7d63&quot;,&quot;#2f8f5f&quot;,&quot;#1f7a72&quot;,&quot;#3a7d4f&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;},&quot;secondaryAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5b6cb0&quot;,&quot;options&quot;:[&quot;#5b6cb0&quot;,&quot;#6d6fa3&quot;,&quot;#4f6f9c&quot;,&quot;#7a6cae&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace accents&quot;}}">
@@ -1454,7 +1484,11 @@ class Component extends DCLogic {
     // ctx = { type, options, entity, arch, title, dashTiles } resolved off options(type)+get(type,id);
     // formMode = null|"create"|"edit"; formDraft is the in-progress record. Both render in ONE overlay
     // that dispatches on options.contextView across the 11 archetypes (AC7/AC8) and on field.kind (AC11).
-    ctx: null, formMode: null, formDraft: null
+    ctx: null, formMode: null, formDraft: null,
+    // SEAM GRAFT (Slice 8): live object-type counts (AC14) + a live list drill (opens entities in AC7).
+    // typeCounts maps type → live row count (client.list); typeList = { type, options, rows } for the
+    // drill overlay. profileLive = { memberships, activity, identity } sourced live (AC16).
+    typeCounts: {}, typeList: null, profileLive: null
   };
 
   // ===== SEAM GRAFT (CASE 0019 console-cutover, Slice 3) =======================
@@ -1564,6 +1598,7 @@ class Component extends DCLogic {
       : this.client.update(c.type, c.entity.id, draft, c.entity._version);
     p.then((row) => {
       this.setState({ ctx: Object.assign({}, c, { id: row.id, entity: row, title: this.titleOf(row, c.options) }), formMode: null, formDraft: null });
+      if (this.state.typeList && this.state.typeList.type === c.type) this.refreshTypeList(); // AC14 — reflect the new row in the open list
     }).catch((e) => {
       if (mode === "edit" && this.handleConflict(c.type, c.entity.id, e)) return; // 412/428 → conflict-reload UX
       this.setState({ seamError: this.seamErr("save", e) });
@@ -1592,6 +1627,60 @@ class Component extends DCLogic {
         this.setState({ seamError: this.seamErr("close:case", e) });
       });
   };
+
+  // ===== SEAM GRAFT (Slice 8): live object-type counts + a list drill (AC14/AC7/AC11) =====
+  // loadTypeCounts() fans client.list(type,{limit:1}) over the panel's object types and records the
+  // page count, so the tree shows live counts (not fixtures). openTypeList() lists a type's entities;
+  // a row opens it in its archetype (AC7), "+ New" opens the create form (AC11/AC12).
+  // A type is seam-backed if the live registry (client.types) or the fixture catalog knows it. We probe
+  // counts/lists only for those, so an unregistered fixture-only type keeps its legacy canvas path.
+  isSeamType(type) {
+    if (this._liveTypeSet && this._liveTypeSet.has(type)) return true;
+    const cat = (typeof window !== "undefined" && window.NUMU_CLIENT && window.NUMU_CLIENT._catalog) || {};
+    return !!cat[type];
+  }
+  loadTypeCounts(tenant) {
+    if (!this.client || this._countsTenant === tenant) return;
+    this._countsTenant = tenant;
+    // resolve the live registry's type set once so isSeamType() is accurate against the server.
+    if (!this._liveTypeSet && this.client.types) {
+      this.client.types().then((ts) => { this._liveTypeSet = new Set((ts || []).map((t) => t.type)); this.forceUpdate && this.forceUpdate(); }).catch(() => { this._liveTypeSet = new Set(); });
+    }
+    const types = (this.OBJECT_TYPES[tenant] || []).filter((t) => this.isSeamType(t.id));
+    types.forEach((t) => {
+      this.client.list(t.id, { limit: 1 })
+        .then((res) => { const n = (res && (res.total != null ? res.total : (res.rows ? res.rows.length : 0)));
+          this.setState((s) => ({ typeCounts: Object.assign({}, s.typeCounts, { [t.id]: n }) })); })
+        .catch(() => {}); // a type the registry lacks is silent — the fixture count stays as a fallback
+    });
+  }
+  openTypeList = (type) => {
+    if (!this.client) { this.setState({ seamError: this.seamErr("list " + type, new Error("no data client")) }); return; }
+    Promise.all([this.client.options(type), this.client.list(type, { limit: 50 })])
+      .then((res) => this.setState({ typeList: { type: type, options: res[0], rows: (res[1] && res[1].rows) || [] } }))
+      .catch((e) => this.setState({ seamError: this.seamErr("list " + type, e) }));
+  };
+  closeTypeList = () => this.setState({ typeList: null });
+  refreshTypeList() {
+    const tl = this.state.typeList; if (!tl || !this.client) return;
+    this.client.list(tl.type, { limit: 50 })
+      .then((res) => this.setState({ typeList: Object.assign({}, this.state.typeList, { rows: (res && res.rows) || [] }) }))
+      .catch((e) => this.setState({ seamError: this.seamErr("list " + tl.type, e) }));
+  }
+
+  // ===== SEAM GRAFT (Slice 8): live profile — identity + memberships + recent activity (AC16) =====
+  // Sources the caller's identity, workspace memberships, and recent events from the live API. Security
+  // stays the existing coming-soon stub (AC17). Falls back silently to the existing fixture profile.
+  loadProfileLive() {
+    if (!this.client || this._profileLoaded) return;
+    this._profileLoaded = true;
+    // memberships: the caller's workspace rows; activity: recent events. Both via list() — a type the
+    // registry lacks rejects, and we keep the fixture profile (no throw, AC23-safe).
+    const out = {};
+    const done = () => this.setState({ profileLive: Object.assign({}, this.state.profileLive || {}, out) });
+    this.client.list("membership", { limit: 20 }).then((r) => { out.memberships = (r && r.rows) || []; done(); }).catch(() => {});
+    this.client.list("event", { limit: 8 }).then((r) => { out.activity = (r && r.rows) || []; done(); }).catch(() => {});
+  }
 
   // ===== render-vals for the live archetype panel + form (Slice 6/7/9) =====
   // Computes every template prop the ctx overlay reads, dispatching on ctx.arch (11 archetypes,
@@ -1677,6 +1766,21 @@ class Component extends DCLogic {
       m.saveCtxForm = this.saveCtxForm; m.cancelCtxForm = this.cancelCtxForm;
     }
     return m;
+  }
+  // render-vals for the live object-type list drill (Slice 8).
+  typeListVals() {
+    const tl = this.state.typeList;
+    if (!tl) return { typeListOpen: false };
+    const o = tl.options, rows = tl.rows || [];
+    const canCreate = this.canWrite() && (o && (o.fields || []).some((f) => f.editable));
+    return {
+      typeListOpen: true, closeTypeList: this.closeTypeList, stopRow: this.stopRow,
+      typeListTitle: (o && o.displayNamePlural) || tl.type,
+      typeListCount: rows.length + (rows.length === 1 ? " row" : " rows"),
+      typeListCanCreate: canCreate, typeListCreate: () => this.startCreate(tl.type),
+      typeListRows: rows.map((r) => ({ title: this.titleOf(r, o), id: r.id, onOpen: () => this.openEntity(tl.type, r.id) })),
+      typeListEmpty: rows.length === 0, typeListEmptyLabel: "No " + (((o && o.displayNamePlural) || tl.type).toLowerCase()) + " yet."
+    };
   }
   // ============================================================================
 
@@ -2079,6 +2183,8 @@ class Component extends DCLogic {
     // active conversation's feed (AC5/AC6). The localStorage feed bootstrap is retired.
     this.resolveLive();
     this.loadConversations();
+    this.loadTypeCounts(this.rTenant()); // AC14 — live object-type counts
+    this.loadProfileLive();              // AC16 — live identity + memberships + activity
     this._lastKey = this.feedKey();
     if (this.state.activeProject) this.loadFeedFromSeam(this.state.activeProject, this.state.lens);
     requestAnimationFrame(() => this.syncCharts());
@@ -2484,11 +2590,18 @@ class Component extends DCLogic {
   objectTypeView(tenant) {
     const off = new Set((this.objTypesOff()[tenant]) || []);
     const hidden = this.hiddenSet();
+    const counts = this.state.typeCounts || {};
     const visible = [], hiddenList = [];
     (this.OBJECT_TYPES[tenant] || []).filter((t) => !off.has(t.id)).forEach((t) => {
       const hkey = "obj:" + tenant + ":" + t.id;
-      const entry = { id: t.id, name: t.name, icon: t.icon, count: t.count || "",
-        onOpen: () => this.openObjectType(t),
+      // AC14 — prefer the LIVE count (client.list) over the fixture count when resolved.
+      const live = counts[t.id];
+      const count = live != null ? String(live) : (t.count || "");
+      // AC7 — a seam-backed object type drills to its entity list (each row opens the archetype); a
+      // fixture-only canvas type keeps the legacy openObjectType path until its backend lands.
+      const onOpen = this.isSeamType(t.id) ? (() => this.openTypeList(t.id)) : (() => this.openObjectType(t));
+      const entry = { id: t.id, name: t.name, icon: t.icon, count: count,
+        onOpen: onOpen,
         onHide: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.toggleHidden(hkey); },
         onRestore: () => this.toggleHidden(hkey) };
       if (hidden.has(hkey)) hiddenList.push(entry); else visible.push(entry);
@@ -2826,7 +2939,12 @@ class Component extends DCLogic {
     const localeMap = { en: "en-US", fr: "fr-FR", de: "de-DE", es: "es-ES", it: "it-IT", pt: "pt-PT", zh: "zh-CN", ja: "ja-JP" };
     const scopeMap = { platform: "org/numu", studio: "app/orvcle-studio", commerce: "app/maison-rets", social: "app/kestrel-social" };
     const psel = this.state.profileSel || { kind: "identity" };
-    const profileWorkspaces = this.ORDER.map((t) => ({ mark: this.TENANTS[t].mark, name: this.TENANTS[t].name, sub: this.TENANTS[t].sub, color: this.accentValue(t), role: this.t(t === "platform" ? "Owner" : "Operator"), scope: scopeMap[t], bg: (psel.kind === "membership" && psel.t === t) ? "var(--accent-tint)" : "var(--surface)", onClick: () => this.selectProfile({ kind: "membership", t: t }) }));
+    // AC16 — memberships from the live members API when resolved; else the fixture workspaces.
+    const live = this.state.profileLive || {};
+    const liveMemberships = Array.isArray(live.memberships) ? live.memberships : null;
+    const profileWorkspaces = (liveMemberships && liveMemberships.length)
+      ? liveMemberships.map((mb, i) => ({ mark: (mb.workspace_id || mb.scope || "·").slice(0, 2).toUpperCase(), name: mb.workspace_name || mb.workspace_id || mb.scope || "Workspace", sub: mb.role || "member", color: "var(--accent)", role: this.t(mb.role || "Operator"), scope: mb.scope || mb.workspace_id || "—", bg: (psel.kind === "membership" && psel.i === i) ? "var(--accent-tint)" : "var(--surface)", onClick: () => this.selectProfile({ kind: "membership", i: i, live: mb }) }))
+      : this.ORDER.map((t) => ({ mark: this.TENANTS[t].mark, name: this.TENANTS[t].name, sub: this.TENANTS[t].sub, color: this.accentValue(t), role: this.t(t === "platform" ? "Owner" : "Operator"), scope: scopeMap[t], bg: (psel.kind === "membership" && psel.t === t) ? "var(--accent-tint)" : "var(--surface)", onClick: () => this.selectProfile({ kind: "membership", t: t }) }));
     const profileSchema = [
       { k: this.t("type"), v: "actor" }, { k: this.t("id"), v: "act_9F3C2A7E" }, { k: this.t("handle"), v: "@jordan" },
       { k: this.t("email"), v: "jordan@numu.dev" }, { k: this.t("locale"), v: localeMap[this.rLang()] }, { k: this.t("timezone"), v: "Europe/Paris" },
@@ -2836,9 +2954,15 @@ class Component extends DCLogic {
       { k: this.t("status"), v: this.t("active") }, { k: this.t("MFA"), v: this.t("enabled") + " · TOTP" },
       { k: this.t("sessions"), v: "2" }, { k: this.t("last active"), v: this.t("now") }, { k: this.t("API tokens"), v: "1" }
     ];
-    const profileActivity = this.ACTIVITY.map((a, i) => ({ icon: a.icon, color: a.color, text: a.text, time: a.time,
-      bg: (psel.kind === "activity" && psel.idx === i) ? "var(--accent-tint)" : "transparent",
-      onClick: () => this.selectProfile({ kind: "activity", idx: i }) }));
+    // AC16 — recent activity from live events when resolved; else the fixture ACTIVITY.
+    const liveActivity = Array.isArray(live.activity) ? live.activity : null;
+    const profileActivity = (liveActivity && liveActivity.length)
+      ? liveActivity.map((ev, i) => ({ icon: "clock-history", color: "var(--text-muted)", text: ev.event || ev.kind || ev.type || "event", time: ev.at || ev.created_at || "",
+          bg: (psel.kind === "activity" && psel.idx === i) ? "var(--accent-tint)" : "transparent",
+          onClick: () => this.selectProfile({ kind: "activity", idx: i, live: ev }) }))
+      : this.ACTIVITY.map((a, i) => ({ icon: a.icon, color: a.color, text: a.text, time: a.time,
+          bg: (psel.kind === "activity" && psel.idx === i) ? "var(--accent-tint)" : "transparent",
+          onClick: () => this.selectProfile({ kind: "activity", idx: i }) }));
 
     // ----- connectors -----
     const connSel = this.state.connSel ?? this.firstConnected(tenant);
@@ -2864,7 +2988,7 @@ class Component extends DCLogic {
     const connScopes = this.SCOPES[connSel] || [];
     const connLog = dInfo.connected ? (this.KIND_LOG[dItem.kind] || []).map((t, i) => ({ text: t, time: [dInfo.sync || "just now", "14m ago", "1h ago"][i] })) : [];
 
-    return Object.assign(this.ctxVals(), {
+    return Object.assign(this.ctxVals(), this.typeListVals(), {
       setRoot: this.setRoot, noop: this.noop,
       screenLabel: T.name + " · " + page,
       tenantMark: T.mark, tenantName: T.name, tenantSub: T.sub, tenantShort: T.short,
