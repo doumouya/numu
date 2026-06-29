@@ -43,6 +43,12 @@ safe; the outage is purely the backend process. Phase 0 (a stopgap restart) is D
   - Auth: the session cookie is **`numu_session`** (not `rp_session`) — `auth.rs:25`. `dev-login` is
     `POST /auth/dev-login` and is **compiled out of release** (`#[cfg(debug_assertions)]`, `auth.rs:103-138`);
     it mints a session for `USR_dev` by default. The cookie is `Set-Cookie: numu_session=<token>; …`.
+  - **F2 (CORRECTION — found by the live round-trip, 2026-06-29):** `/auth/*` is **merged at the router
+    ROOT, NOT nested under `/api`** — `lib.rs` merges `auth_routes` at the top level (`auth::router()` →
+    `.merge(auth_routes)`), whereas objects are nested at `.nest("/api/objects", …)`. So dev-login is
+    `<host>/auth/dev-login`, **not** `<base>/auth/dev-login` (which resolves to `<host>/api/auth/dev-login`
+    and **405s**). The adapter must strip a trailing `/api` segment for the auth route only; all `/objects/*`
+    calls keep the `/api` base. (The mocked unit tests passed despite this; only the live round-trip caught it.)
   - Bind: `NUMU_BIND`, default `127.0.0.1:8080` (`config.rs:27`). So numu's API base is
     `http://127.0.0.1:8080/api`. **PORT COLLISION RISK:** both RedPash and numu default to `:8080` — see AC-1/AC-3 and Risk (a)/(f).
 
@@ -130,8 +136,10 @@ safe; the outage is purely the backend process. Phase 0 (a stopgap restart) is D
   for the adapter — `ci.sh:23,27,31`).
 
 ## API contracts (exact — no guessing) — per-tool mapping table
-All paths are relative to `REDPASH_API_BASE = http://127.0.0.1:<numu-port>/api`. Cookie header on every call:
-`Cookie: numu_session=<token>`; `Content-Type: application/json` on bodies.
+All `/objects/*` paths are relative to `REDPASH_API_BASE = http://127.0.0.1:<numu-port>/api`. **EXCEPTION:
+the auth route is root-mounted** — dev-login is `<host>/auth/dev-login`, NOT under the `/api` base (strip the
+trailing `/api`; see F2 in Diagnosis). Cookie header on every call: `Cookie: numu_session=<token>`;
+`Content-Type: application/json` on bodies.
 
 | MCP tool | numu request | numu response → MCP shape |
 |---|---|---|
@@ -140,7 +148,7 @@ All paths are relative to `REDPASH_API_BASE = http://127.0.0.1:<numu-port>/api`.
 | `case_list(args)` | `GET /objects/case?limit&offset` (numu `ListParams` only supports `limit`/`offset`, `objects.rs:342-346`) — RedPash's `status/assignee/project/q/page/size` filters are NOT supported; filter client-side or via `search::router()` (`/api/search`, `lib.rs:118`). | `200 {items:[{id,data,version}], limit, offset}` → `Case[]` |
 | `case_comment(args)` | `POST /objects/comment` body = **bare** `{subject_id: rid, body}` (omit `author_id`) | `201 {id, data, version, etag}` → comment row |
 | `case_set_status(args)` | (1) `GET /objects/case/:rid` → read `version`; (2) `PATCH /objects/case/:rid` body = `{status}` header `If-Match: W/"<version>"` | `200 {id, data, version, etag}` → updated `Case`. `422 illegal_transition` on a skip; `412/428` on If-Match mismatch/missing — surface as the MCP error. |
-| auth (internal) | `POST /auth/dev-login` (debug build only) → `Set-Cookie: numu_session=<token>` | cache `<token>`; regex `numu_session=([^;,\s]+)` |
+| auth (internal) | `POST /auth/dev-login` (debug build only; **ROOT-mounted — strip the `/api` base, see F2**) → `Set-Cookie: numu_session=<token>` | cache `<token>`; regex `numu_session=([^;,\s]+)` |
 
 Migrating to a non-debug numu requires a real session/token instead of dev-login — see Risk (c).
 
@@ -183,3 +191,21 @@ Migrating to a non-debug numu requires a real session/token instead of dev-login
   no nested feed on the case object. The adapter must assemble the thread by listing `comment` objects and
   filtering by `subject_id` (or via `/api/search`), and map numu's `events` rows to the activity feed.
   Confirm the acceptable fidelity of `CaseDetail` (full thread vs. case-row only) for v1.
+
+## Outcome (2026-06-29 — live-verified)
+Checkpoint 1 approved → **repoint to numu**. Built through architect→tester→coder→reviewer→ops-prep.
+**Verified end-to-end against a live numu on :8099** (debug, against `numu_dev`) — not just mocked.
+
+| AC | State | Evidence |
+|---|---|---|
+| **AC-1** start/health | ~ partial | folded into `numu/tools/cases-mcp-numu.sh` (`db552db`): blocks on `GET /readyz` before proceeding. A standalone `start.sh`/`health.sh` pair was not split out (the one runner covers both). |
+| **AC-2** supervision | ~ deferred | systemd `--user` unit shipped **in-file** in the runner (commented heredoc); installing/enabling it is the follow-on durability step (Risk (e) → dev-box unit). |
+| **AC-3** MCP repoint | ✓ staged | runner repoints `~/.claude.json` (`REDPASH_API_BASE→http://127.0.0.1:8099/api`, `NUMU_CASES_ADAPTER=1`, drops the stale RedPash session), backup first. Must run OUTSIDE a live session (the running Claude process owns/clobbers the file); effective next session. |
+| **AC-4/AC-5** seed | ↪ deferred by design | a coordination parent `PRJ_f68734c2b59c4aaca9b0a69497e7f4d8` is seeded in `numu_dev`; seeding the in-flight cases (0012–0018) is done THROUGH the repointed MCP next session (exercises the real path + the legal status walk). |
+| **AC-6** adapter | ✓ done | `dist/cases-numu.js` + env-flag wiring in `handlers.js` (`014d330`); **F1** no-`:8080`-fallback throw (`4f5016c`); **F2** root-mounted dev-login fix (`10bc65c`). |
+| **AC-7** round-trip | ✓ done | `test/numu-roundtrip.mjs` (create→get→comment→set_status + the 422 illegal-skip) **passes live**; full suite **13 pass / 0 skip** with `NUMU_API_BASE` set, 11 pass / 2 skip mocked. No credentials logged (URLs/statuses only). |
+
+**Held (RedPash `lean`, awaiting Em's explicit push):** `014d330` `276369d` `4f5016c` `10bc65c`.
+**numu:** spec/ledger/runner are **already at origin** on `feat/numu-frontend-integration` (`db552db` was
+pushed by a concurrent session; `7c1d300` sits on top) — nothing pending on numu.
+**Restart handoff:** `bash numu/tools/cases-mcp-numu.sh` → new session → `case_list`.
