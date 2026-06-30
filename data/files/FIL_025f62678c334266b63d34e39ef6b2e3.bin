@@ -1,0 +1,505 @@
+Numero_dossier_ID,Client,Formule,date.ouverture,heure.ouverture,Matricule.de.traitement,Cause.intervention,date.de.survenance,Type.d.energie,Outil.d.assistance,Assistance.ou.Administratif,TOP.D.R,TOP.VR,TOP.Rappat.valide,TOP.Poursuite,TOP.Recup,TOP.Autres.Garanties
+D1000000,EDF,Formule Eco,14/06/2024,12:52,M5082,Fuite chaudière,05/08/2023,Fioul,Web Portal,#??!,O,Oui,#??!,#??!,,0
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000002,Eni,Formule Essentiel,19/11/2022,15:41,M5378,Tableau HS,13/07/2022,Gaz,Téléphone,Assistance,Oui,#??!,#??!,0,1,0
+D1000003,Air Liquide,Formule Standard,07/08/2024,05:04,M3471,Fuite chaudière,25/11/2023,Gaz,Téléphone,Assistance,0,#??!,#??!,Non,Oui,
+#??!,Air Liquide,Formule Standard,20/07/2023,01:21,M1224,#??!,27/07/2023,Eau,Mobile App,Assistance,N,#??!,,1,1,Non
+D1000005,Vattenfall,Formule Premium,17/11/2023,21:28,M0721,Fuite de gaz,06/12/2022,Électricité,Tablette terrain,Assistance,0,Oui,#??!,#??!,,#??!
+D1000006,GRDF,Formule Essentiel,13/04/2025,#??!,#??!,Fuite compteur,#??!,Mixte,Outil Legacy,#??!,#??!,,Non,#??!,O,Non
+D1000007,ENGIE,Formule Standard,#??!,23:42,M3936,Surtension,25/03/2022,Électricité,SAV-Tool,Assistance,Non,Non,0,O,N,#??!
+D1000008,Air Liquide,#??!,15/09/2023,00:22,M6731,Disjoncteur HS,12/11/2022,Mixte,Outil Legacy,Assistance,0,,O,Oui,Non,N
+D1000009,#??!,Formule Confort,02/11/2024,14:07,M7736,Câble sectionné,21/07/2024,Gaz,Téléphone,Assistance,,#??!,#??!,,#??!,#??!
+#??!,Enedis,#??!,05/03/2025,09:21,M6747,Surtension,05/04/2024,Fioul,Mobile App,#??!,#??!,#??!,#??!,0,Oui,1
+#??!,#??!,Formule Eco,21/06/2024,13:19,M2795,Coupure d'eau,04/04/2024,Gaz,Outil Legacy,Assistance,Non,1,1,,1,
+D1000012,Direct Energie,Formule Confort,02/11/2023,02:40,M0351,Fuite compteur,28/08/2023,Électricité,Mobile App,Assistance,1,Oui,O,#??!,Non,
+D1000013,Eni,Formule Pro,22/06/2024,13:39,M8349,Disjoncteur HS,#??!,Électricité,SAV-Tool,Administratif,Oui,#??!,#??!,N,,O
+D1000014,Enedis,Formule Confort,28/10/2023,21:08,M7989,Câble sectionné,22/03/2023,Gaz,Outil Legacy,#??!,,,O,Non,1,Oui
+D1000015,TotalEnergies,Formule Pro,#??!,06:28,M4299,Tableau HS,04/11/2022,GPL,Outil Legacy,#??!,Non,0,#??!,,N,1
+#??!,TotalEnergies,Formule Confort,28/10/2025,#??!,M5052,#??!,07/08/2025,Eau,Web Portal,Assistance,0,#??!,,#??!,1,0
+D1000017,ENGIE,#??!,03/07/2023,#??!,M6878,Tableau HS,11/06/2022,Eau,SAV-Tool,Administratif,,#??!,O,Non,Non,Oui
+D1000018,Vattenfall,Formule Essentiel,03/08/2025,23:40,M1758,#??!,15/11/2024,Fioul,#??!,Assistance,Non,,,#??!,1,N
+D1000019,Vattenfall,#??!,16/06/2024,21:51,M3905,Panne électrique,19/08/2023,Eau,SAV-Tool,Assistance,Oui,Oui,,1,N,Oui
+D1000020,EDF,Formule Pro,19/01/2022,16:25,M3034,Odeur de gaz,02/01/2022,#??!,Web Portal,Assistance,O,Oui,1,1,1,N
+D1000021,#??!,Formule Sérénité,#??!,08:43,M5114,Odeur de gaz,#??!,Électricité,Tablette terrain,Assistance,0,N,,Oui,O,Non
+D1000022,Enedis,Formule Standard,21/10/2025,21:50,M4491,Coupure d'eau,26/07/2023,GPL,Mobile App,#??!,1,N,0,1,Non,Non
+D1000023,Suez,Formule Eco,27/05/2022,22:13,M8826,Odeur de gaz,27/11/2022,Gaz,Téléphone,Assistance,0,Oui,Oui,N,1,Non
+#??!,Suez,#??!,23/12/2024,20:32,M4747,Coupure d'eau,09/06/2022,Fioul,Mobile App,#??!,#??!,N,#??!,,1,N
+#??!,Enedis,Formule Premium,11/08/2024,#??!,M6230,Surtension,05/08/2024,Eau,#??!,Administratif,#??!,N,1,Non,1,Oui
+D1000026,Vattenfall,#??!,14/11/2026,#??!,M6583,Panne électrique,10/12/2023,Eau,Mobile App,Administratif,Oui,#??!,N,Non,0,#??!
+D1000027,GRDF,Formule Sérénité,28/07/2025,10:44,M4569,Fuite de gaz,14/02/2024,#??!,Téléphone,Administratif,N,#??!,N,,Oui,0
+#??!,Saur,Formule Standard,#??!,23:28,M1470,Panne électrique,11/09/2022,Gaz,Mobile App,Assistance,Non,#??!,#??!,0,Non,Non
+D1000029,#??!,Formule Confort,18/01/2022,01:05,M1598,Fuite de gaz,13/01/2022,GPL,Tablette terrain,Administratif,,O,Non,0,0,Oui
+D1000030,GRDF,Formule Premium,#??!,07:27,M9436,Panne électrique,01/03/2023,Gaz,Outil Legacy,Administratif,0,,#??!,#??!,Non,#??!
+D1000031,GRDF,Formule Eco,16/03/2023,08:31,M0212,Fuite de gaz,19/10/2022,Électricité,Outil Legacy,Assistance,Non,N,Oui,#??!,#??!,Non
+#??!,Direct Energie,#??!,27/11/2025,05:21,#??!,Tableau HS,08/08/2022,Eau,Web Portal,Administratif,0,,0,O,#??!,#??!
+D1000033,GRDF,Formule Sérénité,13/04/2024,10:58,M5167,#??!,04/07/2022,Gaz,#??!,Assistance,,#??!,N,Non,N,Non
+D1000034,Suez,Formule Confort,12/07/2024,14:02,M9157,Odeur de gaz,24/11/2024,Gaz,SAV-Tool,Assistance,N,,O,0,Non,
+D1000035,ENGIE,Formule Standard,28/10/2022,#??!,M9692,Tableau HS,#??!,Fioul,Tablette terrain,Administratif,N,,O,N,1,
+D1000036,Eni,#??!,02/09/2025,08:49,#??!,Panne électrique,21/09/2022,GPL,SAV-Tool,Administratif,N,Oui,#??!,Non,Non,
+D1000037,ENGIE,Formule Essentiel,25/09/2024,20:18,M1491,#??!,14/11/2022,Fioul,Téléphone,Administratif,Oui,,O,1,1,O
+D1000038,#??!,Formule Essentiel,13/01/2025,09:16,M4857,Disjoncteur HS,13/03/2025,Mixte,Web Portal,Administratif,Non,Oui,0,Oui,Non,Oui
+D1000039,TotalEnergies,Formule Premium,28/08/2025,00:27,#??!,Court-circuit,21/10/2023,Fioul,Web Portal,Assistance,0,O,0,#??!,N,O
+D1000040,Veolia,Formule Standard,04/09/2023,10:23,M4077,Disjoncteur HS,01/08/2023,Mixte,#??!,Assistance,#??!,N,0,0,Non,#??!
+D1000041,GRDF,Formule Eco,28/08/2026,21:53,#??!,Court-circuit,24/05/2026,Gaz,Web Portal,Administratif,0,,0,Oui,#??!,O
+#??!,Saur,Formule Premium,12/08/2026,13:32,M2024,#??!,#??!,Gaz,Mobile App,Assistance,Oui,,0,N,1,1
+D1000043,ENGIE,Formule Standard,01/12/2025,04:33,M5992,Fuite chaudière,05/11/2023,Mixte,#??!,Assistance,O,Non,0,Oui,1,Non
+D1000044,Direct Energie,Formule Confort,#??!,15:02,M7058,Court-circuit,08/02/2022,#??!,Téléphone,#??!,Non,1,Oui,1,1,0
+#??!,Enedis,Formule Confort,12/01/2023,06:52,M5404,Panne électrique,01/06/2022,#??!,#??!,#??!,N,0,#??!,O,1,1
+D1000046,#??!,#??!,26/03/2026,#??!,M0731,Fuite chaudière,08/08/2023,#??!,SAV-Tool,Administratif,N,#??!,O,Oui,1,#??!
+#??!,GRDF,Formule Standard,26/02/2026,11:11,#??!,#??!,08/05/2024,#??!,Téléphone,Administratif,1,0,#??!,Oui,Oui,0
+D1000048,Enedis,Formule Essentiel,#??!,03:00,M0561,Fuite de gaz,22/07/2023,Fioul,#??!,Assistance,N,1,#??!,N,O,
+D1000049,Veolia,Formule Confort,14/10/2023,03:35,M0585,#??!,19/05/2023,Eau,#??!,Assistance,,Oui,0,0,1,1
+D1000050,Saur,Formule Eco,16/05/2022,18:43,#??!,Pas de chauffage,22/02/2022,Électricité,Web Portal,Assistance,Oui,0,0,0,1,N
+D1000051,Veolia,Formule Confort,10/01/2023,#??!,M4962,Fuite compteur,06/05/2022,#??!,Tablette terrain,Assistance,Non,0,0,1,,#??!
+D1000052,ENGIE,Formule Eco,06/07/2022,22:11,M5698,#??!,#??!,Gaz,Outil Legacy,Administratif,Non,Oui,Non,Non,O,1
+D1000053,ENGIE,Formule Premium,06/05/2023,11:12,#??!,Câble sectionné,#??!,Électricité,Web Portal,Assistance,#??!,Oui,Oui,Oui,1,#??!
+D1000054,#??!,Formule Premium,#??!,08:46,M3982,#??!,01/03/2022,Gaz,Mobile App,#??!,1,N,0,O,,1
+D1000055,Eni,Formule Sérénité,13/04/2024,10:28,#??!,Câble sectionné,24/03/2023,Fioul,Tablette terrain,Administratif,O,0,O,Non,,O
+D1000056,Saur,Formule Pro,13/08/2026,13:11,M2279,Fuite chaudière,17/09/2026,#??!,Outil Legacy,Administratif,1,O,#??!,Non,N,0
+D1000057,EDF,Formule Premium,22/07/2023,17:58,M6175,Panne électrique,16/01/2022,Électricité,Web Portal,Assistance,0,Oui,Oui,Non,#??!,#??!
+D1000058,TotalEnergies,Formule Premium,08/06/2022,09:05,#??!,Pas de chauffage,13/09/2022,Fioul,Outil Legacy,Administratif,O,Non,#??!,N,0,1
+D1000059,EDF,Formule Premium,26/02/2025,09:14,M1731,Panne électrique,05/08/2022,Mixte,Téléphone,#??!,,,#??!,0,N,N
+D1000060,Direct Energie,#??!,#??!,#??!,#??!,Court-circuit,07/06/2023,#??!,Tablette terrain,#??!,1,1,Oui,#??!,Oui,O
+D1000061,#??!,#??!,03/10/2026,07:55,M0830,Fuite compteur,#??!,Gaz,#??!,Administratif,#??!,#??!,0,#??!,0,Oui
+D1000062,Saur,#??!,20/01/2025,00:14,#??!,Coupure d'eau,11/01/2022,Gaz,Web Portal,Assistance,Oui,#??!,N,Non,#??!,N
+#??!,GRDF,Formule Standard,07/11/2024,07:46,M5460,Pas de chauffage,27/09/2023,#??!,Outil Legacy,#??!,Oui,1,0,O,N,Non
+D1000064,Direct Energie,Formule Sérénité,09/09/2024,08:04,#??!,Fuite compteur,28/05/2024,Fioul,Mobile App,Administratif,,0,,Oui,O,Non
+D1000065,EDF,Formule Confort,26/09/2022,14:43,M5751,#??!,15/05/2022,Gaz,Outil Legacy,#??!,,#??!,0,Non,1,O
+D1000066,Veolia,Formule Premium,03/05/2025,14:59,#??!,Câble sectionné,#??!,#??!,Mobile App,Assistance,1,#??!,0,O,1,O
+D1000067,ENGIE,Formule Premium,28/02/2026,23:17,#??!,Fuite compteur,17/02/2024,Eau,SAV-Tool,Assistance,N,O,1,Oui,#??!,0
+#??!,#??!,Formule Premium,26/01/2022,11:34,M0707,#??!,15/06/2022,#??!,Outil Legacy,Assistance,0,0,1,0,#??!,#??!
+D1000069,Suez,Formule Eco,#??!,06:08,M1981,Fuite de gaz,03/12/2025,Fioul,Mobile App,Assistance,N,O,#??!,#??!,O,N
+D1000070,Vattenfall,Formule Pro,15/02/2024,05:20,M4332,Disjoncteur HS,09/07/2022,#??!,#??!,Administratif,Non,#??!,Oui,#??!,,N
+D1000071,#??!,Formule Premium,24/03/2025,12:48,M6081,Fuite compteur,18/02/2022,Mixte,#??!,#??!,1,Oui,Non,#??!,#??!,0
+D1000072,Direct Energie,Formule Sérénité,27/01/2024,14:00,M6751,Fuite chaudière,09/01/2023,Fioul,Web Portal,Administratif,Non,,1,0,1,Non
+D1000073,GRDF,Formule Confort,07/06/2026,11:24,M2324,Court-circuit,03/03/2022,Mixte,#??!,Assistance,0,1,#??!,0,N,N
+D1000074,Direct Energie,Formule Confort,26/10/2022,21:52,M2245,#??!,17/03/2022,#??!,Outil Legacy,Assistance,Oui,,#??!,Oui,1,O
+D1000075,Enedis,#??!,13/08/2025,20:03,M0956,Court-circuit,19/04/2022,Électricité,#??!,#??!,N,,#??!,1,1,0
+D1000076,Eni,Formule Sérénité,21/11/2026,13:39,#??!,Câble sectionné,18/12/2026,#??!,Mobile App,Administratif,#??!,,,Oui,#??!,
+#??!,EDF,Formule Confort,26/12/2023,15:25,M9199,#??!,17/07/2022,Fioul,Téléphone,Administratif,Oui,N,#??!,0,0,Non
+#??!,TotalEnergies,#??!,12/01/2023,18:39,M3548,Panne électrique,07/12/2023,Mixte,Mobile App,Administratif,Non,N,,0,#??!,Non
+D1000079,Direct Energie,Formule Sérénité,20/05/2025,04:15,M2609,#??!,13/03/2022,GPL,Téléphone,Assistance,N,O,Oui,Oui,#??!,#??!
+D1000080,#??!,Formule Eco,12/12/2024,#??!,M9041,Pas de chauffage,11/09/2023,Fioul,Outil Legacy,Administratif,N,Non,Non,#??!,N,#??!
+#??!,GRDF,Formule Confort,11/02/2024,02:34,M6108,Panne électrique,27/04/2024,Eau,#??!,Assistance,Non,#??!,Oui,N,,O
+D1000082,#??!,Formule Essentiel,20/06/2023,04:55,M0266,Coupure d'eau,#??!,Fioul,#??!,Administratif,#??!,Non,,1,N,Non
+D1000083,Suez,Formule Sérénité,02/11/2022,11:50,M5048,Fuite chaudière,28/04/2022,Eau,#??!,Assistance,O,N,0,Non,Oui,Non
+D1000084,#??!,#??!,02/04/2022,19:35,M9689,Câble sectionné,02/07/2022,#??!,Tablette terrain,#??!,Oui,1,,O,1,0
+D1000085,Direct Energie,Formule Confort,08/12/2023,10:05,M3874,Fuite chaudière,15/07/2023,Électricité,Outil Legacy,Assistance,1,#??!,1,,O,Oui
+D1000086,TotalEnergies,Formule Sérénité,02/09/2022,23:25,M6720,Panne électrique,25/03/2022,Fioul,Outil Legacy,Administratif,N,#??!,Oui,Oui,O,Oui
+D1000087,Direct Energie,Formule Premium,27/05/2022,#??!,M5567,Pas de chauffage,#??!,#??!,Mobile App,#??!,1,N,Oui,#??!,1,Non
+D1000088,Vattenfall,#??!,#??!,15:59,M7358,Câble sectionné,25/09/2023,GPL,#??!,Assistance,O,1,N,N,1,Non
+D1000089,Eni,Formule Sérénité,#??!,08:50,M8946,Panne électrique,26/01/2026,GPL,SAV-Tool,Assistance,1,O,N,O,0,1
+D1000090,GRDF,Formule Eco,09/11/2023,08:35,M0542,Fuite de gaz,#??!,GPL,Web Portal,Administratif,1,Oui,Oui,#??!,Oui,0
+D1000091,Vattenfall,Formule Confort,16/02/2026,09:01,M2708,Odeur de gaz,01/01/2023,Gaz,Mobile App,#??!,O,0,0,Oui,N,#??!
+D1000092,TotalEnergies,Formule Pro,04/04/2023,09:10,#??!,Pas de chauffage,16/07/2023,Fioul,Web Portal,Administratif,Non,#??!,N,#??!,#??!,#??!
+D1000093,Enedis,Formule Premium,14/05/2022,20:37,M5369,Câble sectionné,10/04/2022,Eau,Outil Legacy,Assistance,1,0,N,,O,
+D1000094,EDF,Formule Essentiel,17/02/2025,15:32,M2457,Fuite de gaz,16/09/2023,GPL,Outil Legacy,#??!,1,#??!,,#??!,N,
+#??!,Air Liquide,Formule Pro,#??!,06:16,M1435,Fuite compteur,28/09/2024,Gaz,Tablette terrain,Assistance,Oui,,N,,O,
+D1000096,Direct Energie,Formule Confort,22/10/2023,15:51,M1598,Fuite compteur,25/04/2022,Électricité,Tablette terrain,Administratif,,#??!,1,#??!,0,#??!
+D1000097,Eni,Formule Essentiel,06/06/2024,12:51,M8749,#??!,09/08/2024,Fioul,Web Portal,Administratif,,#??!,0,#??!,#??!,O
+D1000098,Saur,Formule Standard,02/02/2025,10:45,M8939,#??!,06/04/2024,Mixte,#??!,Administratif,1,,1,Oui,Oui,
+D1000099,Suez,Formule Pro,05/01/2023,13:52,M6193,Fuite chaudière,18/12/2022,Fioul,Mobile App,Administratif,0,1,Oui,1,Oui,#??!
+#??!,Suez,Formule Eco,08/01/2025,02:44,M6959,Court-circuit,17/12/2025,Électricité,Outil Legacy,#??!,1,Oui,1,Oui,,N
+D1000101,Air Liquide,#??!,17/04/2022,#??!,M7499,Coupure d'eau,14/09/2022,Gaz,Web Portal,Administratif,O,#??!,Non,Oui,,1
+D1000102,TotalEnergies,#??!,11/01/2026,07:28,M2654,Pas de chauffage,18/06/2024,Gaz,Mobile App,Assistance,,,Non,N,,Oui
+D1000103,Veolia,Formule Standard,02/10/2022,08:06,M7186,Pas de chauffage,21/03/2022,Mixte,Tablette terrain,Administratif,0,#??!,N,1,O,N
+D1000104,ENGIE,Formule Confort,17/01/2026,22:38,M7103,Court-circuit,14/01/2022,Eau,SAV-Tool,Assistance,Non,O,1,#??!,,Oui
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000106,ENGIE,Formule Premium,20/05/2022,11:18,M9478,Câble sectionné,#??!,Gaz,Téléphone,Assistance,Non,1,0,O,Oui,Non
+D1000107,#??!,Formule Essentiel,22/10/2024,09:42,#??!,Câble sectionné,16/02/2023,Électricité,#??!,Administratif,,N,O,N,1,
+D1000108,Saur,#??!,17/06/2024,14:49,#??!,#??!,09/06/2024,Eau,Outil Legacy,Administratif,O,N,1,Oui,O,Non
+D1000109,Air Liquide,Formule Essentiel,21/05/2023,06:40,M3590,#??!,15/09/2022,#??!,#??!,Administratif,#??!,#??!,#??!,O,,1
+D1000110,GRDF,Formule Standard,07/06/2023,03:00,M3400,#??!,18/07/2023,#??!,Web Portal,Administratif,N,Oui,Oui,0,N,O
+D1000111,ENGIE,Formule Sérénité,05/12/2023,22:23,M9864,Court-circuit,23/03/2022,Gaz,Téléphone,Assistance,0,0,N,,,O
+D1000112,EDF,#??!,19/07/2026,15:13,M7625,Fuite chaudière,04/03/2024,Gaz,Téléphone,Administratif,N,1,N,N,0,1
+D1000113,Suez,Formule Confort,21/01/2026,18:26,M9858,Fuite chaudière,01/05/2022,Gaz,Web Portal,Assistance,O,Non,,Non,,Oui
+D1000114,Vattenfall,Formule Pro,#??!,00:36,M5194,Fuite de gaz,12/12/2023,#??!,#??!,#??!,O,#??!,N,0,Non,Oui
+#??!,#??!,Formule Premium,#??!,22:46,M2707,#??!,03/03/2022,Électricité,Téléphone,#??!,,#??!,0,O,Oui,Oui
+D1000116,Direct Energie,Formule Premium,01/10/2026,03:55,M3501,Tableau HS,19/05/2023,Eau,Web Portal,Administratif,Oui,1,Non,#??!,1,O
+#??!,Air Liquide,Formule Essentiel,03/03/2022,05:20,M1787,Tableau HS,03/04/2022,Mixte,SAV-Tool,Administratif,1,,Non,Oui,N,Non
+D1000118,EDF,Formule Pro,05/01/2025,12:10,M4646,#??!,24/09/2022,Gaz,Téléphone,Assistance,Oui,#??!,O,,,
+#??!,Vattenfall,Formule Confort,17/11/2024,22:25,M8405,Panne électrique,20/03/2024,Mixte,Tablette terrain,#??!,#??!,Oui,N,Oui,O,0
+#??!,TotalEnergies,Formule Sérénité,10/02/2023,12:51,#??!,Panne électrique,08/04/2022,Fioul,SAV-Tool,Administratif,#??!,N,,O,Non,N
+D1000121,Direct Energie,Formule Premium,12/05/2022,#??!,M5101,Surtension,#??!,Eau,SAV-Tool,Administratif,,O,,1,N,
+D1000122,#??!,#??!,18/06/2022,04:29,M8192,Fuite chaudière,10/12/2022,Mixte,SAV-Tool,Administratif,#??!,#??!,1,N,#??!,Oui
+D1000123,Suez,#??!,#??!,#??!,M0847,Pas de chauffage,14/11/2022,Électricité,Outil Legacy,Administratif,N,N,O,,N,O
+#??!,Suez,Formule Confort,21/09/2022,00:14,M9246,#??!,07/09/2022,#??!,Téléphone,Assistance,N,,O,Non,O,O
+D1000125,Enedis,Formule Essentiel,22/09/2025,19:39,M2512,Odeur de gaz,27/02/2023,Électricité,Téléphone,Assistance,Oui,Oui,1,0,,0
+D1000126,Eni,Formule Premium,16/06/2023,06:34,#??!,Surtension,16/10/2022,#??!,Tablette terrain,Administratif,,#??!,Oui,#??!,O,
+D1000127,GRDF,Formule Standard,#??!,23:28,M5183,Coupure d'eau,17/12/2022,Mixte,Mobile App,Administratif,#??!,Non,N,#??!,Non,#??!
+D1000128,GRDF,#??!,26/07/2022,06:33,M7626,#??!,01/06/2022,#??!,Tablette terrain,Administratif,N,N,0,N,0,O
+D1000129,Veolia,#??!,#??!,00:07,M7194,Panne électrique,01/06/2022,GPL,Web Portal,Administratif,1,0,1,N,0,O
+D1000130,Suez,Formule Confort,#??!,12:57,M9313,Fuite de gaz,28/03/2023,Eau,#??!,#??!,Non,Oui,N,Oui,0,O
+D1000131,Direct Energie,Formule Standard,12/07/2024,14:38,M6535,Tableau HS,15/03/2023,Mixte,Web Portal,Administratif,N,O,1,N,0,
+D1000132,EDF,#??!,09/02/2025,08:13,M7621,Câble sectionné,20/04/2024,Fioul,Téléphone,Assistance,O,1,#??!,,1,N
+#??!,#??!,Formule Premium,14/04/2023,#??!,M9253,Fuite chaudière,06/12/2023,Eau,#??!,#??!,1,N,1,N,#??!,Oui
+D1000134,Eni,Formule Essentiel,22/12/2026,09:26,M2114,Disjoncteur HS,05/03/2023,GPL,Web Portal,Assistance,O,N,,1,1,O
+#??!,#??!,Formule Eco,13/01/2022,02:25,#??!,Odeur de gaz,26/09/2022,Électricité,#??!,Administratif,,1,O,0,Oui,Non
+D1000136,Enedis,Formule Confort,15/10/2024,06:15,M3388,Court-circuit,03/03/2022,Gaz,SAV-Tool,Assistance,#??!,0,N,Non,#??!,Non
+D1000137,Veolia,#??!,04/04/2022,14:05,M3304,Coupure d'eau,17/04/2022,Gaz,Outil Legacy,Administratif,N,Oui,O,1,#??!,0
+D1000138,Veolia,Formule Premium,02/02/2022,00:19,M2024,Câble sectionné,03/07/2022,Électricité,Téléphone,Administratif,Oui,N,Oui,Non,#??!,1
+D1000139,Direct Energie,Formule Essentiel,12/11/2023,03:20,M6025,Tableau HS,16/05/2022,Gaz,SAV-Tool,Administratif,O,N,Oui,O,N,#??!
+D1000140,Direct Energie,Formule Standard,03/10/2023,17:51,M1471,Disjoncteur HS,02/06/2023,GPL,Mobile App,Assistance,Oui,1,#??!,#??!,1,#??!
+D1000141,GRDF,Formule Standard,26/12/2026,11:25,M6688,#??!,16/03/2024,#??!,#??!,Administratif,O,#??!,Non,O,Non,Non
+D1000142,Air Liquide,Formule Pro,#??!,#??!,M2133,Fuite chaudière,15/09/2022,GPL,Tablette terrain,#??!,,#??!,1,,1,O
+D1000143,EDF,#??!,10/08/2026,06:44,M0918,Fuite de gaz,18/12/2024,Fioul,SAV-Tool,Assistance,0,Oui,0,1,O,Oui
+D1000144,GRDF,Formule Sérénité,03/09/2026,22:09,M6722,Câble sectionné,28/05/2022,Fioul,SAV-Tool,#??!,#??!,1,N,N,0,0
+#??!,Vattenfall,Formule Essentiel,08/09/2022,#??!,M8485,Fuite compteur,27/03/2022,Gaz,Téléphone,Assistance,,,,N,Non,0
+D1000146,Saur,Formule Confort,#??!,06:34,M2445,Court-circuit,#??!,#??!,Tablette terrain,Assistance,,,,Oui,O,Oui
+D1000147,TotalEnergies,Formule Standard,12/08/2022,12:20,#??!,Surtension,#??!,Gaz,Tablette terrain,Administratif,#??!,Non,,,1,N
+D1000148,Veolia,Formule Essentiel,24/01/2024,12:18,M0662,Fuite compteur,07/08/2023,Eau,Mobile App,Assistance,#??!,,,Non,O,#??!
+D1000149,#??!,Formule Premium,05/09/2026,14:50,M2703,Panne électrique,10/11/2026,Électricité,Outil Legacy,Administratif,N,#??!,#??!,#??!,1,Non
+#??!,#??!,Formule Premium,#??!,#??!,#??!,#??!,10/07/2024,Fioul,Mobile App,Administratif,Non,Non,0,#??!,O,#??!
+D1000151,ENGIE,Formule Eco,#??!,#??!,M3126,Disjoncteur HS,15/08/2022,Mixte,Téléphone,#??!,Oui,#??!,Non,O,#??!,1
+D1000152,Saur,Formule Sérénité,#??!,20:20,M8233,Court-circuit,07/01/2022,Électricité,Outil Legacy,Administratif,Non,N,Non,,Non,
+D1000153,Enedis,Formule Premium,02/06/2022,13:15,#??!,#??!,27/07/2022,Gaz,#??!,Assistance,O,1,0,N,Non,#??!
+D1000154,Enedis,Formule Sérénité,17/01/2023,15:55,M9422,Panne électrique,09/02/2022,Fioul,Mobile App,Assistance,0,O,,#??!,#??!,#??!
+D1000155,Direct Energie,Formule Confort,19/03/2022,11:05,M3701,Panne électrique,27/03/2022,#??!,Mobile App,Administratif,0,Non,0,N,1,#??!
+D1000156,Suez,Formule Eco,24/09/2024,09:06,M8631,Odeur de gaz,#??!,Mixte,#??!,Administratif,O,Non,#??!,#??!,0,N
+D1000157,Air Liquide,#??!,#??!,16:02,#??!,Fuite compteur,22/08/2022,Fioul,Téléphone,Administratif,O,N,Oui,0,,
+D1000158,Veolia,Formule Premium,13/09/2023,00:07,M8668,Panne électrique,03/01/2023,#??!,#??!,Assistance,Oui,#??!,0,1,,Non
+D1000159,#??!,Formule Essentiel,#??!,17:26,M0524,Disjoncteur HS,06/06/2023,Eau,Tablette terrain,Administratif,N,Oui,Oui,1,1,N
+D1000160,Veolia,Formule Essentiel,08/09/2023,16:26,M2709,Fuite de gaz,04/02/2022,Mixte,Tablette terrain,Administratif,0,#??!,#??!,,,O
+D1000161,Air Liquide,Formule Standard,13/09/2023,00:09,M7773,Disjoncteur HS,23/07/2023,#??!,Téléphone,Administratif,,,N,0,N,
+#??!,#??!,Formule Essentiel,04/01/2025,05:40,M3950,Pas de chauffage,28/05/2025,Mixte,Outil Legacy,Administratif,#??!,#??!,Oui,,Oui,Oui
+D1000163,GRDF,Formule Essentiel,#??!,01:59,#??!,Tableau HS,#??!,Gaz,Tablette terrain,Administratif,1,#??!,#??!,0,Oui,#??!
+D1000164,Direct Energie,Formule Confort,11/11/2023,04:45,M1555,Tableau HS,10/02/2022,Eau,#??!,Assistance,Oui,,N,O,#??!,O
+D1000165,Eni,Formule Sérénité,26/03/2023,00:09,M9531,Câble sectionné,01/10/2022,Mixte,SAV-Tool,Administratif,Oui,Non,Non,#??!,0,0
+#??!,TotalEnergies,Formule Eco,05/09/2024,22:14,M9760,#??!,01/10/2022,GPL,Outil Legacy,Administratif,0,#??!,1,Non,N,
+D1000167,Veolia,Formule Essentiel,26/06/2024,02:14,M5988,Court-circuit,16/05/2024,#??!,Outil Legacy,Administratif,0,1,1,,#??!,O
+D1000168,ENGIE,Formule Standard,15/05/2026,11:21,M5301,#??!,26/03/2023,Fioul,#??!,Administratif,,1,1,#??!,0,Non
+D1000169,EDF,Formule Premium,17/02/2025,01:04,M0835,Odeur de gaz,17/09/2022,Électricité,Tablette terrain,Assistance,N,0,,Non,#??!,Non
+D1000170,Direct Energie,Formule Premium,15/01/2024,11:24,M2056,Court-circuit,26/09/2022,GPL,#??!,Administratif,Non,Non,,,O,
+D1000171,Suez,Formule Sérénité,27/10/2026,21:19,M0581,#??!,#??!,#??!,Tablette terrain,Assistance,#??!,N,0,0,1,Oui
+D1000172,ENGIE,#??!,18/11/2022,05:55,M4003,#??!,#??!,GPL,SAV-Tool,#??!,Oui,1,Non,#??!,Non,#??!
+D1000173,Eni,Formule Essentiel,08/03/2022,07:52,#??!,#??!,23/08/2022,GPL,#??!,Administratif,O,O,#??!,0,O,O
+D1000174,GRDF,#??!,01/02/2022,16:52,M3567,Fuite de gaz,12/08/2022,#??!,SAV-Tool,Assistance,Non,0,1,Oui,#??!,N
+D1000175,Air Liquide,Formule Standard,14/02/2023,14:55,M2747,Fuite de gaz,15/04/2022,Eau,Tablette terrain,Assistance,Non,#??!,O,O,O,0
+#??!,Vattenfall,#??!,07/05/2026,#??!,M9545,Fuite de gaz,#??!,#??!,Téléphone,Assistance,Oui,0,Non,Oui,O,1
+#??!,Air Liquide,Formule Premium,21/06/2023,04:21,M9947,Tableau HS,23/06/2022,Eau,#??!,Assistance,N,O,O,O,N,
+D1000178,Vattenfall,#??!,#??!,16:53,M9033,Fuite de gaz,13/01/2024,#??!,Mobile App,Administratif,Oui,O,0,1,0,Oui
+D1000179,ENGIE,Formule Sérénité,#??!,18:21,M7855,Panne électrique,#??!,Électricité,Téléphone,Assistance,Non,1,N,#??!,1,1
+D1000180,#??!,Formule Premium,13/03/2025,10:35,M1680,Disjoncteur HS,22/05/2025,Fioul,Téléphone,Assistance,0,#??!,N,O,1,Oui
+D1000181,Eni,Formule Sérénité,09/07/2025,23:40,#??!,Court-circuit,#??!,Mixte,Outil Legacy,#??!,N,#??!,#??!,Oui,Non,#??!
+D1000182,GRDF,#??!,#??!,20:21,#??!,#??!,12/05/2023,Gaz,Outil Legacy,Administratif,1,0,Non,,Oui,#??!
+D1000183,Enedis,Formule Premium,15/10/2024,#??!,#??!,Fuite de gaz,21/04/2022,#??!,SAV-Tool,Administratif,N,O,Oui,O,0,O
+D1000184,#??!,Formule Pro,#??!,04:22,M4984,Fuite compteur,09/02/2025,Eau,#??!,Assistance,Non,Non,Oui,,Oui,1
+D1000185,Veolia,Formule Eco,24/03/2026,10:30,M2128,Fuite compteur,07/02/2026,Gaz,Outil Legacy,Administratif,1,,#??!,Oui,N,Oui
+#??!,Eni,Formule Premium,#??!,15:51,M1831,Surtension,05/06/2023,#??!,Téléphone,Administratif,#??!,O,#??!,O,Oui,
+D1000187,#??!,Formule Sérénité,08/05/2025,#??!,M9011,Surtension,22/02/2025,Gaz,SAV-Tool,Assistance,O,0,O,1,1,#??!
+D1000188,TotalEnergies,Formule Confort,07/01/2024,06:59,M7705,Disjoncteur HS,23/09/2022,GPL,Outil Legacy,Administratif,O,Oui,Oui,Non,N,
+D1000189,Veolia,Formule Eco,26/04/2025,07:55,M5077,Pas de chauffage,13/03/2022,Eau,Téléphone,Administratif,,#??!,#??!,N,Non,N
+D1000190,Saur,#??!,09/06/2022,20:38,M2460,Disjoncteur HS,04/11/2022,GPL,Tablette terrain,#??!,Oui,#??!,,#??!,Non,O
+D1000191,ENGIE,Formule Standard,#??!,22:41,M9749,Câble sectionné,01/08/2024,Électricité,Mobile App,#??!,Non,#??!,1,1,Non,O
+D1000192,#??!,Formule Essentiel,25/04/2023,#??!,M7982,Câble sectionné,08/06/2023,Gaz,Tablette terrain,#??!,O,,#??!,O,N,#??!
+D1000193,Saur,Formule Essentiel,04/09/2023,07:08,M4942,#??!,05/08/2022,#??!,Tablette terrain,Administratif,,1,,0,,N
+#??!,Vattenfall,Formule Standard,15/03/2026,13:39,#??!,Disjoncteur HS,01/04/2026,GPL,Téléphone,Administratif,Non,O,Non,Oui,N,0
+D1000195,#??!,#??!,01/07/2024,08:30,#??!,Panne électrique,22/03/2022,Mixte,Web Portal,Administratif,Non,Non,#??!,Oui,0,
+D1000196,Air Liquide,Formule Eco,25/01/2025,#??!,M8567,Disjoncteur HS,18/04/2023,GPL,#??!,Administratif,1,N,,,Non,1
+D1000197,Saur,Formule Premium,02/04/2023,17:13,M6898,#??!,03/01/2023,Gaz,Téléphone,Assistance,,1,Non,Non,O,#??!
+D1000198,Saur,Formule Eco,28/12/2023,02:48,M4509,#??!,05/06/2022,#??!,Téléphone,#??!,Oui,,1,1,,0
+D1000199,Suez,Formule Sérénité,01/05/2026,18:49,M9571,Panne électrique,#??!,Mixte,Tablette terrain,Administratif,O,0,1,1,O,1
+D1000200,Direct Energie,#??!,15/12/2026,#??!,#??!,Disjoncteur HS,14/11/2024,GPL,Outil Legacy,Administratif,Oui,,O,0,0,Oui
+D1000201,TotalEnergies,Formule Sérénité,#??!,#??!,M8565,Court-circuit,08/09/2022,#??!,Téléphone,Assistance,O,0,,O,1,
+#??!,Veolia,Formule Pro,#??!,13:52,M0789,Fuite compteur,#??!,Mixte,#??!,Assistance,0,#??!,Non,O,0,N
+D1000203,Air Liquide,Formule Eco,13/03/2026,#??!,M7248,#??!,#??!,Électricité,Web Portal,Assistance,0,O,Non,1,1,
+#??!,Eni,Formule Premium,#??!,16:15,M0701,#??!,#??!,Mixte,Web Portal,Assistance,O,#??!,0,#??!,N,O
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+#??!,EDF,#??!,22/07/2026,16:49,M7817,Odeur de gaz,#??!,Eau,Mobile App,#??!,Non,Non,#??!,Non,#??!,Non
+#??!,Saur,Formule Standard,17/12/2024,12:11,#??!,Panne électrique,20/09/2023,#??!,Outil Legacy,Assistance,0,O,0,,Non,Non
+D1000208,#??!,Formule Sérénité,#??!,19:10,M9805,Court-circuit,24/06/2022,Eau,Outil Legacy,#??!,Non,#??!,Oui,Oui,0,O
+#??!,Enedis,Formule Premium,03/09/2024,00:43,M9198,Panne électrique,09/11/2023,GPL,#??!,#??!,O,N,1,1,Oui,1
+D1000210,Saur,Formule Premium,20/08/2024,14:54,M6074,Panne électrique,15/08/2023,Mixte,Outil Legacy,Administratif,Oui,O,O,,N,Non
+#??!,#??!,Formule Premium,21/03/2026,06:41,M2507,Surtension,24/05/2025,Gaz,Mobile App,Assistance,#??!,1,0,,#??!,1
+D1000212,EDF,Formule Standard,#??!,02:06,M7188,Disjoncteur HS,#??!,Eau,Téléphone,Administratif,Oui,#??!,N,N,N,0
+D1000213,Enedis,Formule Standard,06/05/2022,#??!,M2132,Panne électrique,23/10/2022,GPL,Téléphone,Assistance,1,,,0,#??!,#??!
+D1000214,Enedis,Formule Eco,03/08/2024,04:24,M3466,#??!,#??!,#??!,Téléphone,Assistance,O,O,O,#??!,0,Non
+D1000215,GRDF,Formule Confort,#??!,23:11,M3759,Disjoncteur HS,#??!,GPL,Téléphone,#??!,1,O,N,Oui,#??!,N
+#??!,Vattenfall,Formule Standard,10/08/2022,07:07,#??!,Fuite de gaz,22/05/2022,#??!,Tablette terrain,Administratif,,Non,Oui,O,,N
+#??!,TotalEnergies,Formule Confort,05/01/2023,07:17,M2054,Disjoncteur HS,05/05/2023,Mixte,Mobile App,Assistance,#??!,,1,N,,1
+D1000218,ENGIE,#??!,#??!,14:44,M2633,Tableau HS,06/01/2022,Eau,Outil Legacy,Assistance,O,Oui,Oui,#??!,Oui,O
+D1000219,Enedis,Formule Sérénité,23/11/2023,02:26,M9963,Fuite chaudière,15/11/2022,GPL,SAV-Tool,Administratif,N,N,,Oui,,N
+D1000220,#??!,Formule Premium,20/02/2025,05:37,M6041,#??!,#??!,Mixte,SAV-Tool,Assistance,Non,Non,Oui,#??!,,O
+D1000221,Saur,Formule Sérénité,17/03/2023,15:43,M1217,Coupure d'eau,#??!,Électricité,#??!,#??!,O,O,#??!,1,#??!,Non
+D1000222,#??!,#??!,10/11/2022,18:03,M2901,Disjoncteur HS,09/09/2022,Fioul,Tablette terrain,Assistance,,0,0,Oui,1,O
+D1000223,Eni,Formule Pro,13/01/2022,03:46,#??!,Panne électrique,18/09/2022,Mixte,Mobile App,Assistance,O,#??!,#??!,N,#??!,N
+#??!,Air Liquide,Formule Standard,#??!,15:44,M6361,Odeur de gaz,10/01/2022,#??!,Outil Legacy,Administratif,0,O,Non,1,1,N
+#??!,Vattenfall,Formule Eco,#??!,17:22,#??!,Fuite chaudière,03/01/2022,GPL,Web Portal,Administratif,1,1,Non,0,Non,0
+D1000226,EDF,Formule Premium,02/10/2026,04:05,M4825,Tableau HS,15/09/2025,Gaz,Web Portal,Assistance,0,0,#??!,0,1,#??!
+D1000227,Saur,Formule Confort,15/02/2026,#??!,M1351,Pas de chauffage,16/03/2025,Fioul,Mobile App,Assistance,Oui,N,,#??!,#??!,
+D1000228,Eni,Formule Premium,#??!,10:17,#??!,Panne électrique,01/12/2022,#??!,Téléphone,Administratif,1,N,#??!,O,1,Oui
+D1000229,TotalEnergies,Formule Essentiel,#??!,17:42,M7245,Pas de chauffage,22/02/2026,Électricité,SAV-Tool,Administratif,Non,Oui,Oui,,Oui,#??!
+D1000230,Enedis,Formule Eco,01/04/2026,17:50,M9608,Disjoncteur HS,04/12/2022,Eau,Tablette terrain,Administratif,#??!,1,Non,1,Non,O
+D1000231,Vattenfall,Formule Sérénité,05/12/2024,23:09,M7044,Surtension,11/08/2024,#??!,SAV-Tool,Assistance,,,Non,Oui,O,#??!
+D1000232,ENGIE,#??!,09/04/2023,#??!,M4991,Fuite compteur,14/02/2022,Eau,SAV-Tool,#??!,Non,1,0,N,Oui,Non
+#??!,GRDF,#??!,06/12/2022,#??!,M7656,Pas de chauffage,#??!,Fioul,#??!,#??!,N,#??!,1,Non,O,
+D1000234,#??!,Formule Premium,25/03/2026,01:04,#??!,Fuite compteur,16/07/2024,Électricité,Outil Legacy,Assistance,Non,Non,#??!,1,1,O
+D1000235,Direct Energie,Formule Pro,02/06/2025,04:29,M5703,Pas de chauffage,06/02/2025,Gaz,Téléphone,Assistance,#??!,#??!,#??!,Non,O,#??!
+D1000236,Saur,Formule Standard,03/12/2022,23:04,M7230,Fuite de gaz,03/09/2022,Électricité,Mobile App,Administratif,N,Oui,N,Oui,N,1
+D1000237,#??!,Formule Sérénité,01/01/2023,04:54,M8566,Fuite de gaz,08/07/2023,Mixte,Téléphone,Administratif,O,Non,,1,#??!,Oui
+D1000238,Vattenfall,Formule Standard,03/02/2025,21:42,M4170,Odeur de gaz,23/05/2024,#??!,Mobile App,Assistance,0,N,N,0,,#??!
+D1000239,Suez,Formule Essentiel,#??!,02:52,M9889,Disjoncteur HS,09/12/2023,Mixte,#??!,#??!,,,,Oui,,0
+#??!,Saur,Formule Sérénité,22/03/2023,14:32,M7544,#??!,#??!,Mixte,SAV-Tool,Administratif,#??!,1,0,Oui,1,#??!
+D1000241,Vattenfall,Formule Eco,#??!,10:37,M2942,Pas de chauffage,02/06/2023,Gaz,SAV-Tool,Administratif,Non,Non,O,1,,#??!
+#??!,GRDF,Formule Premium,06/05/2022,#??!,M1201,Surtension,#??!,GPL,#??!,Administratif,0,1,,#??!,0,N
+D1000243,GRDF,#??!,17/05/2025,06:15,#??!,Disjoncteur HS,09/11/2025,Eau,Mobile App,Administratif,1,#??!,#??!,1,O,1
+D1000244,#??!,Formule Essentiel,09/10/2022,08:36,M3339,#??!,22/10/2022,Mixte,SAV-Tool,Administratif,1,O,#??!,Oui,Non,N
+D1000245,Enedis,#??!,21/01/2025,#??!,M1416,#??!,#??!,Fioul,Téléphone,Administratif,#??!,Non,Oui,Non,Oui,0
+D1000246,TotalEnergies,Formule Sérénité,15/06/2024,12:06,M7657,Fuite de gaz,11/02/2023,Gaz,#??!,Administratif,O,Oui,N,,N,#??!
+D1000247,EDF,Formule Pro,26/11/2026,13:15,M2740,Coupure d'eau,26/08/2025,Mixte,SAV-Tool,Assistance,0,0,Oui,Oui,O,1
+D1000248,Enedis,Formule Premium,06/03/2022,08:55,M1406,Fuite de gaz,#??!,#??!,Mobile App,Assistance,N,N,N,1,Non,0
+D1000249,Air Liquide,Formule Sérénité,26/10/2024,21:40,#??!,Disjoncteur HS,09/08/2023,GPL,Mobile App,Administratif,Non,N,#??!,,N,#??!
+D1000250,GRDF,Formule Premium,23/05/2023,22:39,M8702,Fuite chaudière,27/04/2022,Électricité,Téléphone,Administratif,,N,Non,1,1,0
+D1000251,#??!,Formule Essentiel,#??!,16:58,M3675,Court-circuit,03/06/2022,Mixte,Mobile App,Assistance,Non,O,#??!,O,0,1
+D1000252,#??!,Formule Standard,#??!,21:04,M6575,Coupure d'eau,#??!,#??!,Mobile App,Assistance,#??!,#??!,,0,1,Non
+#??!,EDF,Formule Essentiel,02/06/2025,14:27,#??!,Câble sectionné,05/06/2022,Mixte,SAV-Tool,Administratif,0,,#??!,#??!,Oui,Non
+D1000254,Veolia,Formule Sérénité,16/11/2024,21:19,M7688,Coupure d'eau,05/08/2023,Gaz,#??!,Assistance,Non,Oui,O,1,,0
+D1000255,#??!,Formule Premium,04/12/2024,19:46,M8296,Fuite compteur,23/08/2023,Fioul,#??!,Assistance,#??!,N,Oui,Oui,Oui,O
+D1000256,Veolia,Formule Confort,22/09/2026,19:49,M0449,Disjoncteur HS,21/10/2026,Gaz,Téléphone,Assistance,O,N,O,0,#??!,1
+D1000257,#??!,Formule Premium,14/06/2026,#??!,M8870,Câble sectionné,02/02/2024,GPL,Outil Legacy,#??!,#??!,Oui,O,Oui,,#??!
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+#??!,GRDF,#??!,07/02/2024,10:28,M4726,#??!,25/03/2024,Fioul,Outil Legacy,#??!,,O,N,O,#??!,0
+D1000260,TotalEnergies,Formule Pro,19/11/2026,19:29,#??!,Câble sectionné,#??!,Eau,Mobile App,Assistance,#??!,0,,O,Non,1
+D1000261,Suez,Formule Sérénité,24/12/2022,01:29,#??!,Pas de chauffage,06/10/2022,#??!,SAV-Tool,Assistance,N,,Non,1,#??!,O
+D1000262,Vattenfall,Formule Sérénité,23/03/2023,00:57,M5058,Câble sectionné,#??!,GPL,#??!,Assistance,O,0,,#??!,,Oui
+D1000263,#??!,#??!,27/10/2026,15:24,M0793,Surtension,16/06/2022,Électricité,Tablette terrain,#??!,1,0,0,#??!,Oui,1
+#??!,Vattenfall,#??!,20/10/2023,12:00,M4514,Pas de chauffage,#??!,Eau,Téléphone,Administratif,N,Oui,Oui,0,Non,
+#??!,EDF,Formule Premium,#??!,13:30,#??!,Fuite de gaz,14/11/2024,#??!,Outil Legacy,Assistance,#??!,,O,N,#??!,Oui
+D1000266,Suez,Formule Standard,#??!,11:00,M4502,Pas de chauffage,05/10/2022,Eau,Tablette terrain,Assistance,,Non,Non,N,#??!,O
+D1000267,Saur,Formule Confort,11/08/2023,00:06,M7014,Pas de chauffage,11/02/2022,Fioul,Mobile App,#??!,1,Oui,1,,1,Non
+D1000268,Veolia,Formule Confort,13/11/2023,15:45,M8990,Coupure d'eau,17/05/2023,Fioul,Tablette terrain,Assistance,#??!,Non,Non,#??!,Non,1
+D1000269,Eni,Formule Premium,#??!,05:27,#??!,Fuite compteur,21/11/2022,GPL,Mobile App,Assistance,#??!,N,N,,1,#??!
+D1000270,Eni,#??!,25/05/2022,11:15,M6172,Surtension,#??!,Fioul,SAV-Tool,Administratif,Non,Oui,#??!,N,1,Oui
+D1000271,Direct Energie,#??!,02/11/2022,16:51,M0133,Fuite chaudière,15/04/2022,Fioul,SAV-Tool,Administratif,#??!,Non,#??!,,#??!,O
+D1000272,ENGIE,Formule Standard,26/04/2024,18:29,M5373,Court-circuit,11/01/2022,Fioul,Outil Legacy,Assistance,O,,N,O,Oui,Oui
+D1000273,Enedis,Formule Pro,15/04/2023,10:45,#??!,Court-circuit,27/05/2022,Fioul,#??!,Assistance,Oui,#??!,Non,#??!,O,#??!
+D1000274,Vattenfall,Formule Premium,#??!,01:50,M2383,Tableau HS,05/03/2022,#??!,Tablette terrain,#??!,O,O,N,N,0,Oui
+D1000275,Veolia,Formule Sérénité,15/07/2022,08:51,#??!,Câble sectionné,01/01/2022,GPL,Web Portal,Administratif,#??!,O,0,1,0,Non
+D1000276,Eni,Formule Sérénité,08/06/2024,12:44,M9441,Court-circuit,23/11/2024,Eau,Mobile App,#??!,,,O,1,#??!,#??!
+D1000277,Direct Energie,Formule Premium,#??!,20:26,#??!,Tableau HS,15/10/2023,Électricité,Mobile App,Assistance,0,,1,O,O,Non
+D1000278,#??!,#??!,20/05/2025,19:12,M6988,Câble sectionné,10/04/2022,Eau,#??!,Administratif,N,O,N,,,1
+D1000279,Air Liquide,Formule Premium,10/07/2024,21:59,#??!,Fuite de gaz,08/09/2022,Fioul,Tablette terrain,#??!,Oui,O,0,1,,0
+#??!,Saur,Formule Standard,14/10/2023,10:03,M9530,#??!,22/01/2022,Électricité,Tablette terrain,Assistance,#??!,0,N,#??!,1,#??!
+D1000281,Eni,Formule Sérénité,13/02/2023,09:16,M5037,Pas de chauffage,10/11/2023,Mixte,Tablette terrain,Administratif,0,1,0,N,O,
+D1000282,Eni,#??!,21/01/2023,02:35,M1854,Fuite chaudière,26/12/2023,Électricité,#??!,Administratif,#??!,Non,,N,#??!,Non
+D1000283,Vattenfall,#??!,16/02/2025,10:50,M2854,#??!,13/09/2024,#??!,SAV-Tool,Assistance,,#??!,Non,N,N,O
+D1000284,EDF,Formule Pro,18/08/2022,17:57,M8817,Tableau HS,13/09/2022,GPL,SAV-Tool,#??!,N,#??!,0,O,0,Oui
+D1000285,ENGIE,Formule Eco,11/10/2026,13:19,M8517,#??!,08/02/2022,#??!,SAV-Tool,#??!,N,1,Non,O,0,Oui
+D1000286,Vattenfall,Formule Sérénité,19/10/2023,07:41,M4245,Tableau HS,#??!,Eau,#??!,Administratif,#??!,,0,,Non,Non
+D1000287,Veolia,Formule Confort,13/02/2022,12:33,M9196,Panne électrique,22/01/2022,Eau,Tablette terrain,#??!,O,#??!,O,N,#??!,#??!
+#??!,Eni,Formule Pro,09/10/2023,#??!,M4594,Disjoncteur HS,22/12/2022,#??!,Outil Legacy,Administratif,0,0,#??!,Non,,0
+D1000289,#??!,Formule Pro,27/07/2023,11:58,M6511,Câble sectionné,#??!,#??!,Téléphone,Assistance,#??!,Non,Oui,1,0,Non
+D1000290,Veolia,#??!,18/01/2024,09:46,M5812,Odeur de gaz,23/12/2023,#??!,Tablette terrain,#??!,#??!,O,,#??!,O,O
+D1000291,Suez,Formule Pro,21/07/2025,#??!,M7082,Panne électrique,04/02/2023,#??!,#??!,#??!,,1,O,,Oui,Non
+#??!,GRDF,Formule Standard,19/10/2022,15:07,M3703,Panne électrique,25/11/2022,Fioul,#??!,#??!,0,#??!,,0,1,N
+#??!,EDF,Formule Eco,28/10/2025,17:52,M7738,Pas de chauffage,22/05/2023,Électricité,#??!,Administratif,1,O,1,,1,O
+D1000294,#??!,Formule Pro,#??!,#??!,M1558,Fuite de gaz,14/04/2022,Mixte,Téléphone,Assistance,1,O,Oui,0,1,#??!
+,,,,,,,,,,,,,,,,
+#??!,TotalEnergies,Formule Standard,18/06/2025,10:29,#??!,Pas de chauffage,07/08/2025,Fioul,#??!,Administratif,1,1,1,1,0,0
+,,,,,,,,,,,,,,,,
+D1000298,Eni,Formule Essentiel,#??!,17:17,M9649,Pas de chauffage,26/10/2022,Électricité,SAV-Tool,Administratif,O,,O,#??!,O,O
+D1000299,TotalEnergies,Formule Premium,#??!,00:14,#??!,Fuite compteur,#??!,#??!,#??!,Administratif,#??!,N,#??!,#??!,Oui,N
+D1000300,#??!,Formule Essentiel,09/01/2024,#??!,#??!,Tableau HS,15/01/2023,Eau,Mobile App,Assistance,N,0,#??!,N,1,#??!
+#??!,Saur,Formule Essentiel,04/08/2022,21:50,M6484,Pas de chauffage,23/11/2022,GPL,Web Portal,Administratif,#??!,Oui,Non,0,#??!,#??!
+D1000302,Air Liquide,Formule Confort,10/08/2025,05:18,M6035,Tableau HS,22/01/2024,Eau,Téléphone,Administratif,1,Non,N,O,O,Oui
+D1000303,EDF,Formule Pro,17/10/2025,23:59,M6370,Fuite chaudière,27/03/2024,Mixte,Web Portal,#??!,O,Non,,0,0,Oui
+#??!,Enedis,Formule Eco,10/12/2026,00:04,M7879,Tableau HS,07/07/2026,GPL,Tablette terrain,Assistance,#??!,Non,Oui,O,Non,1
+D1000305,#??!,Formule Sérénité,18/11/2022,18:11,M4017,Coupure d'eau,26/08/2022,Mixte,Téléphone,#??!,1,#??!,N,#??!,#??!,#??!
+D1000306,Veolia,Formule Standard,27/04/2024,23:47,M6825,#??!,#??!,Eau,Téléphone,Assistance,Non,Non,0,#??!,0,1
+D1000307,#??!,Formule Essentiel,24/11/2022,#??!,M1134,Surtension,15/01/2022,#??!,Outil Legacy,#??!,Non,1,Non,O,Non,1
+D1000308,Air Liquide,Formule Premium,15/01/2023,23:59,M2499,Fuite compteur,22/12/2022,#??!,Tablette terrain,Administratif,Non,Non,#??!,Oui,#??!,0
+#??!,Vattenfall,Formule Pro,#??!,#??!,M3669,Fuite de gaz,13/08/2023,Électricité,#??!,Administratif,1,N,#??!,#??!,#??!,Non
+#??!,Eni,Formule Eco,02/03/2024,16:36,M8108,Câble sectionné,02/08/2023,#??!,Outil Legacy,#??!,#??!,N,,Non,#??!,#??!
+D1000311,Saur,Formule Essentiel,15/09/2022,11:13,M4063,Câble sectionné,20/10/2022,GPL,Mobile App,Administratif,Oui,1,N,,Non,1
+#??!,Air Liquide,Formule Essentiel,16/10/2025,22:33,M8454,Disjoncteur HS,15/12/2025,Mixte,#??!,Assistance,N,1,,1,#??!,0
+D1000313,Direct Energie,Formule Standard,16/03/2023,14:50,M1558,Court-circuit,25/08/2022,Eau,Outil Legacy,#??!,,Non,N,,O,Oui
+D1000314,EDF,#??!,#??!,22:59,M6222,Fuite chaudière,24/04/2022,#??!,Mobile App,Administratif,O,,N,O,,#??!
+#??!,Vattenfall,#??!,#??!,23:47,#??!,Tableau HS,#??!,#??!,Mobile App,Administratif,,1,#??!,1,Non,#??!
+D1000316,Enedis,Formule Pro,25/04/2025,23:00,M4723,Panne électrique,26/07/2022,#??!,SAV-Tool,Assistance,O,Oui,0,O,Oui,1
+D1000317,Veolia,Formule Sérénité,03/12/2026,15:08,M8555,Surtension,26/04/2024,Électricité,SAV-Tool,Assistance,N,0,O,,N,Non
+D1000318,Suez,Formule Premium,09/08/2025,#??!,#??!,Tableau HS,#??!,Mixte,Téléphone,Administratif,#??!,N,N,#??!,1,1
+D1000319,Vattenfall,Formule Sérénité,16/02/2026,01:36,M6759,Surtension,04/10/2022,Eau,Web Portal,Administratif,O,O,,Non,O,N
+D1000320,Veolia,Formule Eco,16/05/2023,#??!,M1055,#??!,24/05/2022,Fioul,Outil Legacy,Administratif,O,,#??!,N,0,Non
+D1000321,ENGIE,Formule Premium,03/07/2026,17:24,M8979,Fuite chaudière,#??!,Eau,Téléphone,Assistance,,O,1,,N,Non
+D1000322,#??!,Formule Standard,18/07/2023,15:09,M1685,#??!,22/06/2023,GPL,Web Portal,Assistance,O,0,0,N,#??!,1
+#??!,Saur,Formule Essentiel,01/05/2023,22:44,M1548,Fuite de gaz,10/02/2023,GPL,#??!,Administratif,Non,#??!,N,O,Non,N
+D1000324,#??!,Formule Premium,24/01/2026,10:19,M3425,#??!,15/06/2024,Électricité,Mobile App,Assistance,Oui,0,Non,#??!,Oui,1
+D1000325,GRDF,Formule Eco,01/03/2023,20:21,#??!,Disjoncteur HS,#??!,Mixte,Tablette terrain,Assistance,,1,N,0,1,Non
+D1000326,Eni,#??!,19/01/2026,10:44,M7239,Court-circuit,#??!,Eau,Tablette terrain,Administratif,#??!,#??!,#??!,Oui,Oui,#??!
+D1000327,EDF,#??!,12/08/2024,04:16,M0973,#??!,01/04/2022,Électricité,Outil Legacy,Administratif,N,Non,0,1,1,
+D1000328,Vattenfall,#??!,16/11/2024,11:07,M4542,Surtension,07/02/2023,GPL,#??!,Administratif,,N,O,O,N,#??!
+#??!,Saur,Formule Confort,20/02/2026,19:27,M1822,Fuite de gaz,08/02/2025,Mixte,#??!,#??!,O,#??!,0,Non,#??!,N
+D1000330,Air Liquide,Formule Eco,04/05/2023,#??!,M7527,Tableau HS,11/01/2023,Fioul,#??!,Administratif,0,#??!,N,Oui,Non,#??!
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000332,ENGIE,Formule Pro,14/07/2025,02:13,M5101,#??!,01/02/2023,#??!,Web Portal,Administratif,0,0,Oui,N,N,Oui
+D1000333,#??!,Formule Pro,#??!,09:33,#??!,Fuite de gaz,25/10/2024,GPL,Mobile App,#??!,Oui,N,Non,1,N,0
+D1000334,GRDF,Formule Pro,#??!,#??!,M9039,Surtension,26/03/2024,Eau,SAV-Tool,Administratif,,,,,N,0
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000336,Veolia,#??!,14/11/2025,12:47,M1852,Disjoncteur HS,16/05/2025,Électricité,Outil Legacy,#??!,#??!,,0,,,Oui
+D1000337,Eni,Formule Eco,#??!,12:34,M2385,#??!,22/12/2024,Eau,#??!,Administratif,N,0,1,0,N,0
+#??!,Vattenfall,Formule Standard,#??!,03:15,M3442,Disjoncteur HS,#??!,Électricité,Téléphone,Administratif,N,Oui,Non,1,O,0
+D1000339,Air Liquide,Formule Sérénité,27/06/2024,#??!,M4142,#??!,18/06/2024,Gaz,Mobile App,Administratif,N,O,O,,Non,Oui
+,,,,,,,,,,,,,,,,
+D1000341,EDF,Formule Standard,25/01/2024,#??!,M6489,Odeur de gaz,15/11/2024,GPL,SAV-Tool,Assistance,Oui,,#??!,#??!,O,0
+D1000342,Veolia,Formule Sérénité,22/11/2023,#??!,M6373,Fuite de gaz,#??!,Fioul,Tablette terrain,Administratif,#??!,Oui,0,O,N,
+#??!,#??!,Formule Standard,06/05/2025,11:37,M5275,Panne électrique,26/07/2022,Mixte,#??!,Administratif,,Non,Non,#??!,#??!,N
+D1000344,Veolia,Formule Eco,10/12/2024,07:37,M8407,Odeur de gaz,17/08/2023,Mixte,SAV-Tool,Administratif,,N,0,Oui,Non,1
+D1000345,#??!,Formule Confort,27/05/2024,20:28,M2960,Coupure d'eau,02/07/2023,Eau,Outil Legacy,Administratif,0,0,1,1,0,
+D1000346,Suez,Formule Confort,#??!,17:21,M4219,Panne électrique,17/06/2022,Eau,Outil Legacy,Assistance,,#??!,Non,Oui,#??!,O
+#??!,Enedis,Formule Sérénité,25/01/2025,05:03,#??!,Surtension,23/11/2023,GPL,Outil Legacy,Assistance,N,O,N,Oui,Non,1
+D1000348,Direct Energie,Formule Sérénité,04/03/2026,18:08,M7942,Surtension,06/01/2022,#??!,Tablette terrain,Assistance,,N,1,0,0,
+#??!,Enedis,#??!,27/02/2026,17:22,M7795,Odeur de gaz,14/07/2025,#??!,Outil Legacy,Assistance,#??!,Non,Non,Oui,N,#??!
+#??!,Eni,Formule Eco,#??!,04:00,M4825,#??!,22/11/2022,#??!,Mobile App,Assistance,Non,,O,O,Oui,0
+D1000351,Enedis,Formule Essentiel,04/05/2026,23:57,#??!,Tableau HS,07/07/2022,Gaz,Mobile App,Administratif,#??!,N,0,Non,O,#??!
+#??!,EDF,Formule Sérénité,06/12/2025,08:25,M1715,#??!,01/11/2025,Fioul,SAV-Tool,Administratif,1,N,Non,0,0,Non
+D1000353,#??!,Formule Eco,#??!,13:44,M6357,Fuite de gaz,14/02/2023,Mixte,Tablette terrain,Assistance,O,#??!,,0,,N
+D1000354,Eni,Formule Confort,07/08/2023,01:47,M7608,Odeur de gaz,03/10/2023,Mixte,#??!,Administratif,O,O,,,N,Oui
+D1000355,Saur,Formule Eco,24/07/2026,22:05,#??!,Panne électrique,13/10/2022,Mixte,Tablette terrain,Assistance,N,0,Oui,Non,#??!,1
+D1000356,#??!,Formule Pro,01/05/2023,20:06,M3619,#??!,27/03/2023,Gaz,Web Portal,Administratif,O,Oui,0,O,Non,#??!
+D1000357,#??!,Formule Eco,#??!,13:13,M9817,Câble sectionné,13/10/2024,Gaz,Téléphone,Assistance,O,N,Non,Non,N,Non
+#??!,#??!,Formule Confort,17/06/2024,00:58,M4483,Fuite de gaz,05/12/2023,Électricité,#??!,#??!,O,#??!,1,Non,,
+D1000359,Vattenfall,Formule Pro,#??!,11:38,#??!,Fuite de gaz,23/01/2022,Électricité,Téléphone,Assistance,,O,O,,N,#??!
+D1000360,Suez,#??!,#??!,12:29,#??!,Tableau HS,10/04/2022,#??!,Web Portal,Administratif,1,#??!,1,0,#??!,Non
+D1000361,#??!,Formule Pro,02/12/2023,#??!,M7112,Coupure d'eau,12/12/2022,Fioul,#??!,Assistance,#??!,N,0,0,1,N
+D1000362,Air Liquide,Formule Essentiel,18/03/2026,09:46,M2580,Fuite chaudière,16/10/2026,Électricité,#??!,Assistance,#??!,O,1,O,Non,O
+D1000363,Vattenfall,Formule Eco,22/08/2026,03:20,#??!,Fuite de gaz,#??!,Fioul,Web Portal,#??!,Oui,Oui,1,Oui,Non,#??!
+D1000364,Air Liquide,Formule Eco,#??!,#??!,M1696,Fuite chaudière,10/07/2024,Gaz,SAV-Tool,#??!,O,Non,#??!,1,Non,#??!
+D1000365,#??!,Formule Eco,17/10/2022,08:27,#??!,Surtension,#??!,#??!,Outil Legacy,Assistance,0,#??!,O,N,N,0
+D1000366,Vattenfall,Formule Pro,08/03/2022,#??!,M0846,#??!,18/07/2022,Gaz,#??!,Assistance,O,0,0,Oui,O,Oui
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+#??!,TotalEnergies,Formule Pro,19/05/2025,15:03,M9795,Fuite de gaz,13/01/2024,GPL,Tablette terrain,#??!,O,1,N,Oui,O,#??!
+D1000369,Saur,#??!,23/06/2025,#??!,M5551,#??!,15/02/2025,Fioul,#??!,Administratif,1,,N,#??!,N,Non
+D1000370,GRDF,#??!,#??!,16:10,M4585,Disjoncteur HS,27/01/2026,Électricité,Mobile App,#??!,O,N,#??!,,,O
+,,,,,,,,,,,,,,,,
+#??!,Veolia,Formule Essentiel,#??!,04:08,M4298,Odeur de gaz,04/07/2024,Eau,Outil Legacy,#??!,,#??!,O,#??!,Non,0
+#??!,GRDF,Formule Premium,03/05/2022,#??!,M1424,Court-circuit,26/11/2022,#??!,Tablette terrain,#??!,Non,O,#??!,1,O,#??!
+D1000374,Vattenfall,Formule Essentiel,21/10/2026,20:28,M2072,Court-circuit,19/05/2024,Mixte,Outil Legacy,#??!,,0,,#??!,0,N
+#??!,Direct Energie,Formule Confort,20/07/2023,#??!,M8894,Fuite compteur,13/07/2022,#??!,Téléphone,Administratif,0,,N,#??!,Non,#??!
+D1000376,TotalEnergies,Formule Essentiel,26/10/2025,06:11,M8593,Coupure d'eau,21/12/2024,Eau,Tablette terrain,Administratif,Non,Non,#??!,,Non,O
+D1000377,ENGIE,Formule Pro,22/02/2023,06:03,M4682,Disjoncteur HS,20/02/2022,GPL,Téléphone,#??!,Non,#??!,#??!,Oui,0,N
+D1000378,ENGIE,Formule Pro,23/01/2024,02:21,M7357,Court-circuit,06/12/2024,#??!,Web Portal,Administratif,O,#??!,,O,N,O
+D1000379,EDF,Formule Sérénité,23/03/2024,01:32,M3959,Odeur de gaz,23/11/2023,Électricité,Web Portal,Assistance,1,,#??!,#??!,N,#??!
+D1000380,Direct Energie,Formule Sérénité,16/05/2026,05:54,M2085,Tableau HS,12/08/2022,Gaz,#??!,Administratif,#??!,#??!,N,0,,#??!
+#??!,Enedis,Formule Pro,26/07/2026,13:15,M9921,Panne électrique,04/08/2024,Gaz,Tablette terrain,Administratif,Oui,Oui,Non,N,#??!,1
+D1000382,Saur,Formule Confort,19/04/2023,16:19,M4912,Coupure d'eau,09/04/2023,#??!,Tablette terrain,Assistance,#??!,Non,0,#??!,O,#??!
+#??!,Enedis,Formule Standard,16/12/2023,#??!,M2729,Pas de chauffage,#??!,Électricité,Tablette terrain,Assistance,O,O,#??!,1,N,
+D1000384,#??!,Formule Sérénité,02/05/2022,05:30,M2465,Pas de chauffage,18/12/2022,Électricité,SAV-Tool,Assistance,Oui,1,O,,#??!,Oui
+D1000385,EDF,Formule Pro,21/08/2023,22:07,M6676,Pas de chauffage,22/12/2023,Mixte,Mobile App,Administratif,0,,N,Non,1,1
+D1000386,#??!,Formule Pro,13/05/2026,18:08,M9622,Câble sectionné,27/01/2025,Électricité,SAV-Tool,Administratif,,1,Non,O,O,1
+#??!,Air Liquide,Formule Eco,#??!,#??!,M7638,Odeur de gaz,01/02/2022,Électricité,#??!,Administratif,1,Non,Non,N,#??!,
+D1000388,Suez,Formule Pro,#??!,03:29,#??!,Coupure d'eau,21/09/2025,Mixte,SAV-Tool,Assistance,0,1,#??!,#??!,#??!,
+#??!,ENGIE,Formule Pro,23/03/2022,19:42,M7489,Tableau HS,02/12/2022,Gaz,Mobile App,#??!,N,Non,,O,Non,0
+D1000390,Suez,Formule Sérénité,26/04/2023,22:08,M9679,Pas de chauffage,18/09/2023,Mixte,Outil Legacy,Assistance,,0,0,N,O,Oui
+D1000391,Eni,Formule Sérénité,14/08/2023,20:18,M6741,Surtension,11/07/2023,Fioul,Tablette terrain,#??!,1,,#??!,0,N,#??!
+D1000392,Suez,Formule Premium,20/01/2022,10:22,M5380,Panne électrique,10/12/2022,Électricité,#??!,#??!,N,N,Non,N,Non,Oui
+D1000393,Veolia,Formule Essentiel,23/11/2026,09:23,M4757,Surtension,18/11/2022,Mixte,#??!,Assistance,N,0,Oui,O,0,Non
+D1000394,Direct Energie,Formule Confort,#??!,11:48,M7898,Fuite compteur,#??!,Électricité,Téléphone,Administratif,Non,N,O,#??!,Oui,Non
+D1000395,Suez,Formule Premium,#??!,06:02,M9800,Fuite de gaz,18/04/2023,Eau,#??!,Assistance,#??!,#??!,0,Oui,O,1
+D1000396,Enedis,Formule Eco,17/05/2023,00:50,M7645,Tableau HS,23/12/2023,Électricité,SAV-Tool,#??!,#??!,#??!,O,N,#??!,
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000398,TotalEnergies,Formule Premium,07/10/2022,06:35,M9434,Surtension,17/10/2022,Gaz,Web Portal,Assistance,#??!,0,,0,N,1
+D1000399,GRDF,Formule Premium,22/10/2023,13:08,M3620,Surtension,20/04/2022,#??!,Mobile App,Administratif,N,Oui,#??!,0,0,
+D1000400,Suez,Formule Standard,13/02/2025,#??!,M1356,Coupure d'eau,27/06/2023,Mixte,SAV-Tool,Administratif,#??!,Non,0,#??!,#??!,Non
+D1000401,ENGIE,#??!,26/10/2022,00:42,#??!,Fuite de gaz,28/03/2022,#??!,Tablette terrain,Administratif,O,1,,,0,N
+#??!,Saur,Formule Pro,24/09/2023,15:00,#??!,Coupure d'eau,26/09/2022,Fioul,Outil Legacy,Administratif,N,1,1,N,Non,O
+D1000403,Enedis,Formule Sérénité,19/06/2025,11:36,M0595,Coupure d'eau,#??!,Électricité,Outil Legacy,Administratif,,#??!,1,N,O,0
+D1000404,#??!,#??!,24/01/2026,23:31,#??!,Fuite compteur,#??!,Gaz,Outil Legacy,Assistance,#??!,1,#??!,O,0,1
+D1000405,ENGIE,Formule Sérénité,22/10/2026,18:27,M9308,#??!,27/01/2023,GPL,Outil Legacy,Administratif,Oui,0,1,O,Oui,1
+D1000406,Enedis,#??!,16/06/2026,21:06,M1665,Coupure d'eau,09/12/2026,GPL,#??!,Administratif,Oui,N,Non,N,1,0
+D1000407,Saur,Formule Confort,08/01/2024,08:55,#??!,Panne électrique,07/06/2023,#??!,#??!,Administratif,N,#??!,0,N,Non,
+D1000408,Air Liquide,Formule Sérénité,10/06/2022,#??!,M2672,Câble sectionné,24/12/2022,Gaz,Mobile App,Assistance,N,Non,N,Oui,1,#??!
+D1000409,EDF,Formule Premium,10/02/2022,#??!,M4712,Fuite de gaz,04/05/2022,Électricité,SAV-Tool,Administratif,,#??!,#??!,N,#??!,Oui
+D1000410,#??!,Formule Essentiel,17/03/2023,08:39,M4453,#??!,19/03/2022,GPL,Web Portal,Administratif,Oui,,Oui,0,Non,N
+D1000411,Direct Energie,Formule Pro,#??!,02:01,#??!,Câble sectionné,11/09/2022,Eau,Outil Legacy,Assistance,0,Oui,,#??!,#??!,0
+D1000412,#??!,Formule Pro,27/04/2025,20:36,M1750,#??!,28/02/2025,GPL,Téléphone,#??!,O,#??!,O,#??!,0,1
+D1000413,#??!,Formule Confort,21/03/2024,#??!,M3385,#??!,22/09/2023,GPL,Téléphone,Assistance,,0,N,Non,N,1
+D1000414,#??!,Formule Eco,07/12/2026,07:01,#??!,Odeur de gaz,20/08/2023,GPL,#??!,Assistance,,#??!,O,#??!,O,Oui
+D1000415,Air Liquide,Formule Confort,26/06/2024,17:01,M2159,#??!,03/01/2022,GPL,Outil Legacy,Administratif,Non,N,#??!,1,Oui,Oui
+#??!,EDF,Formule Sérénité,01/11/2025,22:41,M5692,Tableau HS,21/06/2025,Électricité,SAV-Tool,Assistance,#??!,Non,#??!,#??!,0,N
+D1000417,Vattenfall,Formule Confort,03/02/2023,#??!,M4639,Fuite compteur,#??!,GPL,#??!,Assistance,O,Oui,1,1,Oui,0
+D1000418,GRDF,Formule Confort,19/06/2023,00:39,M6812,Panne électrique,03/04/2022,Eau,SAV-Tool,Administratif,Non,#??!,Non,0,1,Oui
+D1000419,#??!,Formule Standard,03/06/2022,09:00,M6054,Court-circuit,#??!,GPL,Web Portal,Administratif,,Non,#??!,Non,#??!,N
+D1000420,EDF,Formule Sérénité,27/10/2026,00:20,M6269,Fuite compteur,21/12/2024,Mixte,Outil Legacy,#??!,#??!,1,N,O,#??!,1
+D1000421,Direct Energie,Formule Confort,18/11/2024,#??!,M9448,Fuite chaudière,#??!,#??!,Mobile App,Assistance,1,#??!,1,#??!,1,1
+#??!,Veolia,Formule Essentiel,12/11/2024,12:18,#??!,Pas de chauffage,#??!,#??!,Outil Legacy,Administratif,#??!,1,#??!,Oui,1,N
+D1000423,Enedis,Formule Pro,26/07/2022,#??!,M0244,Court-circuit,03/04/2022,Gaz,Mobile App,Assistance,#??!,,Non,#??!,1,#??!
+D1000424,Saur,#??!,22/01/2025,04:47,M7983,Coupure d'eau,15/07/2024,Gaz,#??!,Administratif,#??!,Non,Oui,1,O,Oui
+D1000425,TotalEnergies,Formule Eco,09/07/2025,13:23,M9779,Fuite de gaz,09/03/2023,Eau,Web Portal,Administratif,,1,Oui,1,#??!,#??!
+D1000426,TotalEnergies,Formule Sérénité,25/08/2026,12:20,M8632,Câble sectionné,#??!,GPL,Tablette terrain,Administratif,Oui,0,Oui,#??!,Non,#??!
+#??!,Eni,Formule Essentiel,09/12/2024,03:26,#??!,Court-circuit,07/02/2022,Fioul,SAV-Tool,Administratif,O,,O,Non,O,#??!
+D1000428,Veolia,#??!,11/02/2025,05:08,M1177,Disjoncteur HS,04/12/2024,#??!,Tablette terrain,Administratif,#??!,Oui,N,#??!,Non,
+D1000429,TotalEnergies,Formule Standard,#??!,14:18,M1096,#??!,19/09/2022,Fioul,Tablette terrain,Assistance,1,#??!,#??!,N,N,
+D1000430,TotalEnergies,#??!,17/06/2025,00:02,M9898,Tableau HS,17/04/2022,Électricité,Téléphone,#??!,#??!,N,0,0,1,
+D1000431,Vattenfall,Formule Standard,03/06/2025,23:05,M4221,Disjoncteur HS,27/04/2025,#??!,Mobile App,Administratif,O,O,,#??!,,
+D1000432,Air Liquide,Formule Eco,09/01/2025,07:44,M5296,Panne électrique,12/08/2025,GPL,Tablette terrain,Administratif,#??!,O,#??!,1,Non,0
+D1000433,ENGIE,#??!,10/06/2022,17:08,M2903,Odeur de gaz,03/02/2022,GPL,#??!,Administratif,N,N,Non,,N,Oui
+D1000434,Veolia,Formule Pro,06/05/2023,09:46,#??!,Tableau HS,14/09/2023,Fioul,#??!,#??!,Non,Oui,#??!,Non,Non,#??!
+#??!,Saur,Formule Premium,#??!,10:28,M3084,#??!,23/07/2023,Électricité,Web Portal,Administratif,0,1,,0,N,
+D1000436,Suez,Formule Eco,11/01/2022,11:08,M7549,#??!,02/11/2022,Mixte,Outil Legacy,Assistance,Oui,1,Non,#??!,0,#??!
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000438,Direct Energie,Formule Standard,03/11/2024,12:41,M9908,Fuite compteur,#??!,Électricité,SAV-Tool,Administratif,Non,#??!,O,Oui,O,
+D1000439,Veolia,Formule Standard,19/10/2022,18:09,M3872,#??!,26/02/2022,GPL,Tablette terrain,Assistance,#??!,N,Oui,Oui,#??!,#??!
+D1000440,Saur,Formule Standard,#??!,21:03,M3613,Panne électrique,21/06/2022,Électricité,Mobile App,Assistance,O,Oui,Non,#??!,1,
+D1000441,Air Liquide,Formule Standard,12/11/2023,08:02,M3908,Pas de chauffage,09/04/2022,Électricité,Tablette terrain,Assistance,,N,Non,1,0,Non
+D1000442,Vattenfall,Formule Premium,#??!,03:11,#??!,Fuite de gaz,21/04/2024,Fioul,Outil Legacy,Administratif,O,#??!,O,#??!,N,Non
+D1000443,Veolia,#??!,21/06/2026,#??!,M4597,Fuite chaudière,12/12/2026,Fioul,Tablette terrain,Assistance,#??!,Non,1,0,O,Oui
+D1000444,Air Liquide,Formule Pro,20/09/2022,10:40,M4053,Pas de chauffage,11/04/2022,Mixte,SAV-Tool,#??!,Oui,,#??!,#??!,1,O
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+D1000446,Air Liquide,#??!,27/12/2023,21:49,#??!,Odeur de gaz,03/02/2023,#??!,SAV-Tool,Administratif,Non,N,#??!,Non,Oui,1
+D1000447,Veolia,Formule Standard,15/01/2022,15:46,M3891,Fuite compteur,01/09/2022,Électricité,Web Portal,#??!,1,1,O,Non,,0
+D1000448,#??!,Formule Standard,28/07/2026,#??!,M2582,Coupure d'eau,07/12/2022,Électricité,Outil Legacy,Assistance,0,1,N,,Oui,1
+D1000449,Direct Energie,Formule Premium,14/04/2025,13:43,#??!,Court-circuit,#??!,Eau,#??!,#??!,Non,#??!,Non,O,#??!,N
+D1000450,TotalEnergies,Formule Confort,08/05/2024,00:23,M2523,Fuite de gaz,14/01/2024,Gaz,SAV-Tool,Administratif,1,,Oui,#??!,O,0
+D1000451,Veolia,Formule Sérénité,11/05/2024,08:58,M3014,Câble sectionné,10/11/2023,GPL,SAV-Tool,Assistance,1,N,1,O,N,
+D1000452,Enedis,Formule Premium,02/03/2022,19:48,M7093,Fuite de gaz,16/02/2022,GPL,SAV-Tool,Assistance,,#??!,O,1,0,#??!
+D1000453,GRDF,Formule Confort,23/11/2023,20:38,M6580,Panne électrique,13/04/2022,Électricité,#??!,#??!,1,1,Oui,N,,1
+#??!,Suez,Formule Essentiel,25/11/2026,04:56,M1227,Coupure d'eau,08/11/2022,Mixte,Tablette terrain,Assistance,,O,,,,0
+#??!,Enedis,Formule Sérénité,27/06/2023,19:17,M5903,Pas de chauffage,12/01/2023,Fioul,#??!,Assistance,1,Non,1,O,#??!,O
+D1000456,Eni,Formule Eco,20/09/2023,14:44,M8943,Coupure d'eau,#??!,Fioul,Téléphone,#??!,Non,,,O,1,#??!
+D1000457,TotalEnergies,Formule Eco,#??!,21:59,M3902,#??!,22/11/2022,Gaz,Web Portal,Administratif,#??!,O,1,O,Non,1
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+,,,,,,,,,,,,,,,,
+D1000460,#??!,Formule Pro,#??!,#??!,M1766,Pas de chauffage,23/05/2022,Eau,Mobile App,Assistance,#??!,N,#??!,Oui,#??!,Non
+D1000461,Vattenfall,Formule Essentiel,08/08/2026,23:25,M1554,Fuite de gaz,04/11/2024,Électricité,Mobile App,Assistance,1,O,N,Non,0,#??!
+D1000462,Vattenfall,Formule Premium,09/02/2023,16:16,M4120,Coupure d'eau,11/03/2022,#??!,Web Portal,#??!,1,#??!,0,#??!,#??!,O
+#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!,#??!
+#??!,Eni,Formule Eco,14/03/2026,18:10,M9606,#??!,08/12/2022,Gaz,Outil Legacy,Assistance,0,1,,Non,0,N
+D1000465,Air Liquide,Formule Premium,#??!,#??!,M8053,Court-circuit,03/02/2022,Mixte,SAV-Tool,#??!,N,Oui,Non,O,N,1
+D1000466,Suez,Formule Pro,#??!,11:03,M2562,Surtension,24/05/2025,#??!,Mobile App,Assistance,Non,Non,1,N,1,
+D1000467,Suez,Formule Eco,24/11/2024,01:03,#??!,#??!,07/05/2023,Mixte,Téléphone,#??!,#??!,Oui,Oui,1,#??!,Oui
+,,,,,,,,,,,,,,,,
+D1000469,Enedis,#??!,07/04/2025,18:42,M5889,#??!,13/10/2023,Eau,Téléphone,Administratif,Non,#??!,#??!,Oui,0,#??!
+#??!,EDF,Formule Confort,06/08/2023,12:50,M6535,#??!,28/12/2022,#??!,Téléphone,Administratif,#??!,1,,#??!,#??!,Non
+D1000471,Veolia,#??!,02/07/2022,02:53,M7719,#??!,#??!,Eau,Mobile App,Assistance,,#??!,O,Oui,Non,0
+D1000472,Eni,Formule Confort,23/12/2026,18:44,#??!,Fuite compteur,23/04/2023,#??!,Tablette terrain,Assistance,0,0,1,,Non,N
+D1000473,TotalEnergies,Formule Sérénité,23/08/2023,10:10,#??!,#??!,01/12/2022,GPL,Mobile App,Administratif,0,1,O,Oui,Non,#??!
+D1000474,Saur,Formule Standard,15/11/2025,07:28,M0808,Fuite de gaz,23/11/2024,Électricité,Outil Legacy,Administratif,0,,,0,,#??!
+D1000475,#??!,Formule Sérénité,#??!,10:21,M7849,Pas de chauffage,25/02/2022,Fioul,Mobile App,Assistance,Oui,1,#??!,Oui,O,1
+#??!,Suez,Formule Eco,#??!,01:58,M6562,Fuite chaudière,08/02/2023,#??!,SAV-Tool,#??!,Non,Oui,#??!,O,N,
+D1000477,#??!,Formule Confort,13/07/2023,#??!,#??!,Surtension,11/11/2023,Mixte,Outil Legacy,Administratif,#??!,0,O,N,O,
+#??!,Eni,#??!,10/03/2023,03:45,M0168,Odeur de gaz,#??!,#??!,Téléphone,Assistance,Oui,,Oui,N,#??!,Oui
+D1000479,TotalEnergies,Formule Sérénité,#??!,03:00,M3979,Fuite de gaz,#??!,Gaz,Outil Legacy,Assistance,1,0,#??!,#??!,N,
+D1000480,GRDF,Formule Premium,20/03/2024,17:25,M9834,Fuite compteur,15/04/2022,Mixte,#??!,Administratif,N,N,1,1,1,O
+D1000481,Saur,Formule Essentiel,01/01/2026,09:53,M9696,Court-circuit,#??!,GPL,Mobile App,Assistance,1,Non,,1,0,
+D1000482,ENGIE,Formule Confort,21/12/2023,19:55,#??!,Pas de chauffage,05/10/2022,Gaz,Web Portal,Assistance,1,Non,1,N,#??!,Non
+D1000483,Air Liquide,Formule Premium,13/05/2025,21:23,M7200,Panne électrique,14/02/2025,Mixte,Mobile App,Administratif,Oui,Non,O,1,O,1
+D1000484,#??!,Formule Eco,21/06/2024,23:22,M4555,Tableau HS,24/10/2022,GPL,Tablette terrain,Administratif,,1,O,0,#??!,N
+#??!,Enedis,Formule Standard,16/02/2022,23:38,M2988,Fuite chaudière,#??!,Eau,Mobile App,Assistance,N,N,1,N,N,O
+D1000486,TotalEnergies,Formule Pro,08/05/2022,06:41,M6443,Fuite chaudière,26/02/2022,#??!,Mobile App,Administratif,#??!,N,0,0,#??!,N
+D1000487,Suez,Formule Eco,09/08/2024,#??!,M3227,Panne électrique,13/04/2024,Fioul,Tablette terrain,Assistance,N,N,O,,1,O
+D1000488,Eni,Formule Standard,28/04/2026,#??!,M0918,#??!,15/06/2025,GPL,Web Portal,Administratif,1,,1,Non,N,O
+D1000489,#??!,Formule Premium,22/09/2025,11:10,M9441,Fuite de gaz,25/06/2025,Gaz,Web Portal,Administratif,Non,Oui,Oui,0,#??!,0
+D1000490,TotalEnergies,Formule Standard,05/05/2023,12:25,M5007,Fuite chaudière,25/01/2023,Électricité,Téléphone,Assistance,,O,1,Non,Oui,Non
+D1000491,#??!,Formule Eco,09/10/2023,08:29,M2324,Fuite de gaz,23/02/2022,Mixte,Web Portal,Assistance,1,O,#??!,,N,0
+D1000492,EDF,Formule Confort,19/01/2022,00:04,M5320,#??!,24/06/2022,Eau,Téléphone,Assistance,,O,,N,0,#??!
+D1000493,EDF,Formule Premium,#??!,19:34,M3675,Pas de chauffage,17/06/2022,Fioul,Téléphone,Assistance,N,,Oui,O,1,#??!
+D1000494,TotalEnergies,Formule Confort,28/12/2023,#??!,M3725,Fuite chaudière,19/06/2022,Électricité,Tablette terrain,Assistance,Oui,Non,#??!,#??!,Non,0
+D1000495,Enedis,Formule Sérénité,#??!,14:26,M9710,#??!,01/10/2022,Mixte,Téléphone,Assistance,N,#??!,0,1,1,Oui
+D1000496,Eni,#??!,26/05/2024,19:07,#??!,Tableau HS,21/04/2023,Fioul,#??!,#??!,Oui,#??!,,1,1,#??!
+D1000497,Veolia,Formule Confort,20/09/2023,03:18,M7433,Fuite chaudière,#??!,Mixte,SAV-Tool,Assistance,1,N,O,1,N,Oui
+D1000498,TotalEnergies,Formule Sérénité,#??!,17:44,M3976,Surtension,22/09/2022,#??!,Téléphone,#??!,Oui,O,Oui,,,O
+D1000499,#??!,#??!,28/10/2024,02:56,M2904,#??!,24/08/2024,#??!,Téléphone,#??!,O,Oui,1,N,0,
+D1000003,Air Liquide,Formule Standard,07/08/2024,05:04,M3471,Fuite chaudière,25/11/2023,Gaz,Téléphone,Assistance,0,#??!,#??!,Non,Oui,
+D1000003,Air Liquide,Formule Standard,07/08/2024,05:04,M3471,Fuite chaudière,25/11/2023,Gaz,Téléphone,Assistance,0,#??!,#??!,Non,Oui,
+D1000003,Air Liquide,Formule Standard,07/08/2024,05:04,M3471,Fuite chaudière,25/11/2023,Gaz,Téléphone,Assistance,0,#??!,#??!,Non,Oui,
+D1000003,Air Liquide,Formule Standard,07/08/2024,05:04,M3471,Fuite chaudière,25/11/2023,Gaz,Téléphone,Assistance,0,#??!,#??!,Non,Oui,

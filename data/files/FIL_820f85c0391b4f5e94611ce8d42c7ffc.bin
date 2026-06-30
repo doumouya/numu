@@ -1,0 +1,4 @@
+order_id,customer,amount,status
+1001,Aria Vex,249.90,paid
+1002,Maison Rets,1200.00,pending
+1003,Kestrel,89.50,refunded
