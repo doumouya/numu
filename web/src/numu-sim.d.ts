@@ -176,7 +176,8 @@ interface NumuEntity {
 interface NumuSimEngine {
   state: {
     entities: Record<string, NumuEntity>;
-    memberships: Array<{ object_id: string; member_id: string; role: string }>;
+    /** context_role is a cosmetic label (never enforcement — rbac doctrine) */
+    memberships: Array<{ object_id: string; member_id: string; role: string; context_role?: string | null }>;
   };
   reachable(actor: string, type: string | null): NumuEntity[];
   scopeChain(id: string): string[];

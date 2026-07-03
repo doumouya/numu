@@ -7,10 +7,10 @@
 export const ncl: NumuClientApi = (window.numuClient =
   window.numuClient ?? (window.NUMU_HTTP ? window.NumuClient.http("") : window.NumuClient.local()));
 
-/** tenant rail id → the workspace (ORG) entity id the engine scopes by */
+/** Impersonation-Rail workspace id → the (ORG) entity id the engine scopes by */
 export const ORG_OF: Record<string, string> = { studio: "ORG_orvcle", platform: "ORG_numu" };
 
-/** projects-panel id → the project (PRJ) entity id */
+/** Object-Rail project id → the project (PRJ) entity id */
 export const PRJ_OF = (id: string): string => "PRJ_" + id;
 
 /** Prefetch column-distinct values for the autocomplete's lazy field-domain

@@ -14,25 +14,27 @@ phase A runs the design project's in-browser sim; phase B is the Rust api.
 
 ```
 ┌──┬──────────────────────────────────────────────────────┐
-│  │ topbar — tenant chip (mark · name · sub · driver)     │
-│t ├──────────────┬───────────────────────────┬────────────┤
-│e │ Objects      │ conversation feed         │ Context    │
-│n │ panel        │  (blocks)                 │ panel      │
-│a │  overview    │                           │  type-     │
-│n │  objects     │                           │  specific  │
-│t │  channels →  │                           │  viewer    │
-│  │   projects   ├───────────────────────────┤ 27rem ⇄    │
-│r │              │ composer: try-chips ·     │ full width │
-│a │              │ › nacl prompt · send      │            │
-│i │              │ (autocomplete popover ↑)  │            │
-│l │              │                           │            │
+│I │ topbar — panel toggle · tenant chip · chrome (bell ·  │
+│m │   accent · mode · Store · Settings · profile)         │
+│p ├──────────────┬───────────────────────────┬────────────┤
+│  │ OBJECT RAIL  │ conversation feed / Store │ Context    │
+│R │  channels →  │  (blocks)                 │ panel      │
+│a │   projects   │                           │  type-     │
+│i │  objects     ├───────────────────────────┤  specific  │
+│l │              │ composer (docked under    │  viewer    │
+│  │              │  EVERY page): try-chips · │ 27rem ⇄    │
+│  │              │  › nacl · action bar      │ full width │
 └──┴──────────────┴───────────────────────────┴────────────┘
 ```
 
-Expanding the Context panel hides the Objects panel + center (the viewer takes
-the full width). The rail's plug button swaps the center for the **connectors
-page**. There are exactly two tenants: **numu** (platform) and **ORVCLE** (a
-recording studio) — per-tenant accent, projects, objects and feed.
+**The two rails — the tenancy rule.** The far-left strip is the
+**Impersonation Rail**: numu-OPERATOR chrome only. Clicking a client workspace
+(LORVCLE) opens that client's world, and "Impersonate · view as user" at its
+foot connects the operator as one of **that workspace's** users — a
+troubleshooting tool. A client member never sees this rail: when they connect
+they get only the **Object Rail** (the channels→projects/objects tree). While
+viewing-as, the Impersonation Rail disappears too — the operator sees exactly
+what the member sees.
 
 ## Modules (`web/src/`)
 
@@ -40,8 +42,8 @@ recording studio) — per-tenant accent, projects, objects and feed.
 |---|---|
 | `app.ts` | state + layout + seam wiring (send / saveAttachment / applyEffects / feed bootstrap) · **impersonation** (view-as: actor swap + logged engine events + banner) · **buildLive** (the Objects panel bound to the reach-filtered registry, artists grouped from real audio files) · channels as LOCAL user data (add/rename/delete/reorder/collapse/hide, `numu_chan_v2`) · projects as ENGINE objects (POST/PATCH/DELETE + If-Match) · appearance (accent × mode × **skin**, each persisted) · the theme reaction |
 | `client.ts` | the typed `ncl` façade over `window.NumuClient` + `ORG_OF`/`PRJ_OF` + `prefetchValues` |
-| `console/tenant-rail.ts` | OPERATOR chrome: workspace buttons + the impersonation popover (hidden entirely while viewing-as) |
-| `console/projects-panel.ts` | channels→projects tree with full CRUD: create-with-icon+color, inline rename, drag-reorder + drag-to-channel, collapse (count badge), hide/restore, pin — the quick-access objects list last |
+| `console/impersonation-rail.ts` | THE IMPERSONATION RAIL — operator chrome only: workspace buttons + the view-as popover scoped to **the selected workspace's users**; hidden entirely while viewing-as |
+| `console/object-rail.ts` | THE OBJECT RAIL — the one rail every member has: channels→projects tree with full CRUD (create-with-icon+color, inline rename, drag-reorder + drag-to-channel, collapse w/ count, hide/restore, pin) + the quick-access objects list |
 | `console/icon-picker.ts` | the in-app icon picker: search over all ~2,050 Bootstrap Icons (synced name list) + a curated common grid |
 | `console/feed.ts` | the block renderers (below) |
 | `console/composer.ts` | the always-ready nacl terminal docked under EVERY page: one-line grow, try-chips, the autocomplete popover, and the ACTION BAR (➕ attach/insert/reach-out/schedule menu · mic · emoji · the Claude assistant · input settings · send) |
@@ -117,11 +119,13 @@ the chart-bearing regions (see [THEME.md](THEME.md)).
 ## Impersonation (the operator's view-as)
 
 Explicit, purpose-tagged, time-bound, logged — never a silent bypass (RBAC
-design §3.3): the rail's view-as popover (targets = seed users) or the eye in
-Settings → Members swaps `ncl.actor`, writes `operator.impersonation_started`
-/ `_ended` events on the engine, shows the warn banner (who · purpose · until ·
-granted by), and hides the operator rail entirely — the impersonated user's
-reach drives everything (`buildLive`, feeds, nacl).
+design §3.3): the Impersonation Rail's view-as popover (**targets = the
+selected workspace's members**, resolved from the engine's memberships over the
+workspace scope chain) or the eye in Settings → Members swaps `ncl.actor`,
+writes `operator.impersonation_started` / `_ended` events on the engine, shows
+the warn banner (who · purpose · until · granted by), and hides the
+Impersonation Rail entirely — the impersonated user's reach drives everything
+(`buildLive`, feeds, nacl).
 
 ## Clean-slate seeding
 

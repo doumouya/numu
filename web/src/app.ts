@@ -11,8 +11,8 @@
 
 import { el, icon, setTheme, setMode, getTheme, getMode, onThemeChange, toast } from "amenan-ui";
 import { ncl, ORG_OF, PRJ_OF, prefetchValues } from "./client.ts";
-import { mountTenantRail, type ImpTarget } from "./console/tenant-rail.ts";
-import { mountProjectsPanel, initialsOf, type NewProjectOpts } from "./console/projects-panel.ts";
+import { mountImpersonationRail, type ImpTarget } from "./console/impersonation-rail.ts";
+import { mountObjectRail, initialsOf, type NewProjectOpts } from "./console/object-rail.ts";
 import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
 import { mountContextPanel, type ContextPanelCfg } from "./console/context-panel.ts";
@@ -24,11 +24,31 @@ type Accent = "numu" | "numu-blue";
 type PageId = "workspace" | "store";
 type PanelObject = ContextPanelCfg["object"];
 
-/* ── impersonation targets: users in the registry seed (≠ the operator) ── */
+/* ── impersonation targets: THE SELECTED WORKSPACE'S users (≠ the operator).
+      Clicking a client workspace on the Impersonation Rail re-scopes this list
+      to that client's members — the operator connects as one of THEM. ────── */
 const IMP_LABEL: Record<string, string> = { USR_marc: "engineer · member", USR_nova: "artist · viewer", USR_kessy: "artist · viewer" };
-const IMP_TARGETS: ImpTarget[] = (window.NumuSeed?.ENTITIES ?? [])
-  .filter((e) => e[1] === "user" && e[0] !== "USR_jm")
-  .map((e) => ({ id: e[0], name: String(e[2]["display_name"] ?? e[0]), label: IMP_LABEL[e[0]] ?? "member" }));
+function impTargetsFor(tenantId: string): ImpTarget[] {
+  const eng = ncl.engine;
+  const org = ORG_OF[tenantId] ?? "";
+  if (!eng || !org) return [];
+  /* members whose membership object sits in this workspace's scope chain */
+  const roleOf = new Map<string, string>();
+  eng.state.memberships.forEach((m) => {
+    if (eng.scopeChain(m.object_id).includes(org)) {
+      const label = m.context_role ? `${m.context_role} · ${m.role}` : m.role;
+      if (!roleOf.has(m.member_id)) roleOf.set(m.member_id, label);
+    }
+  });
+  return [...roleOf.keys()]
+    .map((id) => eng.state.entities[id])
+    .filter((e): e is NumuEntity => !!e && e.type === "user" && e.id !== "USR_jm" && e.id !== ncl.actor)
+    .map((e) => ({
+      id: e.id,
+      name: String(e.data["display_name"] ?? e.id),
+      label: IMP_LABEL[e.id] ?? roleOf.get(e.id) ?? "member",
+    }));
+}
 
 function canSeeTenant(actorId: string, orgId: string): boolean {
   const eng = ncl.engine;
@@ -158,7 +178,7 @@ const state = {
   page: "workspace" as PageId,
   contextObject: null as PanelObject,
   contextExpanded: false,
-  projectsOpen: true,
+  objectRailOpen: true,
   viewAs: null as (ImpTarget & { until: string }) | null,
 };
 let accent: Accent = getTheme() === "numu-blue" ? "numu-blue" : "numu";
@@ -182,7 +202,7 @@ const railChannels = (): ConsoleChannel[] => chanStore[state.tenantId] ?? seedCh
 function mutateChannels(fn: (cur: ConsoleChannel[]) => ConsoleChannel[]): void {
   chanStore = { ...chanStore, [state.tenantId]: fn(railChannels().slice()) };
   try { localStorage.setItem("numu_chan_v2", JSON.stringify(chanStore)); } catch { /* quota */ }
-  renderPanel();
+  renderObjectRail();
 }
 
 /* ── skins (appearance = accent × mode × skin) ─────────────────────────── */
@@ -208,14 +228,14 @@ const activeSkinId = (): string =>
 
 const rootHost = document.getElementById("root");
 if (!rootHost) throw new Error("no #root");
-const railHost = el("div", { class: "nu-rail-host" });
+const impRailHost = el("div", { class: "nu-imp-rail-host" });
 const banner = el("div", { class: "nu-imp-banner", hidden: "hidden" });
 const topbar = el("header", { class: "nu-topbar" });
-const projectsHost = el("div", { class: "nu-panel-host" });
+const objectRailHost = el("div", { class: "nu-panel-host" });
 const centerHost = el("main", { class: "nu-center" });
 const contextHost = el("div", { class: "nu-context-host" });
-const body = el("div", { class: "nu-body" }, projectsHost, centerHost, contextHost);
-const appRoot = el("div", { class: "nu-app" }, railHost, el("div", { class: "nu-main" }, banner, topbar, body));
+const body = el("div", { class: "nu-body" }, objectRailHost, centerHost, contextHost);
+const appRoot = el("div", { class: "nu-app" }, impRailHost, el("div", { class: "nu-main" }, banner, topbar, body));
 rootHost.appendChild(appRoot);
 applySkinAttr();
 
@@ -235,7 +255,7 @@ function startImpersonation(p: ImpTarget): void {
   if (!reach.some((t) => t.id === state.tenantId) && reach.length) switchTenant(reach[0]!.id);
   notify("Impersonation", `viewing as ${p.name} · grant logged`, "warn");
   renderChrome();
-  renderPanel();
+  renderObjectRail();
 }
 function exitImpersonation(): void {
   if (state.viewAs) ncl.engine?.event(state.viewAs.id, "USR_jm", "operator.impersonation_ended", {});
@@ -243,7 +263,7 @@ function exitImpersonation(): void {
   state.viewAs = null;
   notify("Impersonation", "back to operator view");
   renderChrome();
-  renderPanel();
+  renderObjectRail();
 }
 const impersonateUser = (u: ConsoleUserRecordData): void =>
   startImpersonation({ id: u.id, name: u.name, label: u.role });
@@ -305,7 +325,7 @@ function patchProject(sid: string, patch: Record<string, unknown>): void {
   if (!e) return;
   void ncl
     .request("PATCH", "/api/objects/project/" + projRid(sid), { body: patch, headers: { "If-Match": `W/"${e.version}"` } })
-    .then(renderPanel)
+    .then(renderObjectRail)
     .catch(() => {});
 }
 const renameProject = (sid: string, name: string): void => patchProject(sid, { name });
@@ -329,7 +349,7 @@ function deleteProject(sid: string): void {
         state.activeProject = null;
         state.overviewActive = true;
       }
-      renderPanel();
+      renderObjectRail();
     })
     .catch(() => {});
 }
@@ -350,7 +370,7 @@ function newProject(o: NewProjectOpts): void {
       if (res.status === 201 && bodyOut?.id) {
         state.activeProject = bodyOut.id.replace(/^PRJ_/, "");
         state.overviewActive = false;
-        renderPanel();
+        renderObjectRail();
         notify("Project", o.name ? `Created ${nm}` : "New conversation — rename it via ⋯", "ok");
       } else notify("Project", "Could not create", "warn");
     })
@@ -384,7 +404,7 @@ function openPanelObject(o: PanelObject): void {
   if (!(o && "type" in o && o.type === "video")) state.contextExpanded = false;
   renderContext();
   renderCenter();
-  renderPanel();
+  renderObjectRail();
 }
 
 /* ── seam wiring ───────────────────────────────────────────────────────── */
@@ -499,12 +519,12 @@ function saveAttachment(em: NumuEmailBlock): void {
 
 /* ── region mounts ─────────────────────────────────────────────────────── */
 
-const rail = mountTenantRail(railHost, railCfg());
-function railCfg() {
+const impRail = mountImpersonationRail(impRailHost, impRailCfg());
+function impRailCfg() {
   return {
     tenants: CCD.tenants,
     activeTenantId: state.tenantId,
-    impTargets: IMP_TARGETS,
+    impTargets: impTargetsFor(state.tenantId),
     onTenant: (id: string) => {
       switchTenant(id);
       const t = CCD.tenants.find((x) => x.id === id);
@@ -514,7 +534,7 @@ function railCfg() {
   };
 }
 
-function panelCfg() {
+function objectRailCfg() {
   const live = buildLive(state.tenantId);
   return {
     channels: railChannels(),
@@ -526,7 +546,7 @@ function panelCfg() {
     onSelectProject(id: string) {
       state.activeProject = id;
       state.overviewActive = false;
-      renderPanel();
+      renderObjectRail();
     },
     onOpenObject: (o: ConsoleObject) => openPanelObject(o),
     onNewProject: newProject,
@@ -554,7 +574,7 @@ function panelCfg() {
     onRestoreChannel: (id: string) => mutateChannels((cur) => cur.map((c) => (c.id === id ? { ...c, hidden: false } : c))),
   };
 }
-const projects = mountProjectsPanel(projectsHost, panelCfg());
+const objectRail = mountObjectRail(objectRailHost, objectRailCfg());
 
 function feedCfg() {
   return {
@@ -624,7 +644,7 @@ function contextCfg(): ContextPanelCfg {
       renderContext();
       renderCenter();
       renderChrome();
-      renderPanel();
+      renderObjectRail();
     },
   };
 }
@@ -647,7 +667,7 @@ const store = mountStore(storePage, {
 function chromeBtn(glyph: string, title: string, on: () => void, active = false, child?: Node): HTMLElement {
   return el(
     "button",
-    { class: `nu-rail-chrome${active ? " is-active" : ""}`, title, "aria-label": title, onclick: on },
+    { class: `nu-chrome-btn${active ? " is-active" : ""}`, title, "aria-label": title, onclick: on },
     child ?? icon(glyph),
   );
 }
@@ -656,7 +676,7 @@ function renderChrome(): void {
   /* the viewAs banner */
   banner.textContent = "";
   banner.hidden = !state.viewAs;
-  railHost.hidden = !!state.viewAs;
+  impRailHost.hidden = !!state.viewAs;
   if (state.viewAs) {
     banner.appendChild(icon("eye", { color: "var(--warn)" }));
     banner.appendChild(el("span", { class: "nu-imp-banner-name" }, `Viewing as ${state.viewAs.name}`));
@@ -674,11 +694,11 @@ function renderChrome(): void {
   topbar.textContent = "";
   if (state.page === "workspace" || state.page === "store") {
     topbar.appendChild(
-      chromeBtn("layout-sidebar", state.projectsOpen ? "Hide panel" : "Show panel", () => {
-        state.projectsOpen = !state.projectsOpen;
+      chromeBtn("layout-sidebar", state.objectRailOpen ? "Hide panel" : "Show panel", () => {
+        state.objectRailOpen = !state.objectRailOpen;
         renderCenter();
         renderChrome();
-      }, state.projectsOpen),
+      }, state.objectRailOpen),
     );
   }
   topbar.appendChild(
@@ -707,7 +727,7 @@ function renderChrome(): void {
         notify("Theme", accent === "numu" ? "ink accent" : "blue accent");
       },
       false,
-      el("span", { class: "nu-rail-accent-dot nu-brand-dot" }),
+      el("span", { class: "nu-accent-dot nu-brand-dot" }),
     ),
   );
   chrome.appendChild(
@@ -731,16 +751,16 @@ function renderChrome(): void {
     el(
       "button",
       { class: `nu-topbar-me${isProfile ? " is-active" : ""}`, title: "Your profile", "aria-label": "Profile", onclick: openProfile },
-      el("span", { class: "nu-rail-me-initials" }, meRecord().name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2)),
+      el("span", { class: "nu-me-initials" }, meRecord().name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2)),
     ),
   );
   topbar.appendChild(chrome);
-  rail.update(railCfg());
+  impRail.update(impRailCfg());
 }
 
 function renderCenter(): void {
   const hideCenter = state.contextExpanded;
-  projectsHost.hidden = hideCenter || !state.projectsOpen;
+  objectRailHost.hidden = hideCenter || !state.objectRailOpen;
   centerHost.hidden = hideCenter;
   feedPage.hidden = state.page !== "workspace";
   storePage.hidden = state.page !== "store";
@@ -749,8 +769,8 @@ function renderCenter(): void {
 function renderContext(): void {
   context.update(contextCfg());
 }
-function renderPanel(): void {
-  projects.update(panelCfg());
+function renderObjectRail(): void {
+  objectRail.update(objectRailCfg());
 }
 function renderFeed(): void {
   feed.update(feedCfg());
@@ -779,7 +799,7 @@ function switchTenant(id: string): void {
   state.contextObject = buildLive(id).objects.find((o) => o.type === "artist") ?? null;
   composer.update({ naclHint: nt.naclHint, suggestions: nt.suggestions });
   renderChrome();
-  renderPanel();
+  renderObjectRail();
   renderContext();
   renderCenter();
   loadFeed(id);

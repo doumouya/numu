@@ -40,7 +40,7 @@ body {
 }
 
 /* ── tenant rail ── */
-.nu-rail {
+.nu-imp-rail {
   flex: none;
   width: fit-content;
   height: 100%;
@@ -53,7 +53,7 @@ body {
   background: var(--surface-2);
   box-sizing: border-box;
 }
-.nu-rail-ws {
+.nu-imp-rail-ws {
   --nu-ws-accent: var(--accent);
   position: relative;
   width: 2.45rem;
@@ -70,12 +70,12 @@ body {
   font-weight: var(--weight-bold);
   letter-spacing: -0.03em;
 }
-.nu-rail-ws.is-active {
+.nu-imp-rail-ws.is-active {
   border-color: var(--nu-ws-accent);
   background: var(--nu-ws-accent);
   color: var(--on-accent);
 }
-.nu-rail-ws-bar {
+.nu-imp-rail-ws-bar {
   position: absolute;
   left: -0.5rem;
   top: 50%;
@@ -85,16 +85,16 @@ body {
   border-radius: var(--radius-pill);
   background: var(--nu-ws-accent);
 }
-.nu-rail-divider {
+.nu-imp-rail-divider {
   width: 1.5rem;
   height: 1px;
   background: var(--border);
   margin: 0.1rem 0;
 }
-.nu-rail-spring {
+.nu-imp-rail-spring {
   flex: 1;
 }
-.nu-rail-chrome {
+.nu-chrome-btn {
   width: 2.1rem;
   height: 2.1rem;
   display: grid;
@@ -106,23 +106,23 @@ body {
   color: var(--text-mute);
   transition: var(--transition-control);
 }
-.nu-rail-chrome:hover {
+.nu-chrome-btn:hover {
   border-color: var(--accent);
   color: var(--text);
 }
-.nu-rail-chrome.is-active {
+.nu-chrome-btn.is-active {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
-.nu-rail-accent-dot {
+.nu-accent-dot {
   width: 1.05rem;
   height: 1.05rem;
   border-radius: var(--radius-pill);
   background: var(--accent);
   border: 1px solid var(--border);
 }
-.nu-rail-me {
+.nu-imp-rail-me {
   border: 2px solid var(--border);
   border-radius: var(--radius-pill);
   background: none;
@@ -130,7 +130,7 @@ body {
   cursor: pointer;
   margin-top: 0.1rem;
 }
-.nu-rail-me-initials {
+.nu-me-initials {
   width: 2rem;
   height: 2rem;
   display: grid;
@@ -195,7 +195,7 @@ body {
 .nu-panel-host {
   display: contents;
 }
-.nu-projects {
+.nu-orail {
   width: 16rem;
   flex: none;
   display: flex;
@@ -205,7 +205,7 @@ body {
   background: var(--surface-2);
   box-sizing: border-box;
 }
-.nu-projects-head {
+.nu-orail-head {
   flex: none;
   display: flex;
   align-items: center;
@@ -213,16 +213,16 @@ body {
   padding: 0.6rem 0.7rem 0.6rem 0.85rem;
   border-bottom: 1px solid var(--border);
 }
-.nu-projects-title {
+.nu-orail-title {
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
 }
-.nu-projects-scroll {
+.nu-orail-scroll {
   flex: 1;
   overflow-y: auto;
   padding: 0.35rem 0.4rem 1rem;
 }
-.nu-projects-row {
+.nu-orail-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -232,19 +232,19 @@ body {
   font-size: var(--text-sm);
   color: var(--text);
 }
-.nu-projects-row:hover {
+.nu-orail-row:hover {
   background: var(--hover);
 }
-.nu-projects-row.is-active {
+.nu-orail-row.is-active {
   color: var(--accent);
   background: var(--accent-soft);
   box-shadow: inset 2px 0 0 var(--accent);
 }
-.nu-projects-overview {
+.nu-orail-overview {
   padding: 0.4rem 0.5rem;
   font-weight: var(--weight-semibold);
 }
-.nu-projects-chan {
+.nu-orail-chan {
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -257,8 +257,8 @@ body {
   color: var(--text-mute);
   font-weight: var(--weight-semibold);
 }
-.nu-projects-mark,
-.nu-projects-objicon {
+.nu-orail-mark,
+.nu-orail-objicon {
   width: 1.6rem;
   height: 1.6rem;
   flex: none;
@@ -269,14 +269,14 @@ body {
   font-size: 0.56rem;
   font-weight: var(--weight-bold);
 }
-.nu-projects-mark {
+.nu-orail-mark {
   color: var(--on-accent);
 }
-.nu-projects-objicon {
+.nu-orail-objicon {
   background: var(--surface);
   border: 1px solid var(--border);
 }
-.nu-projects-name {
+.nu-orail-name {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -1560,17 +1560,17 @@ body {
 }
 
 /* ── projects panel · wave 2 (channels CRUD, drag, create flows) ── */
-.nu-pp-chanblock {
+.nu-orail-chanblock {
   margin-top: 0.15rem;
   border-radius: var(--radius-sm);
 }
-.nu-pp-chanblock.is-drop {
+.nu-orail-chanblock.is-drop {
   background: var(--accent-soft);
 }
-.nu-pp-chanblock.is-chandrop {
+.nu-orail-chanblock.is-chandrop {
   box-shadow: inset 0 2px 0 var(--accent);
 }
-.nu-pp-chanhead {
+.nu-orail-chanhead {
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -1582,11 +1582,11 @@ body {
   color: var(--text-mute);
   font-weight: var(--weight-semibold);
 }
-.nu-pp-chanhead--flat {
+.nu-orail-chanhead--flat {
   margin-top: 0;
   padding-left: 0.5rem;
 }
-.nu-pp-chev {
+.nu-orail-chev {
   width: 1.1rem;
   height: 1.1rem;
   display: grid;
@@ -1598,13 +1598,13 @@ body {
   flex: none;
   padding: 0;
 }
-.nu-pp-changrip {
+.nu-orail-changrip {
   display: grid;
   place-items: center;
   cursor: grab;
   flex: none;
 }
-.nu-pp-channame {
+.nu-orail-channame {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -1612,7 +1612,7 @@ body {
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.nu-pp-count {
+.nu-orail-count {
   font-family: var(--font-mono);
   font-size: 0.62rem;
   color: var(--text-mute);
@@ -1622,7 +1622,7 @@ body {
   padding: 0 0.32rem;
   flex: none;
 }
-.nu-pp-dot {
+.nu-orail-dot {
   width: 1.2rem;
   height: 1.2rem;
   display: grid;
@@ -1635,13 +1635,13 @@ body {
   border-radius: var(--radius-sm);
   padding: 0;
 }
-.nu-pp-dot:hover {
+.nu-orail-dot:hover {
   color: var(--text);
 }
-.nu-pp-dot.is-on {
+.nu-orail-dot.is-on {
   color: var(--accent);
 }
-.nu-pp-input {
+.nu-orail-input {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--accent);
@@ -1653,18 +1653,18 @@ body {
   padding: 0.08rem 0.3rem;
   outline: none;
 }
-.nu-pp-input--chan {
+.nu-orail-input--chan {
   font-family: var(--font-mono);
   font-size: 0.58rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0.05rem 0.3rem;
 }
-.nu-pp-input--form {
+.nu-orail-input--form {
   box-sizing: border-box;
   padding: 0.3rem 0.45rem;
 }
-.nu-pp-menu {
+.nu-orail-menu {
   margin: 0.1rem 0.35rem 0.35rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1674,7 +1674,7 @@ body {
   flex-direction: column;
   padding: 0.15rem;
 }
-.nu-pp-menu-item {
+.nu-orail-menu-item {
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -1689,13 +1689,13 @@ body {
   border-radius: var(--radius-sm);
   width: 100%;
 }
-.nu-pp-menu-item:hover {
+.nu-orail-menu-item:hover {
   background: var(--hover);
 }
-.nu-pp-menu-item.is-danger {
+.nu-orail-menu-item.is-danger {
   color: var(--danger);
 }
-.nu-pp-menu-label {
+.nu-orail-menu-label {
   font-family: var(--font-mono);
   font-size: 0.54rem;
   text-transform: uppercase;
@@ -1703,7 +1703,7 @@ body {
   color: var(--text-mute);
   padding: 0.3rem 0.5rem 0.15rem;
 }
-.nu-pp-addchan {
+.nu-orail-addchan {
   margin: 0.6rem 0.35rem 0;
   width: calc(100% - 0.7rem);
   display: flex;
@@ -1718,19 +1718,19 @@ body {
   font: inherit;
   font-size: var(--text-sm);
 }
-.nu-pp-addchan:hover {
+.nu-orail-addchan:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-.nu-pp-addform {
+.nu-orail-addform {
   margin: 0.15rem 0.35rem 0.4rem 0.5rem;
 }
-.nu-pp-addline {
+.nu-orail-addline {
   display: flex;
   align-items: center;
   gap: 0.3rem;
 }
-.nu-pp-chaniconbtn {
+.nu-orail-chaniconbtn {
   width: 1.7rem;
   height: 1.7rem;
   flex: none;
@@ -1743,12 +1743,12 @@ body {
   cursor: pointer;
   padding: 0;
 }
-.nu-pp-chaniconbtn.is-on {
+.nu-orail-chaniconbtn.is-on {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
-.nu-pp-projicon {
+.nu-orail-projicon {
   width: 1.7rem;
   height: 1.7rem;
   flex: none;
@@ -1760,20 +1760,20 @@ body {
   cursor: pointer;
   padding: 0;
 }
-.nu-pp-projicon.is-on {
+.nu-orail-projicon.is-on {
   border: 2px solid var(--accent);
 }
-.nu-pp-projini {
+.nu-orail-projini {
   font-size: 0.5rem;
   font-weight: var(--weight-bold);
 }
-.nu-pp-swatches {
+.nu-orail-swatches {
   display: flex;
   gap: 0.25rem;
   margin-top: 0.3rem;
   flex-wrap: wrap;
 }
-.nu-pp-swatch {
+.nu-orail-swatch {
   width: 1.15rem;
   height: 1.15rem;
   border-radius: var(--radius-pill);
@@ -1782,13 +1782,13 @@ body {
   padding: 0;
   flex: none;
 }
-.nu-pp-swatch.is-on {
+.nu-orail-swatch.is-on {
   border-color: var(--text);
 }
-.nu-pp-pickslot {
+.nu-orail-pickslot {
   margin-top: 0.3rem;
 }
-.nu-pp-mark {
+.nu-orail-mark {
   width: 1.6rem;
   height: 1.6rem;
   flex: none;
@@ -1800,12 +1800,12 @@ body {
   font-size: 0.56rem;
   font-weight: var(--weight-bold);
 }
-.nu-pp-hidden {
+.nu-orail-hidden {
   margin-top: 0.9rem;
   border-top: 1px solid var(--border);
   padding-top: 0.45rem;
 }
-.nu-pp-restore {
+.nu-orail-restore {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -1814,7 +1814,7 @@ body {
   color: var(--text-mute);
   border-radius: var(--radius-sm);
 }
-.nu-pp-objects {
+.nu-orail-objects {
   margin-top: 0.7rem;
 }
 

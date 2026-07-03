@@ -1,6 +1,7 @@
-/* projects-panel.ts — the left "Objects panel": the workspace's organizational
-   tree. PRIMARY: channels (topic groups) → projects (each a live conversation).
-   Then, as convenience: quick-access objects pinned to the rail.
+/* object-rail.ts — THE OBJECT RAIL: the ONE rail every workspace member has
+   (a client member connects and sees only this). The workspace's organizational
+   tree — PRIMARY: channels (topic groups) → projects (each a live
+   conversation); then, as convenience: quick-access objects pinned to the rail.
    Projects are ENGINE objects (create/rename/move/pin/delete flow through the
    seam); channels are local "this-device" user data. Create flows carry an
    icon (the picker) + a color; channels drag-reorder, collapse (count badge),
@@ -33,7 +34,7 @@ export interface NewProjectOpts {
   color: string;
 }
 
-export interface ProjectsPanelCfg {
+export interface ObjectRailCfg {
   channels: ConsoleChannel[];
   projects: ConsoleProject[];
   objects: ConsoleObject[];
@@ -56,9 +57,9 @@ export interface ProjectsPanelCfg {
   onRestoreChannel(id: string): void;
 }
 
-export interface ProjectsPanelHandle {
+export interface ObjectRailHandle {
   el: HTMLElement;
-  update(cfg: ProjectsPanelCfg): void;
+  update(cfg: ObjectRailCfg): void;
 }
 
 interface UiState {
@@ -75,7 +76,7 @@ interface UiState {
   chanDragId: string | null;
 }
 
-export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): ProjectsPanelHandle {
+export function mountObjectRail(host: Element, cfg: ObjectRailCfg): ObjectRailHandle {
   let c = cfg;
   const ui: UiState = {
     menu: null,
@@ -91,9 +92,9 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     chanDragId: null,
   };
 
-  const root = el("div", { class: "nu-projects", onclick: () => { if (ui.menu) { ui.menu = null; render(); } } });
+  const root = el("div", { class: "nu-orail", onclick: () => { if (ui.menu) { ui.menu = null; render(); } } });
   host.appendChild(root);
-  const scroll = el("div", { class: "nu-projects-scroll" });
+  const scroll = el("div", { class: "nu-orail-scroll" });
   root.appendChild(scroll);
 
   const stop = (e: Event): void => e.stopPropagation();
@@ -101,13 +102,13 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
   function dot(glyph: string, title: string, on: (e: Event) => void, active = false): HTMLElement {
     return el(
       "button",
-      { class: `nu-pp-dot${active ? " is-on" : ""}`, title, "aria-label": title, onclick: (e: Event) => { e.stopPropagation(); on(e); } },
+      { class: `nu-orail-dot${active ? " is-on" : ""}`, title, "aria-label": title, onclick: (e: Event) => { e.stopPropagation(); on(e); } },
       icon(glyph, { size: "0.7rem" }),
     );
   }
 
   function renameInput(kind: "project" | "channel", id: string, initial: string): HTMLInputElement {
-    const input = el("input", { class: kind === "channel" ? "nu-pp-input nu-pp-input--chan" : "nu-pp-input", value: initial, onclick: stop });
+    const input = el("input", { class: kind === "channel" ? "nu-orail-input nu-orail-input--chan" : "nu-orail-input", value: initial, onclick: stop });
     const commit = (): void => {
       const v = input.value.trim();
       ui.renaming = null;
@@ -124,15 +125,15 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
   }
 
   function menuBox(items: Array<{ glyph: string; label: string; danger?: boolean; on(): void } | { heading: string }>, indent: string): HTMLElement {
-    const box = el("div", { class: "nu-pp-menu", style: `margin-left:${indent}`, onclick: stop });
+    const box = el("div", { class: "nu-orail-menu", style: `margin-left:${indent}`, onclick: stop });
     items.forEach((it) => {
       if ("heading" in it) {
-        box.appendChild(el("div", { class: "nu-pp-menu-label" }, it.heading));
+        box.appendChild(el("div", { class: "nu-orail-menu-label" }, it.heading));
       } else {
         box.appendChild(
           el(
             "button",
-            { class: `nu-pp-menu-item${it.danger ? " is-danger" : ""}`, onclick: () => { ui.menu = null; it.on(); } },
+            { class: `nu-orail-menu-item${it.danger ? " is-danger" : ""}`, onclick: () => { ui.menu = null; it.on(); } },
             icon(it.glyph, { size: "0.72rem" }),
             it.label,
           ),
@@ -149,18 +150,18 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
   }
 
   function addProjectRow(chId: string): HTMLElement {
-    const nameInput = el("input", { class: "nu-pp-input nu-pp-input--form", placeholder: "Project name…", onclick: stop });
+    const nameInput = el("input", { class: "nu-orail-input nu-orail-input--form", placeholder: "Project name…", onclick: stop });
     const iconBtn = el(
       "button",
       {
-        class: `nu-pp-projicon${ui.projIconOpen ? " is-on" : ""}`,
+        class: `nu-orail-projicon${ui.projIconOpen ? " is-on" : ""}`,
         type: "button",
         title: "Pick an icon",
         style: `background:${ui.projColor}`,
         onmousedown: (e: Event) => e.preventDefault(),
         onclick: (e: Event) => { e.stopPropagation(); ui.projIconOpen = !ui.projIconOpen; render(); },
       },
-      ui.projIcon ? icon(ui.projIcon, { size: "0.8rem" }) : el("span", { class: "nu-pp-projini" }, initialsOf(nameInput.value)),
+      ui.projIcon ? icon(ui.projIcon, { size: "0.8rem" }) : el("span", { class: "nu-orail-projini" }, initialsOf(nameInput.value)),
     );
     const commit = (): void => {
       c.onNewProject({ name: nameInput.value.trim(), channel: ui.addingProj, icon: ui.projIcon, color: ui.projColor });
@@ -173,11 +174,11 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
       if (e.key === "Enter") { e.preventDefault(); commit(); }
       if (e.key === "Escape") { ui.addingProj = null; ui.projIconOpen = false; render(); }
     });
-    const swatches = el("div", { class: "nu-pp-swatches" });
+    const swatches = el("div", { class: "nu-orail-swatches" });
     PROJ_COLORS.forEach((col) => {
       swatches.appendChild(
         el("button", {
-          class: `nu-pp-swatch${ui.projColor === col ? " is-on" : ""}`,
+          class: `nu-orail-swatch${ui.projColor === col ? " is-on" : ""}`,
           type: "button",
           title: "Colour",
           style: `background:${col}`,
@@ -187,18 +188,18 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     });
     const wrap = el(
       "div",
-      { class: "nu-pp-addform", onclick: stop },
+      { class: "nu-orail-addform", onclick: stop },
       el(
         "div",
-        { class: "nu-pp-addline" },
+        { class: "nu-orail-addline" },
         iconBtn,
         nameInput,
-        el("button", { class: "nu-pp-chaniconbtn", type: "button", title: "Create project", onclick: (e: Event) => { e.stopPropagation(); commit(); } }, icon("check-lg", { size: "0.85rem" })),
+        el("button", { class: "nu-orail-chaniconbtn", type: "button", title: "Create project", onclick: (e: Event) => { e.stopPropagation(); commit(); } }, icon("check-lg", { size: "0.85rem" })),
       ),
       swatches,
     );
     if (ui.projIconOpen) {
-      const slot = el("div", { class: "nu-pp-pickslot" });
+      const slot = el("div", { class: "nu-orail-pickslot" });
       mountIconPicker(slot, { value: ui.projIcon, onPick: (n) => { ui.projIcon = n; ui.projIconOpen = false; render(); } });
       wrap.appendChild(slot);
     }
@@ -209,7 +210,7 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
 
   function channelBlock(ch: ConsoleChannel, ci: number): HTMLElement {
     const inCh = projectsIn(ch.id, ci === 0);
-    const block = el("div", { class: "nu-pp-chanblock" });
+    const block = el("div", { class: "nu-orail-chanblock" });
     block.addEventListener("dragover", (e) => {
       if (ui.dragId || (ui.chanDragId && ui.chanDragId !== ch.id)) {
         e.preventDefault();
@@ -227,7 +228,7 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
 
     const grip = el(
       "span",
-      { class: "nu-pp-changrip", title: "Drag to reorder", draggable: "true" },
+      { class: "nu-orail-changrip", title: "Drag to reorder", draggable: "true" },
       icon(ch.icon || "hash", { size: "0.9rem" }),
     );
     grip.addEventListener("dragstart", (e) => {
@@ -238,17 +239,17 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
 
     const head = el(
       "div",
-      { class: "nu-pp-chanhead" },
+      { class: "nu-orail-chanhead" },
       el(
         "button",
-        { class: "nu-pp-chev", title: ch.collapsed ? "Expand" : "Collapse", onclick: (e: Event) => { e.stopPropagation(); c.onToggleCollapse(ch.id); } },
+        { class: "nu-orail-chev", title: ch.collapsed ? "Expand" : "Collapse", onclick: (e: Event) => { e.stopPropagation(); c.onToggleCollapse(ch.id); } },
         icon(ch.collapsed ? "chevron-right" : "chevron-down", { size: "0.7rem" }),
       ),
       grip,
       ui.renaming?.kind === "channel" && ui.renaming.id === ch.id
         ? renameInput("channel", ch.id, ch.name)
-        : el("span", { class: "nu-pp-channame", onclick: (e: Event) => { e.stopPropagation(); c.onToggleCollapse(ch.id); } }, ch.name),
-      ch.collapsed && inCh.length ? el("span", { class: "nu-pp-count" }, String(inCh.length)) : null,
+        : el("span", { class: "nu-orail-channame", onclick: (e: Event) => { e.stopPropagation(); c.onToggleCollapse(ch.id); } }, ch.name),
+      ch.collapsed && inCh.length ? el("span", { class: "nu-orail-count" }, String(inCh.length)) : null,
       dot("plus-lg", "New project here", () => {
         if (ch.collapsed) c.onToggleCollapse(ch.id);
         ui.menu = null;
@@ -282,18 +283,18 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
         const row = el(
           "div",
           {
-            class: `nu-projects-row${p.id === c.activeProjectId ? " is-active" : ""}`,
+            class: `nu-orail-row${p.id === c.activeProjectId ? " is-active" : ""}`,
             draggable: "true",
             onclick: (e: Event) => { e.stopPropagation(); ui.menu = null; c.onSelectProject(p.id); },
           },
           el(
             "span",
-            { class: "nu-pp-mark", style: `background:${p.color}` },
+            { class: "nu-orail-mark", style: `background:${p.color}` },
             p.icon ? icon(p.icon, { size: "0.85rem" }) : p.mark || initialsOf(p.name),
           ),
           ui.renaming?.kind === "project" && ui.renaming.id === p.id
             ? renameInput("project", p.id, p.name)
-            : el("span", { class: "nu-projects-name" }, p.name),
+            : el("span", { class: "nu-orail-name" }, p.name),
           dot("three-dots", "More", () => {
             ui.menu = ui.menu?.kind === "project" && ui.menu.id === p.id ? null : { kind: "project", id: p.id };
             render();
@@ -327,12 +328,12 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     if (!ui.addingChannel) {
       return el(
         "button",
-        { class: "nu-pp-addchan", onclick: (e: Event) => { e.stopPropagation(); ui.addingChannel = true; ui.chanIcon = "hash"; ui.chanIconOpen = false; ui.menu = null; render(); } },
+        { class: "nu-orail-addchan", onclick: (e: Event) => { e.stopPropagation(); ui.addingChannel = true; ui.chanIcon = "hash"; ui.chanIconOpen = false; ui.menu = null; render(); } },
         icon("plus-lg", { size: "0.72rem" }),
         "New channel",
       );
     }
-    const nameInput = el("input", { class: "nu-pp-input nu-pp-input--form", placeholder: "Channel name…", onclick: stop });
+    const nameInput = el("input", { class: "nu-orail-input nu-orail-input--form", placeholder: "Channel name…", onclick: stop });
     const commit = (): void => {
       const v = nameInput.value.trim();
       if (v) c.onAddChannel(v, ui.chanIcon);
@@ -346,21 +347,21 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     });
     const wrap = el(
       "div",
-      { class: "nu-pp-addform", onclick: stop },
+      { class: "nu-orail-addform", onclick: stop },
       el(
         "div",
-        { class: "nu-pp-addline" },
+        { class: "nu-orail-addline" },
         el(
           "button",
-          { class: `nu-pp-chaniconbtn${ui.chanIconOpen ? " is-on" : ""}`, type: "button", title: "Pick an icon", onmousedown: (e: Event) => e.preventDefault(), onclick: (e: Event) => { e.stopPropagation(); ui.chanIconOpen = !ui.chanIconOpen; render(); } },
+          { class: `nu-orail-chaniconbtn${ui.chanIconOpen ? " is-on" : ""}`, type: "button", title: "Pick an icon", onmousedown: (e: Event) => e.preventDefault(), onclick: (e: Event) => { e.stopPropagation(); ui.chanIconOpen = !ui.chanIconOpen; render(); } },
           icon(ui.chanIcon || "hash", { size: "0.8rem" }),
         ),
         nameInput,
-        el("button", { class: "nu-pp-chaniconbtn", type: "button", title: "Create channel", onclick: (e: Event) => { e.stopPropagation(); commit(); } }, icon("check-lg", { size: "0.85rem" })),
+        el("button", { class: "nu-orail-chaniconbtn", type: "button", title: "Create channel", onclick: (e: Event) => { e.stopPropagation(); commit(); } }, icon("check-lg", { size: "0.85rem" })),
       ),
     );
     if (ui.chanIconOpen) {
-      const slot = el("div", { class: "nu-pp-pickslot" });
+      const slot = el("div", { class: "nu-orail-pickslot" });
       mountIconPicker(slot, { value: ui.chanIcon, onPick: (n) => { ui.chanIcon = n; ui.chanIconOpen = false; render(); } });
       wrap.appendChild(slot);
     }
@@ -379,16 +380,16 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     if (hidden.length) {
       const sec = el(
         "div",
-        { class: "nu-pp-hidden" },
-        el("div", { class: "nu-pp-chanhead nu-pp-chanhead--flat" }, icon("eye-slash", { size: "0.85rem" }), el("span", { class: "nu-pp-channame" }, `Hidden · ${hidden.length}`)),
+        { class: "nu-orail-hidden" },
+        el("div", { class: "nu-orail-chanhead nu-orail-chanhead--flat" }, icon("eye-slash", { size: "0.85rem" }), el("span", { class: "nu-orail-channame" }, `Hidden · ${hidden.length}`)),
       );
       hidden.forEach((ch) => {
         sec.appendChild(
           el(
             "div",
-            { class: "nu-pp-restore" },
+            { class: "nu-orail-restore" },
             icon(ch.icon || "hash", { size: "0.85rem" }),
-            el("span", { class: "nu-projects-name" }, ch.name),
+            el("span", { class: "nu-orail-name" }, ch.name),
             dot("arrow-counterclockwise", "Restore channel", () => c.onRestoreChannel(ch.id)),
           ),
         );
@@ -399,16 +400,16 @@ export function mountProjectsPanel(host: Element, cfg: ProjectsPanelCfg): Projec
     if (c.objects.length) {
       const sec = el(
         "div",
-        { class: "nu-pp-objects" },
-        el("div", { class: "nu-pp-chanhead nu-pp-chanhead--flat" }, icon("collection", { size: "0.68rem" }), el("span", { class: "nu-pp-channame" }, c.objectsLabel ?? "Objects")),
+        { class: "nu-orail-objects" },
+        el("div", { class: "nu-orail-chanhead nu-orail-chanhead--flat" }, icon("collection", { size: "0.68rem" }), el("span", { class: "nu-orail-channame" }, c.objectsLabel ?? "Objects")),
       );
       c.objects.forEach((o) => {
         sec.appendChild(
           el(
             "div",
-            { class: `nu-projects-row${o.id === c.activeObjectId ? " is-active" : ""}`, onclick: (e: Event) => { e.stopPropagation(); c.onOpenObject(o); } },
-            el("span", { class: "nu-projects-objicon", style: `color:${o.accent}` }, icon(o.icon, { size: "0.9rem" })),
-            el("span", { class: "nu-projects-name" }, o.name),
+            { class: `nu-orail-row${o.id === c.activeObjectId ? " is-active" : ""}`, onclick: (e: Event) => { e.stopPropagation(); c.onOpenObject(o); } },
+            el("span", { class: "nu-orail-objicon", style: `color:${o.accent}` }, icon(o.icon, { size: "0.9rem" })),
+            el("span", { class: "nu-orail-name" }, o.name),
           ),
         );
       });

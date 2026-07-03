@@ -1,7 +1,10 @@
-/* tenant-rail.ts — the far-left tenant rail: OPERATOR chrome (an impersonated
-   ORVCLE user never sees it). Workspace buttons (mono monogram + active accent
-   bar) and the impersonation tool — the operator's view-as (RBAC design §3.3:
-   explicit, purpose-tagged, time-bound, logged — never a silent bypass). */
+/* impersonation-rail.ts — THE IMPERSONATION RAIL: numu-operator chrome ONLY.
+   A client (LORVCLE) member never sees this rail — they get only the Object
+   Rail. Clicking a client workspace opens that client's world; "Impersonate ·
+   view as user" at the bottom connects the operator as one of THAT workspace's
+   users — a troubleshooting tool (RBAC design §3.3: explicit, purpose-tagged,
+   time-bound, logged — never a silent bypass). Hidden entirely while
+   viewing-as. */
 
 import { el, icon } from "amenan-ui";
 
@@ -11,7 +14,7 @@ export interface ImpTarget {
   label: string;
 }
 
-export interface TenantRailCfg {
+export interface ImpersonationRailCfg {
   tenants: ConsoleTenant[];
   activeTenantId: string;
   impTargets: ImpTarget[];
@@ -19,17 +22,17 @@ export interface TenantRailCfg {
   onImpersonate(t: ImpTarget): void;
 }
 
-export interface TenantRailHandle {
+export interface ImpersonationRailHandle {
   el: HTMLElement;
-  update(cfg: TenantRailCfg): void;
+  update(cfg: ImpersonationRailCfg): void;
 }
 
-export function mountTenantRail(host: Element, cfg: TenantRailCfg): TenantRailHandle {
-  const root = el("nav", { class: "nu-rail", "aria-label": "Workspaces" });
+export function mountImpersonationRail(host: Element, cfg: ImpersonationRailCfg): ImpersonationRailHandle {
+  const root = el("nav", { class: "nu-imp-rail", "aria-label": "Workspaces" });
   host.appendChild(root);
   let impOpen = false;
 
-  function render(c: TenantRailCfg): void {
+  function render(c: ImpersonationRailCfg): void {
     root.textContent = "";
     c.tenants.forEach((t, i) => {
       const active = t.id === c.activeTenantId;
@@ -37,19 +40,19 @@ export function mountTenantRail(host: Element, cfg: TenantRailCfg): TenantRailHa
         el(
           "button",
           {
-            class: `nu-rail-ws${active ? " is-active" : ""}`,
+            class: `nu-imp-rail-ws${active ? " is-active" : ""}`,
             title: t.name,
             "aria-label": t.name,
             style: `--nu-ws-accent:${t.accent}`,
             onclick: () => c.onTenant(t.id),
           },
-          active ? el("span", { class: "nu-rail-ws-bar" }) : null,
+          active ? el("span", { class: "nu-imp-rail-ws-bar" }) : null,
           t.mark,
         ),
       );
-      if (i === 0) root.appendChild(el("span", { class: "nu-rail-divider" }));
+      if (i === 0) root.appendChild(el("span", { class: "nu-imp-rail-divider" }));
     });
-    root.appendChild(el("span", { class: "nu-rail-spring" }));
+    root.appendChild(el("span", { class: "nu-imp-rail-spring" }));
 
     /* impersonate — popover to the right of the rail */
     const pop = el("div", { class: "nu-imp-pop", hidden: "hidden" });
@@ -74,7 +77,7 @@ export function mountTenantRail(host: Element, cfg: TenantRailCfg): TenantRailHa
     const impBtn = el(
       "button",
       {
-        class: `nu-rail-chrome${impOpen ? " is-active" : ""}`,
+        class: `nu-chrome-btn${impOpen ? " is-active" : ""}`,
         title: "Impersonate · view as user",
         "aria-label": "Impersonate",
         onclick: (e: Event) => {

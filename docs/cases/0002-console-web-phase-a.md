@@ -54,6 +54,15 @@ aurora/dusk/ember) · **objectTable** feed block + `read:users` · the docked
 assistant) · clean-slate seeding (registry seed = 2 orgs + the operator).
 Verified end-to-end 2026-07-03 (see CONSOLE.md §verified, wave 2); ci green.
 
+## Canon addendum (Em, 3 Jul): the two rails
+
+The far-left strip is the **Impersonation Rail** — numu-operator chrome only,
+its view-as targets scoped to the SELECTED workspace's members; a client
+(LORVCLE) member sees only the **Object Rail**. Renamed throughout
+(`impersonation-rail.ts` / `object-rail.ts`, `.nu-imp-rail-*` / `.nu-orail-*`)
+and the target list made per-workspace. Client-name spelling (ORVCLE vs
+LORVCLE) is design-project canon — a rename there flows back via design-sync.
+
 ## Known upstream nits (design project, not this repo)
 
 `sim/numu-nacl.js` `r.kind` → `r.body.kind` (pipeline-word step impacts read
