@@ -91,7 +91,11 @@
 [`type-registry`](../.claude/skills/type-registry/SKILL.md) ·
 [`rbac`](../.claude/skills/rbac/SKILL.md) ·
 [`api-conventions`](../.claude/skills/api-conventions/SKILL.md) ·
-[`enforcement-gates`](../.claude/skills/enforcement-gates/SKILL.md) — all **shipped**.
+[`enforcement-gates`](../.claude/skills/enforcement-gates/SKILL.md) — all **shipped** — ·
+[`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) — the front-end discipline
+(tokens/drift · responsive/devices incl. Fold6 · the 30×18 layout grid (**forward design**) ·
+SPA/PWA · gate authoring); packaged export kept at
+[`skills/amenan-typescript.skill`](skills/amenan-typescript.skill).
 
 ### cases/ — the ledger
 

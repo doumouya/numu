@@ -1,0 +1,254 @@
+[
+  {
+    "title": "​iPhone SE",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.2 Mobile/15E148 Safari/604.1",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2,
+      "vertical": { "width": 320, "height": 449 },
+      "horizontal": { "width": 449, "height": 320 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​Common Android",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.130 Mobile Safari/537.36",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 3,
+      "vertical": { "width": 360, "height": 649 },
+      "horizontal": { "width": 649, "height": 360 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​​Galaxy Z Fold6, outer",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 14; SM-F956B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.625,
+      "vertical": { "width": 368, "height": 832 },
+      "horizontal": { "width": 832, "height": 368 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "SM-F956B",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​​​iPhone 15",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 3,
+      "vertical": { "width": 393, "height": 659 },
+      "horizontal": { "width": 659, "height": 393 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​​​​iPhone 15 Plus",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 3,
+      "vertical": { "width": 430, "height": 739 },
+      "horizontal": { "width": 739, "height": 430 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​​​​​Galaxy Z Fold6, inner",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 14; SM-F956B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.625,
+      "vertical": { "width": 707, "height": 750 },
+      "horizontal": { "width": 750, "height": 707 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "SM-F956B",
+      "mobile": true
+    }
+  },
+  {
+    "title": "​​​​​​​iPad Mini (6th)",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+    "capabilities": ["touch"],
+    "screen": {
+      "device-pixel-ratio": 2,
+      "vertical": { "width": 744, "height": 1026 },
+      "horizontal": { "width": 1026, "height": 744 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": false
+    }
+  },
+  {
+    "title": "​​​​​​​​iPad (10th)",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+    "capabilities": ["touch"],
+    "screen": {
+      "device-pixel-ratio": 2,
+      "vertical": { "width": 820, "height": 1073 },
+      "horizontal": { "width": 1073, "height": 820 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": false
+    }
+  },
+  {
+    "title": "​​​​​​​​​iPad Pro (12.9\")",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+    "capabilities": ["touch"],
+    "screen": {
+      "device-pixel-ratio": 2,
+      "vertical": { "width": 1024, "height": 1259 },
+      "horizontal": { "width": 1259, "height": 1024 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "show": "Default",
+    "user-agent-metadata": {
+      "brands": [{ "brand": "", "version": "" }],
+      "fullVersionList": [{ "brand": "", "version": "" }],
+      "fullVersion": "",
+      "platform": "",
+      "platformVersion": "",
+      "architecture": "",
+      "model": "",
+      "mobile": false
+    }
+  }
+]
