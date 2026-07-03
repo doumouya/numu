@@ -31,6 +31,19 @@ gate test cargo test --locked
 if [ -n "${DATABASE_URL:-}" ]; then gate db cargo test --locked --features db-tests
 else skip db "DATABASE_URL not set"; fi
 
+# ── web (the console front-end): build = typecheck + bundle + tokens.css (which
+#    css-drift-audit reads), then the pure-module unit tests. Needs node + the
+#    sibling amenan-ui checkout; skips on a backend-only box. ──
+AMU="${AMU:-../../amenan-ui}"
+if command -v node >/dev/null 2>&1 && [ -f "$AMU/src/index.ts" ]; then
+  gate web-build sh tools/web-build.sh
+  if ls web/tests/*.test.* >/dev/null 2>&1; then gate web-test node --test web/tests/*.test.*
+  else skip web-test "no web/tests yet"; fi
+else
+  skip web-build "node or the sibling amenan-ui checkout missing"
+  skip web-test "node or the sibling amenan-ui checkout missing"
+fi
+
 # ── audit gate: every tools/*-audit/audit.sh must exit 0 (per-audit baseline ratchet is a follow-on) ──
 for a in tools/*-audit/audit.sh; do
   [ -e "$a" ] || continue

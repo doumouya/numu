@@ -14,12 +14,16 @@ fi
 
 files=$(git show --name-only --format= HEAD)
 msg=$(git show -s --format=%B HEAD)
-code=$(printf '%s\n' "$files" | grep -E '^(crates/|migrations/)' || true)
+# documented surfaces: the backend (crates/, migrations/) AND the frontend's
+# authored code (web/src, web/styles, web/index.html, the web tools). web/sim +
+# web/data are design-SYNCED artifacts (mechanical, doctrine documented at the
+# source) — a sync alone owes no doc edit.
+code=$(printf '%s\n' "$files" | grep -E '^(crates/|migrations/|web/src/|web/styles/|web/index\.html|tools/web-|tools/design-sync)' || true)
 docs=$(printf '%s\n' "$files" | grep -E '^docs/' || true)
 na=$(printf '%s' "$msg" | grep -iE 'Docs: ?n/a' || true)
 
 if [ -n "$code" ] && [ -z "$docs" ] && [ -z "$na" ]; then
-  flag docs-currency "HEAD changes a documented surface (crates/ or migrations/) without touching docs/ or a 'Docs: n/a' note"
+  flag docs-currency "HEAD changes a documented surface (crates/, migrations/, web/src|styles|index.html, web tools) without touching docs/ or a 'Docs: n/a' note"
 fi
 
 if [ "$findings" -eq 0 ]; then
