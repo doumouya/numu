@@ -25,16 +25,20 @@ if [ ! -f web/vendor/bootstrap-icons/bootstrap-icons.css ]; then
   cp -r "$AMU/vendor/bootstrap-icons/." web/vendor/bootstrap-icons/
 fi
 
-echo "== 2/4 tokens.css (base + numu overlay + themes + component sheets) =="
+echo "== 2/4 tokens.css (base + numu overlay + themes + skins + component sheets) =="
 cat "$AMU/src/theme/base.css" \
     web/styles/numu-structure.css \
     "$AMU/src/theme/themes/numu.css" \
     "$AMU/src/theme/themes/numu-blue.css" \
+    web/styles/numu-skins.css \
     "$AMU/src/components/atoms/atoms.css" \
     "$AMU/src/components/code/code.css" \
     "$AMU/src/components/kindLabel/kindLabel.css" \
     "$AMU/src/components/field/field.css" \
-    "$AMU/src/components/toast/toast.css" > web/tokens.css
+    "$AMU/src/components/toast/toast.css" \
+    "$AMU/src/components/tabs/tabs.css" \
+    "$AMU/src/components/select/select.css" \
+    "$AMU/src/components/empty-state/empty-state.css" > web/tokens.css
 
 echo "== 3/4 typecheck =="
 [ -d node_modules ] || npm install --silent

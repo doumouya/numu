@@ -1,24 +1,22 @@
-/* tenant-rail.ts — the far-left tenant rail: workspace buttons (mono monogram
-   + active accent bar), then the chrome column (notifications · accent swap ·
-   mode swap · connectors · settings) and the profile avatar. App-local .nu-*
-   composition (amenan's mountRail is the 15rem text rail — different shape). */
+/* tenant-rail.ts — the far-left tenant rail: OPERATOR chrome (an impersonated
+   ORVCLE user never sees it). Workspace buttons (mono monogram + active accent
+   bar) and the impersonation tool — the operator's view-as (RBAC design §3.3:
+   explicit, purpose-tagged, time-bound, logged — never a silent bypass). */
 
 import { el, icon } from "amenan-ui";
 
+export interface ImpTarget {
+  id: string;
+  name: string;
+  label: string;
+}
+
 export interface TenantRailCfg {
   tenants: ConsoleTenant[];
-  me: ConsoleData["me"];
   activeTenantId: string;
-  page: "workspace" | "connectors";
-  mode: "dark" | "light";
-  accent: "numu" | "numu-blue";
+  impTargets: ImpTarget[];
   onTenant(id: string): void;
-  onToggleAccent(): void;
-  onToggleMode(): void;
-  onConnectors(): void;
-  onNotifications(): void;
-  onSettings(): void;
-  onProfile(): void;
+  onImpersonate(t: ImpTarget): void;
 }
 
 export interface TenantRailHandle {
@@ -29,67 +27,73 @@ export interface TenantRailHandle {
 export function mountTenantRail(host: Element, cfg: TenantRailCfg): TenantRailHandle {
   const root = el("nav", { class: "nu-rail", "aria-label": "Workspaces" });
   host.appendChild(root);
-
-  function chromeBtn(
-    name: string,
-    title: string,
-    onclick: () => void,
-    active = false,
-    child?: Node,
-  ): HTMLButtonElement {
-    return el(
-      "button",
-      { class: `nu-rail-chrome${active ? " is-active" : ""}`, title, "aria-label": title, onclick },
-      child ?? icon(name),
-    );
-  }
+  let impOpen = false;
 
   function render(c: TenantRailCfg): void {
     root.textContent = "";
     c.tenants.forEach((t, i) => {
       const active = t.id === c.activeTenantId;
-      const btn = el(
-        "button",
-        {
-          class: `nu-rail-ws${active ? " is-active" : ""}`,
-          title: t.name,
-          "aria-label": t.name,
-          style: `--nu-ws-accent:${t.accent}`,
-          onclick: () => c.onTenant(t.id),
-        },
-        active ? el("span", { class: "nu-rail-ws-bar" }) : null,
-        t.mark,
+      root.appendChild(
+        el(
+          "button",
+          {
+            class: `nu-rail-ws${active ? " is-active" : ""}`,
+            title: t.name,
+            "aria-label": t.name,
+            style: `--nu-ws-accent:${t.accent}`,
+            onclick: () => c.onTenant(t.id),
+          },
+          active ? el("span", { class: "nu-rail-ws-bar" }) : null,
+          t.mark,
+        ),
       );
-      root.appendChild(btn);
       if (i === 0) root.appendChild(el("span", { class: "nu-rail-divider" }));
     });
     root.appendChild(el("span", { class: "nu-rail-spring" }));
-    root.appendChild(chromeBtn("bell", "Notifications", c.onNotifications));
-    root.appendChild(
-      chromeBtn(
-        "",
-        c.accent === "numu" ? "Accent: ink → blue" : "Accent: blue → ink",
-        c.onToggleAccent,
-        false,
-        el("span", { class: "nu-rail-accent-dot" }),
-      ),
+
+    /* impersonate — popover to the right of the rail */
+    const pop = el("div", { class: "nu-imp-pop", hidden: "hidden" });
+    pop.appendChild(el("div", { class: "nu-imp-head" }, "impersonate · see what they see"));
+    if (c.impTargets.length) {
+      c.impTargets.forEach((p) => {
+        pop.appendChild(
+          el(
+            "button",
+            { class: "nu-imp-item", onclick: () => { impOpen = false; c.onImpersonate(p); } },
+            el("span", { class: "nu-ur-avatar nu-ur-avatar--sm", style: "background:var(--surface-2)" }, el("span", { class: "nu-imp-ini" }, p.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase())),
+            el("span", { class: "nu-imp-meta" }, el("span", { class: "nu-imp-name" }, p.name), el("span", { class: "nu-imp-label" }, p.label)),
+            icon("eye"),
+          ),
+        );
+      });
+    } else {
+      pop.appendChild(el("div", { class: "nu-imp-empty" }, "no other users yet — invite members in Settings"));
+    }
+    pop.appendChild(el("div", { class: "nu-imp-foot" }, "30 min grant · purpose: support · every read logged"));
+
+    const impBtn = el(
+      "button",
+      {
+        class: `nu-rail-chrome${impOpen ? " is-active" : ""}`,
+        title: "Impersonate · view as user",
+        "aria-label": "Impersonate",
+        onclick: (e: Event) => {
+          e.stopPropagation();
+          impOpen = !impOpen;
+          pop.hidden = !impOpen;
+          impBtn.classList.toggle("is-active", impOpen);
+        },
+      },
+      icon("person-bounding-box"),
     );
-    root.appendChild(
-      chromeBtn(
-        c.mode === "dark" ? "brightness-high" : "moon-stars",
-        c.mode === "dark" ? "Light mode" : "Dark mode",
-        c.onToggleMode,
-      ),
-    );
-    root.appendChild(chromeBtn("plug", "Connectors", c.onConnectors, c.page === "connectors"));
-    root.appendChild(chromeBtn("gear", "Settings", c.onSettings));
-    root.appendChild(
-      el(
-        "button",
-        { class: "nu-rail-me", title: c.me.role, "aria-label": "Profile", onclick: c.onProfile },
-        el("span", { class: "nu-rail-me-initials" }, c.me.initials),
-      ),
-    );
+    document.addEventListener("mousedown", (e) => {
+      if (impOpen && !pop.contains(e.target as Node) && e.target !== impBtn) {
+        impOpen = false;
+        pop.hidden = true;
+        impBtn.classList.remove("is-active");
+      }
+    });
+    root.appendChild(el("span", { class: "nu-imp-anchor" }, pop, impBtn));
   }
 
   render(cfg);

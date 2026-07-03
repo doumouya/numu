@@ -67,7 +67,7 @@ const DOM: Record<string, string[]> = {
 /** generic registry columns per object (until the manifest plane serves them) */
 const GEN: Record<string, string[]> = {
   case: ["id", "status", "priority", "owner", "opened"],
-  user: ["id", "email", "role", "handle"],
+  user: ["id", "email", "role", "handle", "status", "kyc"],
   customer: ["id", "name", "region", "mrr", "plan"],
   email: ["id", "from", "subject"],
   settings: ["theme", "tone", "lang", "density"],
@@ -159,6 +159,9 @@ export function naclSuggest(
     ["theme", "tone", "lang", "density", "volume"].forEach((a) => {
       if (!typed || a.indexOf(typed) === 0) push("set:" + a + "=", "set:" + a, "settings · no page");
     });
+  }
+  if ((verb === "read" || verb === "list") && "users".indexOf(typed) === 0) {
+    push(verb + ":users", verb + ":users", "everyone you can reach");
   }
   files.forEach((f) => {
     if (!typed || f.name.indexOf(typed) === 0) {

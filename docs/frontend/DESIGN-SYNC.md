@@ -5,10 +5,12 @@ things that live in this repo as **verbatim artifacts**:
 
 | synced into | what | why verbatim |
 |---|---|---|
-| `web/sim/` (7 files) | the engine sim: csv pipeline · registry seed · generic object service · nacl executor · the client seam · the node server | it is the executable spec for phase B — a local fork would silently diverge the spec |
+| `web/sim/` (7 files) | the engine sim: csv pipeline · registry seed (EMPTY by default — clean slate) · generic object service · nacl executor · the client seam · the node server | it is the executable spec for phase B — a local fork would silently diverge the spec |
 | `web/data/nacl-commands.js` | the nacl doctrine (grammar, verbs, catalog) | Em iterates the language IN the design project |
-| `web/data/console-data.js` | the demo tenants/objects/feeds | design-owned content |
+| `web/data/console-data.js` | the console chrome data: tenants · connectors · apps · agents · user records · settings scaffolding (skins, plans, scopes) | design-owned content |
+| `web/data/bi-icon-names.js` | the full Bootstrap Icons name list (the icon picker's search plane) | auto-extracted upstream |
 | `web/data/uploads/dossier.csv` | the signature-scenario fixture (14 MB · 101k rows · wrapped · windows-1252) | the demo is only honest on the real file |
+| `web/assets/claude-mark.png` + `web/assets/logos/` (13 PNGs) | the Claude glyph + connector/app brand marks | real vendor assets, design-owned |
 
 ## The loop
 

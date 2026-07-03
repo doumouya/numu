@@ -38,8 +38,24 @@ conversations+pipeline port · files steps/rows · manifest+values · `/api/nacl
 (the sim executor as spec) · OPTIONS enrichment · the file-write seal ·
 the CATALOG.md registry seed.
 
+## Wave 2 (the 3 Jul handoff — "numu Design System-handoff.zip")
+
+The design project moved fast on Jul 3; re-synced (25 pinned files, incl. the
+icon-name list, the Claude mark, and 13 brand logos) and ported the delta:
+**Store** (Apps/Agents/Connectors shelves) · **Settings** (12 sections, skin
+cards, members w/ roles, app permission grants, AI-connect, plans) · **Profile
+== Record** viewer (inline editing, KYC, memberships, sessions) ·
+**impersonation** (actor swap + logged engine events + banner) · projects-panel
+**CRUD** (create-with-icon+color via the ~2,050-icon picker, drag-reorder,
+collapse, hide/restore) · REAL **audio/video players** (persisted position, 4
+video layouts) · **artist** viewer · **skins** (`--brand` channel: midnight +
+aurora/dusk/ember) · **objectTable** feed block + `read:users` · the docked
+**action-bar composer** (attach/insert/reach-out/schedule menu, Claude
+assistant) · clean-slate seeding (registry seed = 2 orgs + the operator).
+Verified end-to-end 2026-07-03 (see CONSOLE.md §verified, wave 2); ci green.
+
 ## Known upstream nits (design project, not this repo)
 
-`sim/numu-nacl.js` `r.kind` → `r.body.kind` (step impact reads "undefined
-applied"); the node server's dossier seed path expects `uploads/` at web root.
-Both recorded in DESIGN-SYNC.md.
+`sim/numu-nacl.js` `r.kind` → `r.body.kind` (pipeline-word step impacts read
+"undefined applied"); the node server's dossier seed path expects `uploads/` at
+web root. Both recorded in DESIGN-SYNC.md.

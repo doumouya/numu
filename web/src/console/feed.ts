@@ -10,6 +10,7 @@ import { mountNuChart } from "./chart-theme.ts";
 export interface FeedCfg {
   feed: NumuBlock[];
   onOpenObject(b: NumuObjectBlock): void;
+  onOpenTableRow(r: NumuObjectTableRow): void;
   onSaveAttachment(b: NumuEmailBlock): void;
 }
 
@@ -152,6 +153,32 @@ function dashboardBlock(b: NumuDashboardBlock): HTMLElement {
   );
 }
 
+function objectTableBlock(b: NumuObjectTableBlock, onOpenRow: FeedCfg["onOpenTableRow"]): HTMLElement {
+  const list = el("div", { class: "nu-otable-rows" });
+  b.rows.forEach((r) => {
+    list.appendChild(
+      el(
+        "button",
+        { class: "nu-otable-row", onclick: () => onOpenRow(r) },
+        tag(b.objType, "var(--accent)"),
+        el("span", { class: "nu-otable-title" }, r.title),
+        r.status ? badge({ label: r.status }) : null,
+        el("span", { class: "nu-otable-meta" }, r.meta),
+        icon("chevron-right", { size: "0.7rem", color: "var(--text-mute)" }),
+      ),
+    );
+  });
+  return el(
+    "div",
+    { class: "nu-card nu-card--otable" },
+    cardHead(
+      icon(b.icon ?? "collection", { color: "var(--accent)", size: "0.95rem" }),
+      el("span", { class: "nu-card-title nu-otable-head" }, b.title),
+    ),
+    list,
+  );
+}
+
 function objectBlock(b: NumuObjectBlock, onOpen: FeedCfg["onOpenObject"]): HTMLElement {
   return el(
     "button",
@@ -197,6 +224,8 @@ export function renderBlock(b: NumuBlock, cfg: FeedCfg): HTMLElement {
       return dashboardBlock(b);
     case "object":
       return objectBlock(b, cfg.onOpenObject);
+    case "objectTable":
+      return objectTableBlock(b, cfg.onOpenTableRow);
     default:
       return bubbleBlock(b);
   }

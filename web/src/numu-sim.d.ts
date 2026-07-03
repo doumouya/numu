@@ -73,6 +73,23 @@ interface NumuObjectBlock {
   status?: string;
 }
 
+/** multi-row read result — one clickable row per reachable entity */
+interface NumuObjectTableRow {
+  id: string;
+  title: string;
+  status: string;
+  meta: string;
+  objRef?: string;
+}
+
+interface NumuObjectTableBlock {
+  type: "objectTable";
+  objType: string;
+  icon?: string;
+  title: string;
+  rows: NumuObjectTableRow[];
+}
+
 interface NumuBubbleBlock {
   type: "sent" | "bubble";
   text: string;
@@ -90,6 +107,7 @@ type NumuBlock =
   | NumuDataBlock
   | NumuDashboardBlock
   | NumuObjectBlock
+  | NumuObjectTableBlock
   | NumuBubbleBlock;
 
 /* ── nacl execution ────────────────────────────────────────────────────── */
@@ -144,13 +162,37 @@ interface NumuResponse<B = unknown> {
   headers?: Record<string, string | null>;
 }
 
+/* ── the sim engine surface the shell reads (LOCAL driver only — the http
+      driver's `engine` is undefined and the server enforces reach) ──────── */
+
+interface NumuEntity {
+  id: string;
+  type: string;
+  data: Record<string, unknown> & { attributes?: Record<string, unknown> };
+  scope_parent_id: string | null;
+  version: number;
+}
+
+interface NumuSimEngine {
+  state: {
+    entities: Record<string, NumuEntity>;
+    memberships: Array<{ object_id: string; member_id: string; role: string }>;
+  };
+  reachable(actor: string, type: string | null): NumuEntity[];
+  scopeChain(id: string): string[];
+  principals(actor: string): string[];
+  isPlatformAdmin(actor: string): boolean;
+  event(entityId: string, actor: string, kind: string, payload?: unknown): void;
+}
+
 /* ── the client seam (sim/numu-client.js — local ⇄ http drivers) ───────── */
 
 interface NumuClientApi {
   kind: "local" | "http";
+  /** the acting user — impersonation swaps this (operator view-as) */
   actor: string;
-  /** local driver only — the in-process engine (used by tests, never the UI) */
-  engine?: unknown;
+  /** local driver only — the in-process engine */
+  engine?: NumuSimEngine;
   ensureBlob(fileId: string): Promise<boolean>;
   request(
     method: string,
@@ -187,12 +229,16 @@ interface ConsoleChannel {
   id: string;
   name: string;
   icon: string;
+  system?: boolean;
+  collapsed?: boolean;
+  hidden?: boolean;
 }
 
 interface ConsoleProject {
   id: string;
   name: string;
-  mark: string;
+  mark?: string;
+  icon?: string;
   color: string;
   channel: string;
   pinned?: boolean;
@@ -207,6 +253,13 @@ interface ConsoleObject {
   accent: string;
   meta?: string;
   artist?: string;
+  artistId?: string;
+  album?: string;
+  year?: string;
+  no?: number;
+  cover?: string | null;
+  src?: string;
+  autoplay?: boolean;
   duration?: string;
   pos?: string;
   posPct?: number;
@@ -215,13 +268,29 @@ interface ConsoleObject {
   status?: string;
   fields?: Array<[string, string]>;
   charts?: NumuChartSpec[];
-  src?: string;
+  /** artist grouping (buildLive) */
+  plays?: string;
+  tracks?: ConsoleObject[];
+  albums?: Array<{ title: string; year?: string; cover?: string | null }>;
+  /** enriched case detail (recordFromRef) */
+  caseType?: string;
+  priority?: string;
+  origin?: string;
+  classification?: string;
+  assignee?: string | null;
+  reporter?: string | null;
+  project?: string;
+  workflowId?: string;
+  wfStates?: string[] | null;
+  description?: string;
+  version?: number;
 }
 
 interface ConsoleConnector {
   id: string;
   name: string;
   icon: string;
+  img?: string;
   color: string;
   kind: string;
   connected?: boolean;
@@ -236,6 +305,69 @@ interface ConsoleConnector {
   account?: string;
   scopes?: string;
   lastSync?: string;
+}
+
+interface ConsoleStoreApp {
+  id: string;
+  name: string;
+  cat: string;
+  icon?: string;
+  img?: string;
+  accent: string;
+  installed?: boolean;
+  enabled?: boolean;
+  claude?: boolean;
+  badge?: string;
+  src?: string;
+  tagline: string;
+  about?: string[];
+}
+
+interface ConsoleUserRecordData {
+  id: string;
+  type: "user";
+  name: string;
+  handle: string;
+  email: string;
+  phone: string;
+  country: string;
+  kind: "human" | "agent" | "service";
+  status: string;
+  role: string;
+  accent: string;
+  joined: string;
+  lastActive: string;
+  timezone: string;
+  locale: string;
+  legalName?: string;
+  self?: boolean;
+  notes: string;
+  kyc: { status: string; method: string; date: string };
+  memberships: Array<{ org: string; team: string; role: string }>;
+  activity: Array<{ icon: string; text: string; time: string }>;
+  owned: Array<{ objType: string; name: string; meta: string; icon: string; accent: string }>;
+  sessions?: Array<{ device: string; os: string; where: string; ip: string; last: string; current?: boolean }>;
+}
+
+interface ConsoleSkin {
+  id: string;
+  name: string;
+  desc: string;
+  mode: "dark" | "light";
+  theme: "numu" | "numu-blue";
+  skin: string;
+  gradient?: boolean;
+}
+
+interface ConsoleSettingsData {
+  workspace: { name: string; handle: string; currency: string; locale: string; timezone: string; region: string };
+  currencies: string[];
+  locales: string[];
+  skins: ConsoleSkin[];
+  aiConnect: Array<{ id: string; name: string; vendor: string; icon?: string; img?: string; connected: boolean; plan?: string; note: string }>;
+  plans: Array<{ id: string; name: string; price: string; per: string; current?: boolean; features: string[] }>;
+  appScopes: Array<{ id: string; label: string; desc: string }>;
+  notifications: Array<{ id: string; label: string; desc: string; on: boolean }>;
 }
 
 interface ConsoleTenantData {
@@ -253,6 +385,11 @@ interface ConsoleData {
   tenants: ConsoleTenant[];
   composerChannels: Array<{ id: string; icon: string; label: string }>;
   connectors: Array<{ group: string; items: ConsoleConnector[] }>;
+  apps: ConsoleStoreApp[];
+  agents: ConsoleStoreApp[];
+  userOrder: string[];
+  users: Record<string, ConsoleUserRecordData>;
+  settings: ConsoleSettingsData;
   data: Record<string, ConsoleTenantData>;
 }
 
@@ -270,6 +407,14 @@ interface NaclCommands {
   [k: string]: unknown;
 }
 
+/* ── the registry seed (web/sim/numu-seed.js, design-synced) ───────────── */
+
+interface NumuSeedData {
+  ENTITIES: Array<[string, string, Record<string, unknown>, string | null]>;
+  WORKFLOWS: Record<string, { states: string[]; initial: string; close_checks: string[]; rejects?: string[] }>;
+  ROLES: Record<string, number>;
+}
+
 /* ── the globals the plain <script> tags install ───────────────────────── */
 
 interface Window {
@@ -284,8 +429,11 @@ interface Window {
     clauses(text: string): unknown[];
     profileBlock(name: string, source: string, out: NumuUploadOut): NumuDataBlock;
   };
+  NumuSeed?: NumuSeedData;
   NACL_COMMANDS: NaclCommands;
   CONSOLE_DATA: ConsoleData;
+  /** the full Bootstrap Icons name list (web/data/bi-icon-names.js, synced) */
+  BI_ICON_NAMES?: string[];
   /** window-global values cache the autocomplete's lazy field-domain plane fills */
   __NUMU_VALUES?: Record<string, Record<string, string[]>>;
   echarts?: {
