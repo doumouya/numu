@@ -1,35 +1,24 @@
-/* numu-structure.css — numu's STRUCTURE overlay over amenan-ui's base.css.
-   Two jobs, both token-only (no classes — app classes live in app.css):
+/* numu-structure.css — numu's APP-SIDE structure overlay over amenan-ui's
+   base.css. Token-only (no classes — app classes live in app.css).
 
-   1. ADD the structural tokens the numu Design System defines and amenan-ui's
-      base does not yet carry (font shorthands + weights/leadings/tracking,
-      focus geometry, chart structural aliases, extra type steps, control
-      heights, overlay/control transitions).
-   2. SETTLE the value drift in numu's favor — numu is tighter/denser than the
-      amenan defaults (spacing steps, radius-sm, motion, body size, pad-x).
-      This file is concatenated AFTER base.css in web/tokens.css, so these
-      :root declarations win inside the numu app without touching any other
-      amenan-ui consumer.
-
-   Values are preserved from the design system's tokens/base.css (structure
-   tier). The PALETTE (incl. the numu extra --selection-bg) lives per-theme in
-   amenan-ui's themes/numu*.css. */
+   OWNERSHIP (one token, one home): the numu-family structural RETUNE
+   (density steps, radii, control heights, tap/focus geometry) lives in
+   amenan-ui's themes/numu.css — a mode-independent block shared by numu +
+   numu-blue (absorbed there @267b50c). THIS file carries only what the app
+   needs beyond that: font shorthands + weights/leadings/tracking, motion
+   composites, chart structural aliases, and the residual value drift
+   (--sp-6/8, --text-md, --fast/--slow). Concatenated AFTER base.css in
+   web/tokens.css, so these :root declarations win here without touching any
+   other amenan-ui consumer. Values preserved from the design system's
+   tokens/base.css. */
 
 :root {
-  /* ── 2 · numu density overrides (drift settled) ── */
-  --sp-5: 1.25rem;
+  /* ── residual value drift (the rest of the retune lives in the theme) ── */
   --sp-6: 1.5rem;
   --sp-8: 2rem;
-  --radius-sm: 0.3rem;
   --text-md: 0.875rem; /* body */
-  --ctl-h: 2.125rem;
-  --pad-x: 0.7rem;
   --fast: 0.1s;
   --slow: 0.15s;
-
-  /* ── 1 · additions: type scale edges ── */
-  --text-2xs: 0.7rem;
-  --text-3xl: 1.75rem;
 
   /* additions: leading / weight / tracking / numerics */
   --leading-tight: 1.25;
@@ -48,15 +37,6 @@
   --font-body: var(--weight-regular) var(--text-md) / var(--leading) var(--font);
   --font-title: var(--weight-semibold) var(--text-lg) / var(--leading-tight) var(--font);
   --font-code: var(--weight-regular) var(--text-sm) / var(--leading) var(--font-mono);
-
-  /* additions: density rhythm */
-  --ctl-h-sm: 1.75rem;
-  --ctl-h-lg: 2.5rem;
-  --tap-min: 2.25rem;
-
-  /* additions: focus geometry (COLOR stays the per-theme --focus-ring) */
-  --focus-width: 2px;
-  --focus-offset: -1px;
 
   /* additions: motion composites */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

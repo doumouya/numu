@@ -4,7 +4,8 @@
    routes through the sim engine (or, with ?http=1, an HTTP backend serving the
    same surface). Appearance = accent (numu|numu-blue) × mode (light|dark) ×
    skin (midnight + gradient trio on the --brand channel), each persisted.
-   Impersonation is the operator's view-as: explicit, time-bound, logged.
+   Impersonation is the operator's view-as: explicit + grant-logged (start/end);
+   enforced expiry + per-read audit are phase-B server properties (IMPERSONATION.md).
 
    State lives here; each region is a mount with an update() — a state change
    re-renders exactly the regions it touches (no framework, no vdom). */
@@ -267,7 +268,8 @@ function exitImpersonation(): void {
 }
 const impersonateUser = (u: ConsoleUserRecordData): void =>
   startImpersonation({ id: u.id, name: u.name, label: u.role });
-const canImpersonate = (): boolean => !!ncl.engine && !state.viewAs;
+const canImpersonate = (): boolean =>
+  !!ncl.engine && !state.viewAs && ncl.engine.isPlatformAdmin(ncl.actor);
 const meId = (): string => state.viewAs?.id ?? "USR_jm";
 const meRecord = (): ConsoleUserRecordData => CCD.users[meId()] ?? (CCD.users["USR_jm"] as ConsoleUserRecordData);
 
@@ -437,6 +439,9 @@ function applyEffects(effects: NumuEffect[]): void {
       const q = String(ef.query ?? "").toLowerCase();
       const audio = buildLive(state.tenantId).objects.find((o) => o.type === "audio" && (!q || o.name.toLowerCase().includes(q)));
       if (audio) openPanelObject({ ...audio, autoplay: true });
+    } else if (ef.kind === "openObjectId" && ef.id) {
+      const media = buildLive(state.tenantId).objects.find((o) => o.id === ef.id);
+      openPanelObject(media ?? recordFromRef(ef.id) ?? null);
     } else if (ef.kind === "it" && ef.id) {
       state.itFile[state.tenantId] = ef.id;
     }
@@ -684,7 +689,7 @@ function renderChrome(): void {
       el("span", { class: "nu-imp-banner-meta" }, `${state.viewAs.label} · purpose: support · until ${state.viewAs.until} · granted by JM`),
     );
     banner.appendChild(el("span", { class: "nu-spring" }));
-    banner.appendChild(el("span", { class: "nu-imp-banner-live" }, "rbac live · access logged"));
+    banner.appendChild(el("span", { class: "nu-imp-banner-live" }, "rbac live · grant logged"));
     banner.appendChild(el("button", { class: "nu-imp-exit", onclick: exitImpersonation }, "Exit"));
   }
 

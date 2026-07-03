@@ -2,9 +2,10 @@
    A client (LORVCLE) member never sees this rail — they get only the Object
    Rail. Clicking a client workspace opens that client's world; "Impersonate ·
    view as user" at the bottom connects the operator as one of THAT workspace's
-   users — a troubleshooting tool (RBAC design §3.3: explicit, purpose-tagged,
-   time-bound, logged — never a silent bypass). Hidden entirely while
-   viewing-as. */
+   users — a troubleshooting tool (RBAC design §3.3: explicit, purpose-tagged;
+   phase A logs the grant start/end — per-read audit + enforced expiry are the
+   phase-B server contract, see docs/frontend/IMPERSONATION.md). Hidden
+   entirely while viewing-as. */
 
 import { el, icon } from "amenan-ui";
 
@@ -72,7 +73,7 @@ export function mountImpersonationRail(host: Element, cfg: ImpersonationRailCfg)
     } else {
       pop.appendChild(el("div", { class: "nu-imp-empty" }, "no other users yet — invite members in Settings"));
     }
-    pop.appendChild(el("div", { class: "nu-imp-foot" }, "30 min grant · purpose: support · every read logged"));
+    pop.appendChild(el("div", { class: "nu-imp-foot" }, "30 min grant · purpose: support · start/end logged"));
 
     const impBtn = el(
       "button",
