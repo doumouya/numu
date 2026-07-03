@@ -39,7 +39,7 @@ Plus the generic objects surface the sim serves and numu main already has:
   cleanness, fully_null_rows, row_count, col_count, columns: ColumnMeta[],
   wrapped}`.
 - **nacl result**: `{blocks: Block[], effects: Effect[]}` — block `type`s:
-  `email · step · data · dashboard · object · sent`; effect `kind`s: `theme ·
+  `email · step · data · dashboard · object · objectTable · sent/bubble`; effect `kind`s: `theme ·
   closePanel · play · it · needBlob · openObjectId` (see CONSOLE.md).
 - **Entity**: `{id, type, data, scope_parent_id, version, created_at,
   updated_at}` + `ETag: W/"<version>"`.

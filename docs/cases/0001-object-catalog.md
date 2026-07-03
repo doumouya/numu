@@ -25,7 +25,7 @@ apply to every type for free.
 
 ## Delivered this batch
 
-- [`docs/OBJECTS.md`](../OBJECTS.md) — the catalog: 7 groups, every `[TYPE]` with an editable
+- [`docs/api/OBJECTS.md`](../api/OBJECTS.md) — the catalog: 7 groups, every `[TYPE]` with an editable
   `type_fields` table + `ENRICH:` markers, every `[SYSTEM]` table with a columns table, a prefix
   registry, and 5 open enrichment questions.
 - [`README.md`](../../README.md) — what numu is + the two-layer idea + planned layout.
@@ -42,7 +42,7 @@ apply to every type for free.
 
 ## How to contribute
 
-Edit the field tables in `docs/OBJECTS.md` directly (add/refine/retire fields), or answer an open
+Edit the field tables in `docs/api/OBJECTS.md` directly (add/refine/retire fields), or answer an open
 enrichment question at its foot. Sign edits in this Case log below.
 
 ## Follow-on slices (separate Cases, after the catalog settles)
@@ -54,7 +54,7 @@ gates + ratchet) · `.agents/` (5 roles, project-agnostic) · `CLAUDE.md` (baked
 ## Log
 
 - **2026-06-26 — Torv:** opened on-disk (Cases backend briefly down), then promoted to
-  `CAS_62572E8F27B44ABA867287654E2CD41F` when it recovered. Wrote `docs/OBJECTS.md` + `README.md` +
+  `CAS_62572E8F27B44ABA867287654E2CD41F` when it recovered. Wrote `docs/api/OBJECTS.md` + `README.md` +
   this stub. Catalog is DRAFT v0, ready for enrichment. Awaiting Em's field-level input and other
   sessions' contributions.
 
@@ -77,7 +77,7 @@ gates + ratchet) · `.agents/` (5 roles, project-agnostic) · `CLAUDE.md` (baked
   | CaseArticle | skip as runbook-swap; **take the link idea** | knowledge stays typed (`runbook`/`decision`); the *link* becomes a generic **`relation` edge** (M:N, typed) — G2 `PROPOSED` |
   | CaseOwnerSharingRule | skip | sharing = `memberships` + the `scope_parents` cascade |
 
-  **Edited `docs/OBJECTS.md`:** the `visibility` common field (opted into `comment`/`case`); the
+  **Edited `docs/api/OBJECTS.md`:** the `visibility` common field (opted into `comment`/`case`); the
   `relation` `[SYSTEM]` edge (the anti-junction primitive — fills numu's one real gap: M:N typed
   relations); the `milestone` type; and a **"What numu deliberately does NOT model (and why)"** section
   so the *absences* are documented decisions, not oversights. **Dropped** my earlier over-reaches
@@ -97,7 +97,7 @@ gates + ratchet) · `.agents/` (5 roles, project-agnostic) · `CLAUDE.md` (baked
 
 - **2026-06-26 — Em blessed all three primitives → promoted to canonical (Torv):** Em: *"go for
   relation, milestone, and omnisearch primitives."* Removed the `PROPOSED (CASE 0001)` markers across
-  [`docs/OBJECTS.md`](../OBJECTS.md) — the three are now canonical builtins of the catalog:
+  [`docs/api/OBJECTS.md`](../api/OBJECTS.md) — the three are now canonical builtins of the catalog:
   - **`relation` `[SYSTEM]`** (G2) — the M:N typed entity↔entity edge. Finalized for build: **unique**
     `(subject_id, object_id, relation_type)`; readable iff the caller reaches *both* endpoints, writable
     iff they can edit the `subject` (leak-free).

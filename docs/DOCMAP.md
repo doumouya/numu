@@ -1,104 +1,123 @@
-# numu — DOCMAP (docs ⇄ code-area map)
+# numu — DOCMAP (the layer walk: read order = build order)
 
-> **The structural map.** numu's promise is "no need to consult any other repo's docs" — so the few docs
-> it *does* ship must be navigable at a glance. This is that index: every doc, what it governs, the code
-> area it is the contract for, and the order to read them in. Scan this first; dive from here.
->
-> *(This is the project-agnostic successor to the redpash `REDMAP.md` convention — same job, generic name:
-> "DOC" not "RED", because numu is the engine, not any one product.)*
+> **The structural map.** numu's promise is "no need to consult any other repo's docs" — so the docs
+> must be navigable at a glance. The tree mirrors the system's layers: the **kernel** numu stands on,
+> the **substrate** under it, then numu's own **api → frontend → nacl** layers, the forward-looking
+> **foundation**, and the **cases** ledger. Every doc: what it governs, the code area it's the
+> contract for, and its status. When code exists, **code is truth** and the doc reconciles in the
+> same change (the docs-currency gate). The baked working rules live in [`../CLAUDE.md`](../CLAUDE.md).
 
-## Read order
+## Read order (the layer walk)
 
-1. [`README.md`](../README.md) — what numu is + the one idea (two layers). *Orientation.*
+1. [`../README.md`](../README.md) — what numu is; the layer table. *Orientation.*
 2. **DOCMAP.md** (this) — where everything lives.
-3. [`OBJECTS.md`](OBJECTS.md) — the object catalog. **The active enrichment surface** + the data contract.
-4. [`HTTP.md`](HTTP.md) — how every registered type is exposed over HTTP (the uniform verb surface).
-   - ⭐ [`CONTRACT.md`](CONTRACT.md) — **the one-page frozen surface for the frontend** (every type + endpoint + rule).
-   - [`RUNNING.md`](RUNNING.md) — boot the binary + connect a frontend (CORS / proxy).
-5. [`OBSERVABILITY.md`](OBSERVABILITY.md) — debuggable-by-construction: request-id spine, problem+json, the 5th gate.
-6. **The frontend** — [`frontend/CONSOLE.md`](frontend/CONSOLE.md) (the console architecture) →
-   [`frontend/SEAM.md`](frontend/SEAM.md) (**the NumuClient contract — the phase-B API spec**) →
-   [`frontend/THEME.md`](frontend/THEME.md) (tokens + drift gates) →
-   [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) (the design-project round-trip) →
-   [`nacl/README.md`](nacl/README.md) (the command-language doctrine home).
-7. [`cases/0001-object-catalog.md`](cases/0001-object-catalog.md) — the live coordination thread for the catalog work.
-8. **Foundation / planning docs** — the [object model](numu-objects-schema.md), [data plane](numu-gluesql-postgres.md) + [CSV datatypes](numu-csv-flow-and-datatypes.md), [RBAC + operator access](numu-rbac-membership-design.md), and [legal/privacy](numu-legal-privacy-data-compliance.md) for the numu frontend + customer data. *Forward-looking.*
+3. **LAYER 0 · kernel** — [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) (the UI framework boundary) ·
+   [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) (the engine lineage). *What numu stands on.*
+4. **LAYER 0.5 · substrate** — [`ops/DATABASE.md`](ops/DATABASE.md): the Postgres under everything
+   (HA · backups/PITR · DB-level observability). *Forward-looking; current = single-node dev.*
+5. **LAYER 1 · api** — [`api/OBJECTS.md`](api/OBJECTS.md) (the object catalog — START HERE for the
+   data model) → [`api/HTTP.md`](api/HTTP.md) (the uniform verb surface; **locked**) →
+   [`api/CONTRACT.md`](api/CONTRACT.md) (the one-page frozen frontend surface) →
+   [`api/RBAC.md`](api/RBAC.md) · [`api/AUTH.md`](api/AUTH.md) →
+   [`api/OBSERVABILITY.md`](api/OBSERVABILITY.md) (debuggable-by-construction; **locked**) →
+   [`api/RUNNING.md`](api/RUNNING.md) (boot + connect).
+6. **LAYER 2 · frontend** — [`frontend/CONSOLE.md`](frontend/CONSOLE.md) (the console architecture) →
+   [`frontend/SEAM.md`](frontend/SEAM.md) (**the NumuClient contract = the phase-B API spec**) →
+   [`frontend/IMPERSONATION.md`](frontend/IMPERSONATION.md) (the Impersonation Rail + its audit/RBAC
+   assessment) → [`frontend/THEME.md`](frontend/THEME.md) →
+   [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md).
+7. **LAYER 3 · nacl** — [`nacl/README.md`](nacl/README.md) (doctrine home; canon =
+   `web/data/nacl-commands.js`).
+8. **foundation/** — the forward-looking planning set (object model · data plane · CSV datatypes ·
+   operator access/RBAC parts 2–4 · legal/privacy).
+9. **cases/** — the on-disk Case ledger (`0001` …).
 
 ## The map — doc ⇄ code-area
 
-Each contract doc is the spec for a code slice that lands later (numu is design-phase, non-UI first). When
-that slice exists, **code becomes the source of truth and the doc reconciles in the same change** (the
-docs-currency gate); until then, the doc *is* the contract.
+### Layer 0 · kernel
 
-| Doc | Governs | Code area it's the contract for | Status |
+| Doc | Governs | Code area | Status |
 |---|---|---|---|
-| [`README.md`](../README.md) | The pitch + the two-layer model (SYSTEM tables vs REGISTERED TYPES) | whole repo (orientation) | living |
-| [`DOCMAP.md`](DOCMAP.md) | The doc index + read order (this file) | `docs/` | living |
-| [`OBJECTS.md`](OBJECTS.md) | The data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, the prefix registry, the seeded `default` workflow, the `relation` edge, omnisearch | `migrations/` (SYSTEM tables) · `seed/` (builtin `type_definitions` + `type_fields` rows) | design contract |
-| [`HTTP.md`](HTTP.md) | The uniform verb surface over the registry: `/api/objects/:type`, the verb→status matrix, OPTIONS self-description, `If-Match` concurrency, two-stage leak-free RBAC, `method_policy`, + runtime **type administration** (`POST /api/types`, hot-reload) | `crates/api/src/{objects,types}.rs` (the generic handler set + the type-admin surface over the registry) | **LIVE** (objects + CASE 0007 type-registration) |
-| [`OBSERVABILITY.md`](OBSERVABILITY.md) | Debuggability (P-DEBUG): the request-id/trace-id spine, structured spans, problem+json envelope, `/healthz`·`/readyz`, the debug-echo | `api/` middleware (`request_id_layer` + `TraceLayer`) · `tools/debuggability-audit` (the 5th gate) | design contract |
-| [`RBAC.md`](RBAC.md) | The two permission planes: the reach resolver (Plane A → 404), field perms (Plane B → 403), roles-as-data, the membership-management SEV-0 guards | `crates/api/src/{rbac,caller,members,field_perms}.rs` · `migrations/0003`,`0004` · `tools/rbac-audit` | **LIVE** (CASE 0005) |
-| [`AUTH.md`](AUTH.md) | Sessions + the Caller extractor; social OAuth (Google/Apple/FB/TikTok), the HMAC state cookie, the SSRF gate, the enterprise-SSO seam | `crates/api/src/{auth,oauth,http_client}.rs` · `migrations/0005`,`0006` | **LIVE** (CASE 0005) |
-| [`.claude/skills/http/`](../.claude/skills/http/SKILL.md) | **Generic** RFC-9110 HTTP technique (method/status/header/conditional-request semantics) — what `HTTP.md` *applies* | consumed by `api/` + connectors; reusable across projects | **shipped** (committed) |
-| [`.claude/skills/type-registry/`](../.claude/skills/type-registry/SKILL.md) | How-to: add an object **type** (1 `type_definitions` + N `type_fields` rows; field grammar, `scope_parents`, engine-owned defaults) — *applies* `OBJECTS.md` | `crates/api/src/{registry,objects}.rs` · `migrations/` seeds | **shipped** |
-| [`.claude/skills/rbac/`](../.claude/skills/rbac/SKILL.md) | How-to: gate access the two-plane, leak-free way (reach → 404, field perms → 403; roles-as-data; membership SEV-0 guards) — *applies* `RBAC.md` | `crates/api/src/{rbac,caller,members,field_perms}.rs` · `tools/rbac-audit` | **shipped** |
-| [`.claude/skills/api-conventions/`](../.claude/skills/api-conventions/SKILL.md) | How-to: the handler house-style (one `AppError`→problem+json, no-unwrap, mutation events, `Caller`, `If-Match`) — *applies* `OBSERVABILITY.md` + `HTTP.md` | `crates/api/src/{error,auth,objects,db}.rs` · `tools/debuggability-audit` | **shipped** |
-| [`.claude/skills/enforcement-gates/`](../.claude/skills/enforcement-gates/SKILL.md) | How-to: author a `tools/*-audit` gate (`ci.sh` auto-discovery, the ratchet) + the Rust-gate/DB-backstop doubling — *applies* `tools/README.md` | `tools/ci.sh` · `tools/*-audit/` · `migrations/0008` | **shipped** |
-| [`frontend/CONSOLE.md`](frontend/CONSOLE.md) | The console: layout regions, module map, the feed block vocabulary, the viewer registry, nacl-in-the-console, the verified phase-A walk | `web/src/` · `web/styles/` · `web/index.html` | **LIVE** (phase A) |
-| [`frontend/SEAM.md`](frontend/SEAM.md) | **The NumuClient contract** — client methods ⇄ HTTP routes, wire shapes, the verified error contract, faithful-vs-simulated, the phase-B route map | `web/src/client.ts` · `web/src/numu-sim.d.ts` · phase B: `crates/api/src/{nacl,manifest,values,conversations,pipeline}.rs` | **LIVE** (contract) |
-| [`frontend/THEME.md`](frontend/THEME.md) | numu ⇄ amenan-ui theming: tier ownership, the structure overlay, chart color synthesis, the css-drift-audit's four queries | `web/styles/` · `tools/css-drift-audit/` · amenan-ui `themes/numu*.css` | **LIVE** |
-| [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | The design-project round-trip: what syncs verbatim, the manifest, the no-fork gate, known upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` · `web/sim/` · `web/data/` | **LIVE** |
-| [`nacl/README.md`](nacl/README.md) | nacl orientation (grammar, verbs, pipeline words, "it") — canon = the synced `web/data/nacl-commands.js` | `web/data/nacl-commands.js` · phase B: `crates/api/src/nacl.rs` | **LIVE** (doctrine) |
-| [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
+| [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) | the framework boundary: what numu consumes (imports, build alias, css cat), token/structure ownership, upstream-vs-overlay rules | `web/` ↔ the sibling `amenan-ui` repo (its docs are the reference) | **LIVE** |
+| [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) | the engine lineage: shared architecture vs divergence, cross-repo maintenance rules | `crates/api` ↔ the sibling `birama-engine` repo | **LIVE** |
 
-## Foundation / planning docs (the numu frontend + customer data)
+### Layer 0.5 · substrate
 
-Forward-looking planning for numu as a **backend-office** (a frontend + client websites built on numu): the
-**reconciled numu+redpash object model**, the data plane it inherits, and the RBAC + legal/privacy work for
-**processing customer data**. Grounded in live introspection of both DBs (`numu_dev`, `redpash_prerelease`) +
-redpash source; the operator-access and legal artifacts are **design/roadmap**, not yet built. Each gets a
-real contract status as its slice lands.
-
-| Doc | Governs | Code area it's the contract for | Status |
+| Doc | Governs | Code area | Status |
 |---|---|---|---|
-| [`numu-objects-schema.md`](numu-objects-schema.md) | The reconciled numu (17) + redpash (12) object catalog — every type, field, metadata — grouped by a forward context taxonomy + the naming-reconciliation matrix | `migrations/`·`seed/` (numu) + the redpash app catalog being reused | planning |
-| [`numu-gluesql-postgres.md`](numu-gluesql-postgres.md) | The data plane numu inherits: GlueSQL (browser, ephemeral, per-user) vs Postgres (registry/metadata) + the immutable blob + step-replay | redpash `data` crate + `pipeline.rs` (to port) | planning |
-| [`numu-csv-flow-and-datatypes.md`](numu-csv-flow-and-datatypes.md) | CSV ingest (upload + connector) + the storage/semantic datatype catalog + sentinels + `ColumnMeta` | redpash `crates/{data,shared}` (to port) | planning |
-| [`numu-rbac-membership-design.md`](numu-rbac-membership-design.md) | RBAC/membership **today** (the two planes, reach resolver, roles-as-data, SEV-0 guards) + the **operator/customer-data** access design (`operator_access`, `access_audit`, purpose-limit) | `crates/api/src/{rbac,caller,members,field_perms}.rs` (Part 1 LIVE) + proposed tables (Parts 2–4) | Part 1 LIVE · Parts 2–4 design |
-| [`numu-legal-privacy-data-compliance.md`](numu-legal-privacy-data-compliance.md) | Legal/privacy/GDPR posture: controller/processor, the privacy-audit ratchet, data-subject rights, the Article control-map + roadmap (claude-for-legal) | redpash privacy machinery (`tools/privacy-audit`, `me.rs`, `crypto.rs`) to port + legal artifacts | planning |
+| [`ops/DATABASE.md`](ops/DATABASE.md) | the DB substrate: HA topology (Patroni/etcd/HAProxy), backups/PITR (pgBackRest), DB-level observability (the `monitoring` schema + a `db-health` collector feeding the audit substrate) | `migrations/` (schema) · deploy/ops (forward) | design contract (forward-looking; current = single-node localhost) |
 
-## Not-yet-written (planned slices, each its own Case)
+### Layer 1 · api (numu's backend on the engine architecture)
 
-These appear in [`README.md`](../README.md)'s layout and the [catalog case](cases/0001-object-catalog.md)'s
-follow-on list. They get a DOCMAP row the moment they land:
+| Doc | Governs | Code area | Status |
+|---|---|---|---|
+| [`api/OBJECTS.md`](api/OBJECTS.md) | the data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, prefixes, the seeded `default` workflow, relations, omnisearch | `migrations/` · the registry seeds | **LIVE** (+ open enrichment) |
+| [`api/HTTP.md`](api/HTTP.md) | the uniform verb surface: `/api/objects/:type[/:id]`, verb→status matrix, OPTIONS self-description, If-Match, two-stage leak-free RBAC, `method_policy`, runtime type-admin (`POST /api/types`, hot-reload) | `crates/api/src/{objects,types}.rs` | **LIVE · locked** |
+| [`api/CONTRACT.md`](api/CONTRACT.md) | the one-page frozen surface for the frontend | the whole api | **LIVE** |
+| [`api/RBAC.md`](api/RBAC.md) | the two planes: reach resolver (Plane A → 404), field perms (Plane B → 403), roles-as-data, membership SEV-0 guards | `crates/api/src/{rbac,caller,members,field_perms}.rs` · `tools/rbac-audit` | **LIVE** (CASE 0005) |
+| [`api/AUTH.md`](api/AUTH.md) | sessions + the Caller extractor; social OAuth ×4, the HMAC state cookie (**`NUMU_SECRET` required in prod**), the SSRF gate | `crates/api/src/{auth,oauth,http_client}.rs` | **LIVE** (CASE 0005) |
+| [`api/OBSERVABILITY.md`](api/OBSERVABILITY.md) | debuggability: request-id spine, problem+json, health, the debuggability gate, §9 database-level observability | `crates/api` middleware · `tools/debuggability-audit` | **LIVE · locked** |
+| [`api/RUNNING.md`](api/RUNNING.md) | boot the binary + connect a frontend (CORS/proxy, env vars) | `crates/api/src/{main,config}.rs` | **LIVE** |
 
-| Artifact | Will be the contract/impl for | Doc home |
+### Layer 2 · frontend (the console on amenan-ui)
+
+| Doc | Governs | Code area | Status |
+|---|---|---|---|
+| [`frontend/CONSOLE.md`](frontend/CONSOLE.md) | the console: the two rails, module map, block vocabulary, viewer registry, appearance (theme × mode × skin), clean-slate seeding, the verified walks | `web/src/` · `web/styles/` | **LIVE** (phase A) |
+| [`frontend/SEAM.md`](frontend/SEAM.md) | **the NumuClient contract** — methods ⇄ routes, wire shapes, the verified error contract, faithful-vs-simulated, the phase-B route map | `web/src/client.ts` · `web/sim/` · phase B: `crates/api` | **LIVE** (contract) |
+| [`frontend/IMPERSONATION.md`](frontend/IMPERSONATION.md) | the Impersonation Rail: canon, flow, and the audit-performance + RBAC-respect assessment (enforced ✔ / display-only ⚠ / phase-B ✗) | `web/src/console/impersonation-rail.ts` · `web/src/app.ts` | **LIVE** (assessed) |
+| [`frontend/THEME.md`](frontend/THEME.md) | numu ⇄ amenan-ui theming: tier ownership, the overlay, chart color synthesis, the css-drift queries | `web/styles/` · `tools/css-drift-audit/` | **LIVE** |
+| [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | the design-project round-trip: verbatim set, the manifest, the no-fork gate, upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` | **LIVE** |
+
+### Layer 3 · nacl
+
+| Doc | Governs | Code area | Status |
+|---|---|---|---|
+| [`nacl/README.md`](nacl/README.md) | orientation: grammar, verbs, pipeline words, "it" — canon = the synced doctrine file | `web/data/nacl-commands.js` · phase B: `crates/api/src/nacl.rs` | **LIVE** (doctrine) |
+
+### foundation/ (forward-looking planning)
+
+| Doc | Governs | Status |
 |---|---|---|
-| `migrations/` | the SYSTEM tables (`OBJECTS.md` G1–G6 `[SYSTEM]`) | `OBJECTS.md` |
-| `seed/` | builtin `type_definitions` + `type_fields` rows + the `default` workflow | `OBJECTS.md` |
-| `tools/` + `ci.sh` | the five gate audits + the ratchet | (a `tools/` README, next slice) |
-| `.claude/agents/` | the 5-role orchestrator (architect→tester→coder→reviewer→ops), project-agnostic | `OBJECTS.md` G5 |
-| `CLAUDE.md` | the baked-in conventions (the gates as standing rules) | itself |
-| `docs/decisions/`, `docs/runbooks/` | locked decisions + fixed-bug records | per the redpash cadence |
+| [`foundation/numu-objects-schema.md`](foundation/numu-objects-schema.md) | the reconciled numu+redpash object catalog + naming matrix | planning |
+| [`foundation/numu-gluesql-postgres.md`](foundation/numu-gluesql-postgres.md) | the data plane: GlueSQL (browser) vs Postgres, immutable blob + step-replay | planning (phase B ports it) |
+| [`foundation/numu-csv-flow-and-datatypes.md`](foundation/numu-csv-flow-and-datatypes.md) | CSV ingest + the storage/semantic datatype catalog | planning (phase B) |
+| [`foundation/numu-rbac-membership-design.md`](foundation/numu-rbac-membership-design.md) | Part 1 (the two planes) **LIVE**; Parts 2–4 (operator access, `access_audit`, purpose-limit) = the impersonation phase-B contract | Part 1 LIVE · 2–4 design |
+| [`foundation/numu-legal-privacy-data-compliance.md`](foundation/numu-legal-privacy-data-compliance.md) | GDPR posture, privacy ratchet, data-subject rights | planning |
 
-## The five gates (the enforcement spine, mapped)
+### Skills (the how-tos — apply the contracts; don't duplicate them)
 
-numu's identity is that its disciplines are **queries, not prompts** — harness-agnostic, git/DB-enforced:
+`.claude/skills/`: [`http`](../.claude/skills/http/SKILL.md) ·
+[`type-registry`](../.claude/skills/type-registry/SKILL.md) ·
+[`rbac`](../.claude/skills/rbac/SKILL.md) ·
+[`api-conventions`](../.claude/skills/api-conventions/SKILL.md) ·
+[`enforcement-gates`](../.claude/skills/enforcement-gates/SKILL.md) — all **shipped**.
 
-| Gate | Enforces | Where it's specified |
+### cases/ — the ledger
+
+[`cases/`](cases/) `0001` object catalog · `0002` http surface · `0003` backend foundation · `0004`
+ci gate · `0005` rbac · `0006` cases engine · `0007` type registration · `0008` backend completion ·
+`0009` CORS ops · `0010` orchestrator · `0011` backend finish · **`0012` console web phase A**
+(renumbered from a colliding 0002) · **`0013` staging truth + secret guard**.
+
+## The enforcement spine
+
+The gates ARE the disciplines — 13 live when nothing skips (fmt · clippy · test · db ·
+web-build · web-test · case-first · css-drift · debuggability · docs-currency · rbac ·
+sim-verbatim · stale-staging), 2 follow-on
+(capability-ledger · agent-refs). The authoritative table: [`../tools/README.md`](../tools/README.md);
+the working rules: [`../CLAUDE.md`](../CLAUDE.md).
+
+### Root
+
+| Doc | Governs | Status |
 |---|---|---|
-| **case-first** | non-trivial work opens a Case before it's coded | `CLAUDE.md` (planned) · `cases/` fallback |
-| **docs-currency** | no Case reaches `done` until its docs are reconciled | `OBJECTS.md` G4 (`close_checks: ["docs_reconciled"]`) |
-| **capability-ledger** | no capability lives only in memory (anti-amnesia) | `OBJECTS.md` G6 (`capability` `[TYPE]`) |
-| **agent-refs** | every orchestrator reference resolves to a real artifact | `tools/` (planned) |
-| **debuggability** | no bare 500, no dropped request-id | [`OBSERVABILITY.md`](OBSERVABILITY.md) §6 |
+| [`../CLAUDE.md`](../CLAUDE.md) | the baked working rules (case-first · docs-currency · the gate table · DB-test features · required prod env) | **LIVE · locked** |
+| [`../tools/README.md`](../tools/README.md) | the gate registry (the authoritative live-gate table) | **LIVE** |
 
 ## Rules for this map
 
-- **Every doc has exactly one DOCMAP row.** A new doc without a row (or a row whose links don't resolve) is
-  a finding — `tools/doc-coverage-audit` (a planned gate) fails CI on it, the same way redpash's does.
-- **Code wins on disagreement.** Once a slice has code, the code is truth; a change that alters a documented
-  surface reconciles its doc *in the same change* (docs-currency). A design-contract doc is authoritative
-  only until its code lands.
-- **Changing a "locked decision" doc** (`OBJECTS.md`/`HTTP.md`/`OBSERVABILITY.md` headers say so) **is an
-  Em-level decision** — note it in the [catalog case](cases/0001-object-catalog.md) or its own Case.
+- **Every doc has exactly one DOCMAP row**; a row whose link doesn't resolve is a finding.
+- **Code wins on disagreement**; the doc reconciles in the same change (docs-currency).
+- **Locked docs** (`api/OBJECTS.md` · `api/HTTP.md` · `api/OBSERVABILITY.md` · `CLAUDE.md`) change
+  only by an Em-level decision, noted in a Case.

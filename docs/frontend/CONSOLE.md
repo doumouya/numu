@@ -94,7 +94,9 @@ object carries no `src`.
   refetch by the `src` recorded at upload). Blocks append to the feed +
   persist; effects apply client-side.
 - **Effects**: `theme` (mode dark|light · accent ink|blue — no settings page),
-  `closePanel`, `play` (→ the audio viewer), `it` (the thread's focused file).
+  `closePanel`, `play` (→ the audio viewer), `it` (the thread's focused file),
+  `openObjectId` (a `new:` create opens its object in the panel), `needBlob`
+  (handled in Send — refetch + one retry).
 - **Autocomplete**: `nacl-suggest.ts` staging over three planes — the thread's
   materialized csvs (from the feed's `data` blocks), the lazy column-distinct
   values cache (`window.__NUMU_VALUES`, prefetched per upload), and the

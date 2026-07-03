@@ -31,14 +31,14 @@ RFC 9110/9457 + 3 design memos).
 
 ## Delivered
 
-- **`docs/HTTP.md`** — numu's HTTP contract: route shape `/api/objects/:type[/:id]`, the verb→status
+- **`docs/api/HTTP.md`** — numu's HTTP contract: route shape `/api/objects/:type[/:id]`, the verb→status
   matrix, OPTIONS-as-live-self-description, PUT(full)/PATCH(RFC 7386), `If-Match` concurrency (412/428,
   `ETag: W/"<version>"`), RBAC-per-verb (two-stage leak-free 404→403), `method_policy` opt-out,
   TRACE/CONNECT stance, problem+json envelope. Locked decision.
-- **`docs/OBSERVABILITY.md`** — P-DEBUG: request-id flow (edge→log→`events`→error `instance`), span
+- **`docs/api/OBSERVABILITY.md`** — P-DEBUG: request-id flow (edge→log→`events`→error `instance`), span
   taxonomy, capture-vs-view (D2), no-bare-500 (D3), `/healthz`+`/readyz`, the gated debug-echo, and the
   5th CI gate (`tools/debuggability-audit`) with its 7-rule checklist. Locked decision.
-- **`docs/OBJECTS.md`** (merged with the concurrent enrichment) — new "HTTP surface" section;
+- **`docs/api/OBJECTS.md`** (merged with the concurrent enrichment) — new "HTTP surface" section;
   `type_definitions += method_policy`; `entity_data += version, updated_at` (+ `cases` mirror note);
   `events += request_id, trace_id` + the request-correlation note; a clarifying note on `[TYPE] skill` vs
   a Claude-Code `SKILL.md`.
@@ -48,7 +48,7 @@ RFC 9110/9457 + 3 design memos).
   ssrf-gate, client, debugging, review) + `scripts/` (`curl-trace.sh` [request-id + timing on every example],
   `check-allow.sh`, `ssrf-vectors.txt` [the 12-vector regression list]). Scripts pass `bash -n`, executable.
 - **`README.md`** — bake-in rows (Uniform HTTP surface · Debuggable by construction); layout updated
-  (`docs/HTTP.md`, `docs/OBSERVABILITY.md`, `.claude/skills/http/`; `.agents/`→`.claude/`); status note.
+  (`docs/api/HTTP.md`, `docs/api/OBSERVABILITY.md`, `.claude/skills/http/`; `.agents/`→`.claude/`); status note.
 
 ## Verification
 

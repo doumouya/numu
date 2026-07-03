@@ -2,7 +2,7 @@
 
 How numu realizes "every object implements all (safe) HTTP methods" with **one generic handler set**, not
 per-type code. This is the server half of directive #1. The authoritative numu contract is
-[`../../../docs/HTTP.md`](../../../docs/HTTP.md); this reference is the implementer's how-to.
+[`../../../docs/api/HTTP.md`](../../../docs/api/HTTP.md); this reference is the implementer's how-to.
 
 ## The router (one mount, all types)
 ```

@@ -5,7 +5,7 @@ things that live in this repo as **verbatim artifacts**:
 
 | synced into | what | why verbatim |
 |---|---|---|
-| `web/sim/` (7 files) | the engine sim: csv pipeline · registry seed (EMPTY by default — clean slate) · generic object service · nacl executor · the client seam · the node server | it is the executable spec for phase B — a local fork would silently diverge the spec |
+| `web/sim/` (7 files) | the engine sim: csv pipeline · registry seed (two workspaces + the operator only — clean slate) · generic object service · nacl executor · the client seam · the node server | it is the executable spec for phase B — a local fork would silently diverge the spec |
 | `web/data/nacl-commands.js` | the nacl doctrine (grammar, verbs, catalog) | Em iterates the language IN the design project |
 | `web/data/console-data.js` | the console chrome data: tenants · connectors · apps · agents · user records · settings scaffolding (skins, plans, scopes) | design-owned content |
 | `web/data/bi-icon-names.js` | the full Bootstrap Icons name list (the icon picker's search plane) | auto-extracted upstream |
@@ -42,3 +42,10 @@ makes the clobber impossible to miss.
 - `sim/server.node.js` seeds `ROOT/uploads/dossier.csv`; in this repo the
   fixture lives at `web/data/uploads/dossier.csv`, so the server-side seed
   no-ops (harmless — Save-to-chat uploads through the API anyway).
+- `sim/numu-nacl.js` — the bare-column `read:` branch (`read:id=345 set:…`,
+  a canonical doctrine example) isn't wired: it returns "no-op in sim (verb
+  not wired)" and the chained `set:` never runs (the `on:` branch handles
+  bare columns; `read:` doesn't).
+- the console kit's impersonation copy overclaims ("every read logged" /
+  "access logged") — our port ships the softened truth ("start/end logged" /
+  "grant logged"); align the kit when convenient.

@@ -22,7 +22,7 @@ frozen contract. The only object gap was the four G7 `[TYPE]`s.
     (`http_client::SsrfFetcher::get_json` — https-only, IP-pinned, metadata-blocked), stamps
     `last_run_at`/`status`, emits an event. Reach-gated (Edit on the connector). `http_json` in v1; other
     kinds → 422.
-- **`docs/CONTRACT.md`** — one frozen page: every type (prefix, scope), every endpoint, the cross-cutting
+- **`docs/api/CONTRACT.md`** — one frozen page: every type (prefix, scope), every endpoint, the cross-cutting
   rules (errors, leak-free RBAC, concurrency, status codes). The frontend's factorization artifact.
 - **`tests/g7.rs` (2):** the catalog is usable (secret/skill/milestone create; secret has no value field);
   connector-run gates (404 unknown · 422 non-runnable kind). The real http_json fetch is boot-verified.

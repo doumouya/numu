@@ -135,7 +135,7 @@ device") — make it an *enforceable* operator control, not just an architecture
 ([RBAC doc](numu-rbac-membership-design.md) §3.7).
 
 ### 3.6 Observability privacy ✅ (numu has this)
-`docs/OBSERVABILITY.md`: **no secret/PII in spans** — DB spans log `table`/`rows`, never bound values;
+`docs/api/OBSERVABILITY.md`: **no secret/PII in spans** — DB spans log `table`/`rows`, never bound values;
 outbound spans log `host`, never auth headers; events log `actor_id` (a reference) + caller-scrubbed context.
 Every mutation emits an event (fire-and-forget, never blocks). *(Read-audit of operator access is the new
 addition — RBAC doc §3.4.)*

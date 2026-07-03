@@ -21,9 +21,9 @@ handler in [`objects.rs`](../../../crates/api/src/objects.rs) then exposes that 
 `/api/objects/:type[/:id]` for every verb, with RBAC, validation, concurrency, OPTIONS self-description,
 and an audit event — all for free. You write **zero Rust and zero migration** to ship a new object.
 
-> The contract for everything here is [`docs/OBJECTS.md`](../../../docs/OBJECTS.md). This skill is the
+> The contract for everything here is [`docs/api/OBJECTS.md`](../../../docs/api/OBJECTS.md). This skill is the
 > *how-to*; read OBJECTS.md for the catalog and the locked decisions. The HTTP surface a new type inherits
-> is in [`docs/HTTP.md`](../../../docs/HTTP.md); access control it inherits is the **rbac** skill.
+> is in [`docs/api/HTTP.md`](../../../docs/api/HTTP.md); access control it inherits is the **rbac** skill.
 
 ## Decide first: is this a TYPE or a SYSTEM table?
 
@@ -162,5 +162,5 @@ app is built fresh per test, so a new seed is picked up automatically.
 - [ ] Every `required readonly`/`system` field has an `options.default`.
 - [ ] Enum fields carry `{"enum":[…]}`; a default (if any) is a member of that enum.
 - [ ] You did **not** add a typed table unless an engine indexes/triggers on it.
-- [ ] OPTIONS + a create/patch round-trip pass against a real DB; `docs/OBJECTS.md` reconciled if the
+- [ ] OPTIONS + a create/patch round-trip pass against a real DB; `docs/api/OBJECTS.md` reconciled if the
       catalog changed (the **enforcement-gates** docs-currency rule).

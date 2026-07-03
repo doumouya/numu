@@ -25,7 +25,7 @@ useful to the debugger and **leak-free** to an attacker at the same time.
   ("`title` is required"); for a *denial* it must stay generic ("Not found") so it can't confirm existence.
 - **`instance`** — the **request-id** (`X-Request-Id`). This is what makes the envelope diagnostic: the
   error the user pasted *is* the handle to the full server trace
-  (`SELECT * FROM events WHERE request_id = $1`). See `../../../docs/OBSERVABILITY.md`.
+  (`SELECT * FROM events WHERE request_id = $1`). See `../../../docs/api/OBSERVABILITY.md`.
 - **`kind`** — numu's machine code, kept as a stable extension member (debuggers grep by `kind`, not by
   message string). It is part of the API contract.
 
@@ -46,7 +46,7 @@ debuggability audit flags any second error responder. Logging is automatic in th
 cause chain at `error` (with request-id), 4xx → message at `warn`. Handlers don't log errors themselves.
 
 ## Mapping failures → codes (the leak-free map)
-See `status-codes.md` for the full table and `../../../docs/HTTP.md` §6 for numu's exact bindings. The
+See `status-codes.md` for the full table and `../../../docs/api/HTTP.md` §6 for numu's exact bindings. The
 discipline: pick the most specific code, keep denials at 404/403 with generic text, and ensure *every*
 path — including the catch-all — produces this envelope with a request-id. A bare `500 {}` is a CI
 failure (debuggability audit rule 2), because an error nobody can trace is the worst kind.

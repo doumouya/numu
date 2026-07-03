@@ -9,8 +9,8 @@
 
 ## Goal
 
-Em: **"go"** — turn the design contract ([`HTTP.md`](../HTTP.md), [`OBSERVABILITY.md`](../OBSERVABILITY.md),
-[`OBJECTS.md`](../OBJECTS.md)) into the first bootable backend. The headline: **every registered object
+Em: **"go"** — turn the design contract ([`HTTP.md`](../api/HTTP.md), [`OBSERVABILITY.md`](../api/OBSERVABILITY.md),
+[`OBJECTS.md`](../api/OBJECTS.md)) into the first bootable backend. The headline: **every registered object
 speaks the full safe HTTP verb set from ONE generic handler over the registry — zero per-type code.**
 
 ## Delivered (verified end-to-end against a throwaway Postgres — 24/24 checks)

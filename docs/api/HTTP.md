@@ -2,7 +2,7 @@
 
 > **Locked decision.** This is numu's project-specific HTTP contract: how the object registry exposes
 > every type over HTTP. Generic RFC semantics (what each method/status *means*) live in the reusable
-> [`http` skill](../.claude/skills/http/SKILL.md) — this doc says how numu *applies* them. The
+> [`http` skill](../../.claude/skills/http/SKILL.md) — this doc says how numu *applies* them. The
 > debuggability spine (request-id, problem+json, spans) is [`OBSERVABILITY.md`](OBSERVABILITY.md). The
 > data model is [`OBJECTS.md`](OBJECTS.md). Changing anything here is an Em-level decision.
 
@@ -24,28 +24,28 @@ writes the `type_definitions` + `type_fields` rows and **hot-reloads the registr
 `/api/objects/:type` surface above is live with **no restart**. `GET /api/types` lists the catalog;
 `GET /api/types/:type` describes one. Status map: **201** (registered) · **403** (non-admin — a platform
 capability, no object to leak) · **409** (taken `type_id`/`id_prefix`, DB-backstopped) · **422** (malformed
-spec). A seed migration is the other path (loads at boot). (docs/OBJECTS.md G1; CASE 0007.)
+spec). A seed migration is the other path (loads at boot). (docs/api/OBJECTS.md G1; CASE 0007.)
 
 **Relations (`/api/relations`).** The generic typed entity↔entity edge: `POST /api/relations`
 `{subject_id, object_id, relation_type}` (write-gated on *edit subject*) · `GET /api/relations?entity=<id>`
 (read-gated — an edge is returned only if the caller reaches *both* ends) · `DELETE /api/relations/:id`.
-**201/204** · **403/404** (no edit/view reach) · **409** (duplicate triple) · **422** (unknown
-`relation_type`). (docs/OBJECTS.md G2; CASE 0008.)
+**201/204** · **404** (no edit/view reach — leak-free) · **409** (duplicate triple) · **422** (unknown
+`relation_type`). (docs/api/OBJECTS.md G2; CASE 0008.)
 
 **Search (`/api/search`).** `GET /api/search?q=<text>[&type=<type>][&limit=N]` — reach-filtered full-text
 over *every* type at once (the `entity_data.search_vector` GIN tsvector); ranked by `ts_rank`; a blank `q`
-→ **400**. Leak-free by the same reach gate as the object reads. (docs/OBJECTS.md G3; CASE 0008.)
+→ **400**. Leak-free by the same reach gate as the object reads. (docs/api/OBJECTS.md G3; CASE 0008.)
 
 **Orchestrator (`/api/feature-runs`).** The 5-role pipeline as DB state: `POST /api/feature-runs`
 `{case_id?, title}` (start) · `POST /api/feature-runs/:id/handoffs` `{role, gate, outcome, note}` (advance —
 `pass`/`fail`/`test-drift`/`escalate`) · `GET /api/feature-runs/:id` · `GET ?case_id=`. The circuit breaker
-is a `SELECT` (≤3 retries/gate, ≤8 hops/run → `escalated`). **403/404** (no reach on the run's Case) · **422**
-(unknown outcome · wrong role for the phase · a closed run). (docs/OBJECTS.md G5; CASE 0010.)
+is a `SELECT` (≤3 retries/gate, ≤8 hops/run → `escalated`). **404** (no reach on the run's Case — leak-free) · **422**
+(unknown outcome · wrong role for the phase · a closed run). (docs/api/OBJECTS.md G5; CASE 0010.)
 
 **Connector run (`/api/connectors/:id/run`).** `POST` — fetch the connector's `target` through the SSRF
 gate and return the JSON. `http_json` kind in v1 (others → **422**); reach-gated (Edit on the connector,
 leak-free **404**). The connector/secret/skill/milestone *objects* themselves are the generic
-`/api/objects/:type` surface. (docs/OBJECTS.md G7; CASE 0011.) Full map: [`CONTRACT.md`](CONTRACT.md).
+`/api/objects/:type` surface. (docs/api/OBJECTS.md G7; CASE 0011.) Full map: [`CONTRACT.md`](CONTRACT.md).
 
 ## 1. Verb → status matrix
 
@@ -56,9 +56,9 @@ registry (unknown → leak-free **404**).
 
 | Verb | Semantics | Req body | Success | Errors |
 |---|---|---|---|---|
-| **GET** | List entities of type, scope-filtered by reach + RBAC; paginated | no | **200** | 400 · 401 · 404 (unknown type / read-denied, leak-free) · 406 |
+| **GET** | List entities of type, reach-filtered (a no-reach caller gets a `200` empty list, never a 404); paginated | no | **200** | 400 · 401 · 404 (unknown type, leak-free) |
 | **HEAD** | GET metadata only (count/existence probe within reach) | no | **200** | as GET |
-| **POST** | Create one; server mints the id; creator gets an `owner` membership in the same txn | yes | **201** (+`Location`, +`ETag`) | 400 · 401 · 403 (field gate) · 404 (create-denied/unknown type) · 409 (unique slug/handle) · 415 · 422 (validation/domain rule) |
+| **POST** | Create one; server mints the id; creator gets an `owner` membership in the same txn | yes | **201** (+`Location`, +`ETag`) | 400 (unknown / non-settable field — the schema gate) · 401 · 404 (unknown type) · 415 · 422 (validation/domain rule) — the per-field rank `403` on create is planned (the seal slice, §4) |
 | **PUT / PATCH / DELETE** | **not offered on a collection** (no bulk wipe by default) | — | — | **405** (+`Allow`) |
 | **OPTIONS** | Self-description of the **type** (§2) | no | **200** (+`Allow`) | 404 (unknown type) |
 
@@ -66,18 +66,19 @@ registry (unknown → leak-free **404**).
 
 | Verb | Semantics | Req body | Success | Errors |
 |---|---|---|---|---|
-| **GET** | Fetch one; emit `ETag` + `Last-Modified` | no | **200**; **304** (If-None-Match / If-Modified-Since hit) | 400 · 401 · 404 (unknown id / view-denied) · 406 |
+| **GET** | Fetch one; emit `ETag` | no | **200**; **304** (`If-None-Match` hit) | 400 · 401 · 404 (unknown id / view-denied) |
 | **HEAD** | GET metadata only, no body | no | **200** / **304** | as GET |
 | **PUT** | **Full replace** of `data` (§3); `If-Match` **required** | yes | **200** / **204** | 400 · 401 · 403 · 404 · 409 · **412** · 415 · 422 · **428** |
 | **PATCH** | **Partial merge** — JSON Merge Patch RFC 7386 (§3); `If-Match` **required** | yes | **200** / **204** | 400 · 401 · 403 · 404 · 409 · **412** · 415 · 422 · **428** |
-| **DELETE** | Remove (cascade via `entities`); `If-Match` **required** | no | **204** | 401 · 404 (unknown id / delete-denied) · 409 (sole-owner/dependency) · **412** · **428** |
+| **DELETE** | Remove (cascade via `entities`); `If-Match` **required** | no | **204** | 401 · 404 (unknown id / delete-denied) · **412** · **428** — no 409 guard here; the sole-owner `409` lives on the members surface (§4) |
 | **POST** | **not offered on an item** (a sub-action is a PATCH of a field, e.g. a workflow move is `PATCH status`, not a verb) | — | — | **405** (+`Allow`) |
 | **OPTIONS** | Self-description for **this item** incl. per-verb RBAC verdict + current `ETag` (§2) | no | **200** (+`Allow`) | 404 (unknown id / view-denied) |
 
-**405 vs 404 (locked):** `405` is returned only when the type exists *and is visible to the caller* but
-the verb is structurally not offered (PUT on a collection, or a verb masked off in §7). Unknown type, or
-an entity the caller can't see → **404**. So the `Allow` header is only ever revealed *after* the
-leak-free view gate passes — existence is never probeable by method.
+**405 vs 404 (locked):** `405` is returned when the type is registered but the verb is structurally not
+offered (PUT on a collection, POST on an item). Unknown type → **404**. The `Allow` header on a 405 is
+the **type-level** permitted set (computed with no object gate), so it reveals only that the type exists
+— never whether a particular entity does. (A §7-masked verb answering 405 here is part of the planned
+seal slice; today the mask shapes OPTIONS/`Allow` only.)
 
 ### PUT vs PATCH — the precise rule
 
@@ -106,39 +107,42 @@ JSON body:
   "resource": "item",                          // or "collection"
   "allow": ["GET","HEAD","PATCH","OPTIONS"],   // == Allow header == this caller's permitted verbs
   "rbac": {                                    // per-verb verdict for THIS caller on THIS object
-    "GET":    { "allowed": true,  "via": "reach:project_id", "min_role": "viewer" },
-    "POST":   { "allowed": false, "reason": "min_role member" },
-    "PUT":    { "allowed": false, "reason": "min_role member" },
-    "PATCH":  { "allowed": true,  "min_role": "member" },
-    "DELETE": { "allowed": false, "reason": "min_role admin" }
+    "GET":    { "allowed": true },
+    "PUT":    { "allowed": false, "reason": "insufficient reach" },
+    "PATCH":  { "allowed": true },
+    "DELETE": { "allowed": false, "reason": "insufficient reach" }
+    // shipped verdict = {allowed, reason?}; reason ∈ "insufficient reach" · "masked by method_policy".
+    // richer fields — via (the granting reach edge) + min_role — are planned, not yet emitted
   },
-  "fields": [                                  // from type_fields, field-perm-filtered to this caller
+  "fields": [                                  // from type_fields — EVERY field listed; can_read is per-caller
     { "field":"title","label":"Title","kind":"text","required":true,
       "editable":true,"perm_class":"standard","can_read":true,"can_write":true },
     { "field":"status","label":"Status","kind":"enum","required":true,"editable":true,
       "perm_class":"standard","can_read":true,"can_write":true,
       "options":["backlog","todo","in_progress","in_review","done"] }
-    /* fields the caller cannot read are omitted entirely (leak-free) */
+    /* an unreadable field appears with can_read:false (not omitted); can_write is the SCHEMA's
+       editable flag, not the caller's rank — the per-caller write verdict is planned */
   ],
   "validation": { "required":["title","type","status","priority","project_id"],
                   "refs": {"project_id":"PRJ","assignee_id":"USR"} },
   "concurrency": { "etag": "W/\"7\"" },         // item only; current validator
   "workflow": { "workflow_id":"default","initial":"backlog",
-                "transitions": {"in_progress":["todo","in_review"]} }   // present iff the type has a workflow (states/transitions per OBJECTS.md G4 'default')
+                "transitions": {"in_progress":["todo","in_review"]} }   // planned — not yet emitted by options_body (states/transitions per OBJECTS.md G4 'default')
 }
 ```
 
 - **Self-documenting:** fields, kinds, enum vocab, required set, ref targets, validation, allowed verbs,
   *and the caller's own permission verdict* — no external doc needed. The runtime mirror of OBJECTS.md.
-- **Debuggable:** when a write `403`s/`422`s, the troubleshooter calls OPTIONS and sees exactly which
-  field they can't write (`can_write:false`) or which verb their role lacks (`rbac.DELETE.reason`). The
-  `via` names the reach edge that granted access (`reach:project_id`) — making the `scope_parent_id`
-  resolution observable.
+- **Debuggable:** when a write `403`s/`422`s, the troubleshooter calls OPTIONS and sees which verb was
+  denied (`rbac.DELETE.reason`) and the field list (`can_read` per caller; `can_write` is the schema's
+  editable flag). A `via` field naming the reach edge that granted access (`reach:project_id`) is
+  planned — it would make the `scope_parent_id` resolution observable.
 - **One source of truth:** the `Allow` header on a `405` is exactly the `allow` array. One function,
   `permitted_verbs(caller, type, entity)`, computes both.
-- **Leak-free:** OPTIONS on an entity the caller can't view is itself `404`. OPTIONS on a real type's
-  *collection* the caller has no reach into returns `200` with the type schema but `rbac.GET.allowed:false`
-  — schema is public-within-tenant; *instances* are not.
+- **Leak-free:** OPTIONS on an entity the caller can't view is itself `404`. OPTIONS on a *collection*
+  returns `200` with the type schema for any authenticated caller — collection-level gates admit everyone
+  (`rbac.GET.allowed:true`; the reach filter applies to the *rows* a list returns, so a no-reach GET is a
+  `200` empty list). Schema is public-within-tenant; *instances* are not.
 
 ## 3. Conditional requests — lost-update protection
 
@@ -147,10 +151,11 @@ lost-writes a real hazard. numu fixes it **at the registry level, once**, so eve
 
 - **Where the version lives:** `entity_data.version int NOT NULL DEFAULT 1` (mirrored on the `cases`
   typed table), bumped on every successful write. Plus `entity_data.updated_at`.
-- **ETag / Last-Modified:** `ETag: W/"<version>"` (weak — semantic equivalence; JSONB serialization
-  isn't byte-stable). `Last-Modified = updated_at`. Emitted on every item `GET/HEAD`, `POST` (201),
-  `PUT`/`PATCH` (200).
-- **GET/HEAD:** honor `If-None-Match` and `If-Modified-Since` → **304**.
+- **ETag:** `ETag: W/"<version>"` (weak — semantic equivalence; JSONB serialization isn't byte-stable).
+  Emitted on every item `GET/HEAD`, `POST` (201), `PUT`/`PATCH` (200). (`Last-Modified = updated_at`
+  remains the contract but is planned — the header is not yet emitted.)
+- **GET/HEAD:** honor `If-None-Match` → **304**. (`If-Modified-Since` is not yet read — it lands with
+  `Last-Modified`.)
 - **PUT/PATCH/DELETE:** `If-Match` **required**. Absent → **428 precondition_required**. Stale (version
   mismatch) → **412 precondition_failed**. "I edited a Case another agent already moved" is a clean 412,
   never a silent clobber.
@@ -166,14 +171,17 @@ field matrix). No per-verb ACL table.
 | Verb(s) | Safety | Action | Min role | Then |
 |---|---|---|---|---|
 | GET, HEAD, OPTIONS | safe | **View** | `viewer` | reach + per-field `can_read` filter on the response |
-| POST | unsafe | **Create** | `member` | per-field `can_write` gate on the body; mint the owner edge |
-| PUT, PATCH | unsafe | **Edit** | `member` | per-field `can_write` gate on each written field |
-| DELETE | unsafe | **Delete** | `admin` *(raisable to `owner` per type)* | + 409 guards (sole-owner, dependencies) |
+| POST | unsafe | **Create** | `member` | schema `settable()` gate on the body (→ 400); mint the owner edge — the per-field rank gate on create is planned (the seal slice) |
+| PUT, PATCH | unsafe | **Edit** | `member` | per-field `can_write` (`require_write`) gate on each written field |
+| DELETE | unsafe | **Delete** | `admin` *(raisable to `owner` per type)* | no 409 guard on the object itself — the sole-owner `409` lives on the members surface (demote/remove of the last `owner`) |
 
 - **Two-stage, leak-free (locked):** (1) object-level Action gate → denial is **404** (existence
   unprobeable; the `scope_parent_id` FK makes a foreign-parent row unrepresentable, so cross-tenant
-  reach can't even produce a 403). (2) Only after View/Edit is admitted does the field-perm gate run →
-  field-level denial is **403** (the caller already proved they can see the object, so 403 leaks nothing).
+  reach can't even produce a 403). (2) Only after View/Edit is admitted does the field-perm gate run
+  (on PUT/PATCH today; create is schema-gated, per the POST row) → field-level denial is **403** (the
+  caller already proved they can see the object, so 403 leaks nothing). Collection-level gates
+  (`object_id = None` — list, create) admit every **authenticated** caller: the rank floors bite on
+  *item* actions, and list data is reach-filtered row by row.
 - **DELETE floor:** default `admin`; a type that holds irreplaceable build-knowledge (`decision`,
   `runbook`) may raise it to `owner` via `method_policy.delete_min_role` — a value, not code. Lowering
   below `admin` is rejected by validation.
@@ -190,7 +198,7 @@ Router mounted at /api/objects:
                         .put(item_put).patch(item_patch).delete(item_delete)
                         .post(m405).options(item_options))
   .layer(require_type)        // :type ∉ registry ⇒ leak-free 404; the sole dispatch point
-  .layer(method_mask_guard)   // §7: a masked verb → 405 (+Allow) AFTER the view gate
+  // planned (the seal slice): .layer(method_mask_guard) — §7: a masked verb → 405 (+Allow)
 ```
 
 Each handler is **type-agnostic**: load the type's `type_fields` from the cache, read/write
@@ -205,21 +213,23 @@ debugging interface; full detail in [`OBSERVABILITY.md`](OBSERVABILITY.md) §6.
 
 ```jsonc
 { "type": "https://numu/errors/<kind>", "title": "<short>", "status": 422,
-  "detail": "<actionable, leak-free message>", "instance": "req_01J…", "kind": "close_preconditions_unmet" }
+  "detail": "<actionable, leak-free message>", "instance": "req_0197…", "kind": "close_preconditions_unmet" }
 ```
 
 - **`instance` = the request-id** — the join key from the error the user pasted to the full server trace.
 - **Denials (404/403) carry GENERIC `title`/`detail`** — no object-specific text — so we keep
   debuggability (request-id in `instance`) without leaking existence. The `kind` slug is numu's stable,
   greppable machine taxonomy.
-- **Dev** builds append a `cause` chain; **release** logs the chain server-side (with the request-id) and
-  drops it from the wire (the airlock). A bare `500` is a CI failure, not a code-review nicety.
+- The full cause is logged server-side (with the request-id) and never put on the wire — in **every**
+  build (the airlock; 5xx `detail` is the canonical reason). A bare `500` is a CI failure, not a
+  code-review nicety.
 
 numu status bindings: `404` = RBAC object-denial / unknown type / unknown id (leak-free) · `403` =
-field-gate, post-existence · `400` = malformed/unknown field · `415` = wrong Content-Type · `406` =
-Accept unsatisfiable · `409` = unique / sole-owner / dependency conflict · `412` = stale `If-Match` ·
-`428` = mutation without `If-Match` · `422` = illegal workflow transition / close-precondition unmet ·
-`405` (+`Allow`) = verb not offered · `429` (+`Retry-After`) = rate-limited · `503` = DB/infra down.
+field-gate, post-existence · `400` = malformed/unknown field · `415` = wrong Content-Type · `409` =
+conflict (duplicate relation triple · taken `type_id`/`id_prefix` · last-owner on the members surface) ·
+`412` = stale `If-Match` · `428` = mutation without `If-Match` · `422` = illegal workflow transition /
+close-precondition unmet · `405` (+`Allow`) = verb not offered · `429` = rate-limited (no `Retry-After`
+header) · `503` = DB/infra down. Responses are always JSON — there is no Accept negotiation, so no `406`.
 
 ## 7. Opt-out without code — `type_definitions.method_policy`
 
@@ -227,7 +237,7 @@ A read-only or restricted type drops/raises verbs via a **row**, never a handler
 
 ```jsonc
 // type_definitions.method_policy (default '{}' = full surface)
-{ "mask": ["POST","PUT","PATCH","DELETE"],   // a read-only type (e.g. a derived view); masked verb → 405 (+Allow), omitted from OPTIONS.allow
+{ "mask": ["POST","PUT","PATCH","DELETE"],   // a read-only type (e.g. a derived view); masked verb omitted from OPTIONS.allow/verdicts
   "delete_min_role": "owner" }               // raise the DELETE floor (§4); lowering below 'admin' rejected
 ```
 
@@ -236,22 +246,28 @@ A single JSON column (over a typed bitmask) is forward-compatible — room for f
 `close_checks` are already JSON-in-a-row). Default `'{}'` means **the principle holds by default; opt-out
 is the rare, declared exception** — what keeps the feature O(1).
 
+**Shipped vs contract:** today the mask is **advisory** — honored only where the `Allow` set is computed
+(`permitted_verbs`/`rbac_verdict` in `caller.rs`, i.e. OPTIONS + the `Allow` header); the mutation
+handlers do not yet consult it, so a masked verb still executes. Handler-level `405` (+`Allow`)
+enforcement remains the contract (planned — the phase-B "seal" slice). `delete_min_role` **is** enforced
+today (§4).
+
 ## 8. TRACE & CONNECT — the explicit, security-aware call
 
 - **CONNECT — never routed.** It establishes a proxy tunnel; meaningless for a resource. Unrouted →
   Axum returns **405**. Recorded so a future reader doesn't "add it for completeness."
 - **TRACE — disabled by construction.** TRACE echoes the request and is the **Cross-Site Tracing (XST)**
   vector (it can reflect `Authorization`/`Cookie` to script). numu does not route it → **405** in every
-  environment. The legitimate debug need is re-homed to a **gated** `POST /api/_debug/echo`: available
-  only when `NUMU_DEBUG=1` (non-prod) **and** only to a platform-admin actor; it echoes the
-  *header-redacted* request as the server parsed it (method, path, body, the `X-Request-Id`, the resolved
-  `Caller`, the computed reach + RBAC verdict). In production the route does not exist (config/compile
-  gated) → no XST surface. The seven canonical resource verbs are universal; TRACE/CONNECT are out, with
-  TRACE's value safely re-homed.
+  environment. The legitimate debug need is re-homed to a **gated** `POST /api/_debug/echo`: the route is
+  always registered but answers a leak-free **404** to everyone unless `NUMU_DEBUG=1` (a runtime flag —
+  it applies in release builds too; nothing is compile-gated); with the flag on, a non-platform-admin
+  gets **403**. It echoes `{request_id, headers (redacted), body}`; enriching the echo with method/path,
+  the resolved `Caller`, and the computed reach + RBAC verdict is planned. The seven canonical resource
+  verbs are universal; TRACE/CONNECT are out, with TRACE's value safely re-homed.
 
 ## 9. Cross-references
 
-- Generic RFC method/status/header semantics → the [`http` skill](../.claude/skills/http/SKILL.md)
+- Generic RFC method/status/header semantics → the [`http` skill](../../.claude/skills/http/SKILL.md)
   (`references/methods.md`, `references/status-codes.md`, `references/conditional-requests.md`).
 - Request-id flow, span taxonomy, the problem+json envelope, `/healthz`/`/readyz`, the debug-echo, and
   the `debuggability-audit` CI gate → [`OBSERVABILITY.md`](OBSERVABILITY.md).
@@ -266,7 +282,7 @@ is the rare, declared exception** — what keeps the feature O(1).
       `require_type` is the sole dispatch; TRACE/CONNECT unrouted → 405. (§5, §8)
 - [ ] `If-Match` required on PUT/PATCH/DELETE (428 absent, 412 stale; single `WHERE version=` round-trip). (§3)
 - [ ] Two-stage gate: object→404, field→403; `permitted_verbs()` computes both `Allow` and the OPTIONS verdict. (§2, §4)
-- [ ] OPTIONS returns the self-description body (fields, validation, enum vocab, workflow, per-verb verdict, ETag). (§2)
+- [ ] OPTIONS returns the self-description body (fields, validation, enum vocab, per-verb verdict, ETag; the workflow key is planned). (§2)
 - [ ] PUT = full replace (engine fields preserved); PATCH = RFC 7386 merge. (§1)
-- [ ] Every unsafe verb writes an `events` row with the diff + `request_id`. (OBSERVABILITY.md)
+- [ ] Every unsafe verb writes an `events` row with the post-write snapshot + `request_id`. (OBSERVABILITY.md)
 - [ ] Gated `POST /api/_debug/echo` (platform-admin + `NUMU_DEBUG=1`, header-redacted). (§8)

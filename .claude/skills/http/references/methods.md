@@ -58,14 +58,14 @@ Safe, idempotent. Returns the `Allow` header (the methods available on the resou
 **self-description** body: the caller's permitted verbs, per-verb RBAC verdict, the readable `type_fields`,
 enum vocab, validation, current `ETag`, and the workflow. This is the runtime mirror of the object catalog
 — the "no other docs to consult" promise, and a self-serve answer to "why was I denied?". Also the CORS
-preflight verb. (Body schema: `../../../docs/HTTP.md` §2.)
+preflight verb. (Body schema: `../../../docs/api/HTTP.md` §2.)
 
 ## TRACE — omitted (security)
 TRACE echoes the received request back to the client. It is the **Cross-Site Tracing (XST)** vector: it
 can reflect `Authorization`/`Cookie` headers into script, defeating `HttpOnly`. Disabled by default on
 virtually every server. **numu does not route TRACE → 405.** The legitimate "show me what the server
 received" need is re-homed to a gated `POST /api/_debug/echo` (platform-admin + `NUMU_DEBUG=1`,
-header-redacted) — see `../../../docs/HTTP.md` §8.
+header-redacted) — see `../../../docs/api/HTTP.md` §8.
 
 ## CONNECT — omitted (not applicable)
 CONNECT establishes a TCP tunnel through a forward proxy (e.g. for HTTPS via a proxy). It has no meaning

@@ -22,9 +22,9 @@ security bug:
 - **Plane B — of the fields on an object you *can* reach, which may you read/write?** A write you're not
   ranked for is **403 naming the field** — safe, because existence is already admitted.
 
-> The contract is [`docs/RBAC.md`](../../../docs/RBAC.md). This skill is the how-to and the gotchas; read
+> The contract is [`docs/api/RBAC.md`](../../../docs/api/RBAC.md). This skill is the how-to and the gotchas; read
 > RBAC.md for the full model. Gate ordering on the HTTP surface is in
-> [`docs/HTTP.md`](../../../docs/HTTP.md).
+> [`docs/api/HTTP.md`](../../../docs/api/HTTP.md).
 
 ## The leak-free contract (locked — do not "improve")
 

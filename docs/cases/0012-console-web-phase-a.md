@@ -1,4 +1,7 @@
-# CASE 0002 — the numu console on amenan-ui (phase A: UI over the sim seam)
+# CASE 0012 — the numu console on amenan-ui (phase A: UI over the sim seam)
+
+> Renumbered from 0002 (collision with `0002-http-surface.md`); the wave-1/2 commit trailers say
+> CASE 0002 — history stays, this file is the live reference.
 
 **Status:** phase A done (verified) · phase B (the Rust seam) is the follow-on
 **Branch:** `feat/console-web` (off main) · **Decided by Em, 2026-07-03:**

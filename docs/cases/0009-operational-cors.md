@@ -20,7 +20,7 @@ been booted end-to-end, and (2) there was no CORS, so a cross-origin browser cal
 - **Boot verification** on a fresh DB (`numu_dev`): all 13 migrations apply; `/healthz`·`/readyz` 200;
   `dev-login` → cookie; `POST`/`GET /api/objects/project` → 201/200; `GET /api/search` finds it. The binary
   is genuinely operational, not just unit-green.
-- **`docs/RUNNING.md`** — the operational guide: boot, env vars, and the frontend-integration story
+- **`docs/api/RUNNING.md`** — the operational guide: boot, env vars, and the frontend-integration story
   (the `SameSite=Lax` cookie ⇒ **proxy same-origin in dev** is the clean path; direct cross-origin needs
   `SameSite=None; Secure` over HTTPS).
 

@@ -18,7 +18,7 @@ Em asked "is `ci.sh` implemented?" — it wasn't. Build the gate (proactive tool
   (auto-discovers every `tools/*-audit/audit.sh`; each must exit 0). Aggregates results, exits non-zero on
   any red.
 - **`tools/debuggability-audit/audit.sh`** — the **5th gate** (the first one wired), a read-only static
-  analyzer over `crates/api/src` enforcing [`OBSERVABILITY.md`](../OBSERVABILITY.md) §6: no bare-panic on a
+  analyzer over `crates/api/src` enforcing [`OBSERVABILITY.md`](../api/OBSERVABILITY.md) §6: no bare-panic on a
   handler path (unwrap/expect), one problem+json responder (no ad-hoc error JSON), `request_id_layer`
   wired, ≥1 event per mutation handler, OPTIONS/HEAD/`/healthz`/`/readyz` wired, no credential in a
   log/span. Excludes `#[cfg(test)]` modules (panics in tests are fine).

@@ -47,7 +47,7 @@ gate, committed and **held for Em's push**. RBAC core first: **A0 → B0 → B1 
   dev principal is a real actor.
 - **`tools/ci.sh`** — the `db` gate now runs all `--features db-tests` (not just `db_smoke`), so RBAC
   matrices ride the gate as they land.
-- **`docs/OBJECTS.md`** — G2 reconciled: the `roles` registry table + `memberships.role` is now an FK to it
+- **`docs/api/OBJECTS.md`** — G2 reconciled: the `roles` registry table + `memberships.role` is now an FK to it
   + the one-role-per-edge note + at-a-glance row (docs-currency).
 
 ## Verification (A0)
@@ -95,7 +95,7 @@ confirmed every A0 assertion before the Rust tests.
   - **E2** (c36cecc): Apple id_token verification (JWKS/RS256 + aud/iss/exp/nonce), with a generated-key
     offline test (verify + reject nonce-mismatch/wrong-aud).
   - **E3** (e2ac6fe): Facebook + TikTok (userinfo adapters; subject by sub/id/open_id; nested shape).
-  - **F** (this commit): `docs/RBAC.md` + `docs/AUTH.md` + DOCMAP rows; strict-CI sign-off.
+  - **F** (this commit): `docs/api/RBAC.md` + `docs/api/AUTH.md` + DOCMAP rows; strict-CI sign-off.
 
   **Final tally:** 16 slices (A0→F) across ~16 commits, all on numu/main; the `db` gate runs ~20
   `#[sqlx::test]`s + the `http_client`/`oauth` unit tests; `debuggability-audit` + `rbac-audit` clean.

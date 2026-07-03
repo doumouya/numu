@@ -2,7 +2,7 @@
 
 Debuggability is a numu non-negotiable (#8): every request is traceable. This is the playbook for when a
 request misbehaves — grounded in the correlation-id, the self-describing OPTIONS endpoint, and
-`scripts/curl-trace.sh`. The full framework contract is `../../../docs/OBSERVABILITY.md`.
+`scripts/curl-trace.sh`. The full framework contract is `../../../docs/api/OBSERVABILITY.md`.
 
 ## The correlation-id lifecycle (the one thing that makes everything traceable)
 1. **Generate or propagate** at the edge: `X-Request-Id` (`req_<uuidv7>`), validated in shape; a `trace_id`

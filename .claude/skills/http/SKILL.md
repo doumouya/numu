@@ -98,8 +98,8 @@ framework pipeline.
 ## When the project has its own conventions
 Inside numu (or a numu-derived project), the in-repo `.claude/skills/http/` version is authoritative — it
 carries the registry verb-map, the leak-free-404 invariant, the `scope_parent_id` backstop, and the
-`events`-row contract ([`../../../docs/HTTP.md`](../../../docs/HTTP.md) +
-[`../../../docs/OBSERVABILITY.md`](../../../docs/OBSERVABILITY.md)). Defer to those for numu specifics; use
+`events`-row contract ([`../../../docs/api/HTTP.md`](../../../docs/api/HTTP.md) +
+[`../../../docs/api/OBSERVABILITY.md`](../../../docs/api/OBSERVABILITY.md)). Defer to those for numu specifics; use
 this skill for the generic RFC semantics underneath them.
 
 ## Ground truth: fetch, don't assert

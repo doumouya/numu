@@ -2,7 +2,7 @@
 
 Use when reviewing a new/changed endpoint, a connector, or a whole API before it ships. Each item is a
 yes/no a reviewer (human or agent) can check against the diff. Findings map to the
-`debuggability-audit` rules where applicable (`../../../docs/OBSERVABILITY.md` §6).
+`debuggability-audit` rules where applicable (`../../../docs/api/OBSERVABILITY.md` §6).
 
 ## Methods & semantics
 - [ ] No **safe** verb (GET/HEAD/OPTIONS) mutates state (no side effects on GET).

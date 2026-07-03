@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # debuggability-audit — the 5th numu gate. A read-only static check of crates/api/src against the P-DEBUG
-# rules of docs/OBSERVABILITY.md §6. Exits 0 if clean, 1 + a finding list otherwise. v0 is text/regex over
+# rules of docs/api/OBSERVABILITY.md §6. Exits 0 if clean, 1 + a finding list otherwise. v0 is text/regex over
 # Rust source (a syn-based analyzer is a follow-on); it deliberately under-claims rather than false-positive.
 # Test modules (`#[cfg(test)]` → EOF per file) are excluded — panics in tests are fine.
 set -uo pipefail
@@ -67,6 +67,6 @@ if [ "$findings" -eq 0 ]; then
   echo "  debuggability-audit: clean (0 findings)"
   exit 0
 else
-  echo "  debuggability-audit: $findings finding(s) — see docs/OBSERVABILITY.md §6"
+  echo "  debuggability-audit: $findings finding(s) — see docs/api/OBSERVABILITY.md §6"
   exit 1
 fi

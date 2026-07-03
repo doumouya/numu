@@ -11,7 +11,8 @@ translates to SQL (and HTTP for some cases).
 
 - **Verbs → SQL:** `new`=INSERT · `read`=SELECT · `set`=UPDATE · `del`=DELETE ·
   `on:`=the loop (for-each match; a bare `on:` reports the match count and
-  waits for a chained write) · `post`=write back (UPSERT) · `play`=media.
+  waits for a chained write) · `post`=write back (UPSERT) · `save`=MATERIALIZE
+  (executor-wired; not yet staged in autocomplete) · `play`=media.
   (`open:` was a test-period alias — **retired**, do not reintroduce.)
 - **Quoting:** python-like — `'…'` or `"…"` for values with spaces/commas;
   backticks for identifiers with dots/reserved chars. The parser unquotes;
@@ -27,6 +28,8 @@ translates to SQL (and HTTP for some cases).
 - `read:file.type=mp3` — SELECT by type/family → clickable file cards (audio → player)
 - `read:id,customer,region,plan` — projection (SELECT those columns FROM "it")
 - `read:id=345 set:region="Val de Marne"` — single-row lookup, then UPDATE it
+  *(doctrine canon; the sim executor's bare-column `read:` branch isn't wired yet —
+  an upstream nit recorded in [../frontend/DESIGN-SYNC.md](../frontend/DESIGN-SYNC.md))*
 - `on:city=London set:country=England` — the loop: for each match, UPDATE
 - org-wide, no settings page: `set:theme.mode=dark` · `del:panel` ·
   `play:file.name=kessy-lowlight set:volume=10`

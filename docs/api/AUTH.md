@@ -25,6 +25,10 @@
   real admin exists (the seeded dev bootstrap excluded); a single race-free UPDATE, second claim → 409.
 - **`POST /auth/logout`** — drops the caller's sessions + clears the cookie.
 
+These session-minting routes sit behind the per-client `/auth` rate limit
+(`NUMU_AUTH_RATE_LIMIT`/`_WINDOW_SECS` → **429**); the `/auth/:provider/*` OAuth routes (§3) are **not**
+yet behind it.
+
 ## 3. Social OAuth (authorization-code)
 
 `GET /auth/:provider/start` → `GET /auth/:provider/callback` (`oauth.rs`):
@@ -53,7 +57,9 @@
 
 The provider abstraction is shaped around the **OUTPUT** `{sub, email, name}`, and config is keyed by
 provider. So **OIDC-SSO is a future config row** (same IdToken kind, a tenant's issuer/JWKS) and **SAML is a
-future adapter** that yields the same OUTPUT — neither is a rewrite. `NUMU_SECRET` signs the state cookie.
+future adapter** that yields the same OUTPUT — neither is a rewrite. `NUMU_SECRET` signs the state cookie —
+**required in prod**; today the code silently falls back to a dev literal in all builds (the release
+boot-guard is ENFORCED: a release build refuses to start on a missing/dev-literal secret — `config::validate_secret`, CASE 0013). Never log it.
 
 ## 5. The SSRF gate (every outbound fetch)
 

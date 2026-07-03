@@ -27,7 +27,9 @@ Migrations run automatically on boot (idempotent — safe to restart). `GET /hea
 | `NUMU_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | browser origins allowed to call the API with credentials (comma-separated) |
 | `NUMU_DEBUG` | off | enables `POST /api/_debug/echo` |
 | `NUMU_TRUST_PROXY` | off | trust `X-Forwarded-For` for the `/auth` rate limit (set only behind a real proxy) |
-| `NUMU_AUTH_RATE_LIMIT` / `_WINDOW_SECS` | `30` / `60` | per-client `/auth` limit |
+| `NUMU_AUTH_RATE_LIMIT` / `_WINDOW_SECS` | `30` / `60` | per-client limit on the session-minting `/auth` routes (dev-login · claim-admin · logout); the `/auth/:provider/*` OAuth routes are **not** yet behind it |
+| `NUMU_SECRET` | dev literal (insecure) | **required in prod** — signs the OAuth state cookie (HMAC). A **release build refuses to boot** when it is unset or equals the dev literal (`config::validate_secret`, CASE 0013); dev keeps the fallback with a stderr warning. Never log it. See [`AUTH.md`](AUTH.md) §4 |
+| `GOOGLE_/APPLE_/FACEBOOK_/TIKTOK_*` | — | OAuth provider credentials: `*_CLIENT_ID` / `*_CLIENT_SECRET` / `*_REDIRECT_URI` per provider (TikTok uses `TIKTOK_CLIENT_KEY`). See [`AUTH.md`](AUTH.md) §3 |
 | `RUST_LOG` | `info,numu_api=debug` | log filter (also hot-swappable via `PATCH /api/_debug/log-level`) |
 
 ## Connecting a frontend

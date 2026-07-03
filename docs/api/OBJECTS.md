@@ -6,8 +6,9 @@
 > field, retire one — without reading any other repo's docs. Look for **`ENRICH:`** markers where a
 > field set genuinely benefits from your domain judgment.
 >
-> Status: **DRAFT v0** — non-UI design first (no UI in scope yet). Storage/migrations land in a
-> follow-on slice; this doc is the contract they implement.
+> Status: **LIVE — code is truth.** The catalog shipped: `migrations/` (the system tables + seeds) and
+> the generic API (`crates/api/src/`) implement it, with the console frontend on top. Where this doc and
+> the code disagree, the code wins and the doc reconciles (docs-currency).
 
 ---
 
@@ -25,8 +26,9 @@ numu has exactly **two layers**. Holding the distinction is the whole model:
 The payoff — and the reason numu is "pull-and-go": **a customer project adds its own domain objects
 (`invoice`, `patient`, `listing`, whatever) the exact same way numu's built-in types were added — a
 type row + field rows, zero migrations.** numu ships the *build-coordination* types seeded; your
-project stacks its *domain* types on top. The five enforcement gates
-(case-first · docs-currency · capability-ledger · agent-refs · debuggability) ride along for free, because they're
+project stacks its *domain* types on top. The enforcement gates
+(case-first · docs-currency · debuggability · rbac · css-drift · sim-verbatim · stale-staging;
+capability-ledger and agent-refs are planned follow-ons) ride along for free, because they're
 defined over the system tables, not over any particular type.
 
 ### The field shape — the enrichment unit
@@ -91,8 +93,9 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
   → 405** (TRACE = the Cross-Site-Tracing hole; CONNECT = proxy-only, no resource meaning). TRACE's
   legitimate debug value is re-homed to a gated `POST /api/_debug/echo` (platform-admin + `NUMU_DEBUG=1`).
 - **OPTIONS = live self-description:** returns the caller's allowed verbs (`Allow` header), the per-verb
-  RBAC verdict (+ the reach edge that granted it), the readable `type_fields`, enum vocab, validation,
-  current `ETag`, and the workflow — the runtime mirror of this catalog (the "no other docs" promise).
+  RBAC verdict (`{allowed, reason?}` — the reach-edge annotation is planned), the `type_fields` list
+  (per-caller `can_read`), enum vocab, validation, and the current `ETag` (the workflow key is planned) —
+  the runtime mirror of this catalog (the "no other docs" promise).
 - **PUT vs PATCH:** PUT = full `data` replace (engine fields preserved); PATCH = JSON Merge Patch (RFC 7386).
 - **Concurrency:** every item carries an `ETag` (`W/"<version>"`); `If-Match` is **required** on
   PUT/PATCH/DELETE → `428` if absent, `412` if stale. GET/HEAD honor `If-None-Match` → `304`.
@@ -119,18 +122,21 @@ debuggability spine it leans on: [`OBSERVABILITY.md`](OBSERVABILITY.md).
 | **G4 · Work tracking (coordination core)** | workflows, case_close_checks `[SYSTEM]` · case, comment, attachment `[TYPE]` |
 | **G5 · Orchestrator / feature pipeline** | feature_runs, role_handoffs | `[SYSTEM]` |
 | **G6 · Build knowledge ("bake everything")** | changeset `[SYSTEM]` · spec, acceptance_criterion, runbook, decision, capability `[TYPE]` |
-| **G7 · Deferred (designed-for, not built v1)** | connector, secret, skill, milestone | `[TYPE]` |
+| **G7 · Integration (types LIVE; deep runtimes external-decision-gated)** | connector, secret, skill, milestone | `[TYPE]` |
 
 Prefix registry (each `id_prefix` is unique → makes `kind(id)` a pure lookup):
 `USR` actor · `TEM` team · `ORG` workspace · `PRJ` project · `CAS` case · `CMT` comment ·
 `ATT` attachment · `SPC` spec · `ACR` acceptance_criterion · `RBK` runbook · `DEC` decision ·
-`CAP` capability · `CON` connector · `SEC` secret · `SKL` skill · `MIL` milestone.
+`CAP` capability · `CON` connector · `SEC` secret · `SKL` skill · `MIL` milestone · `NOT` note
+(a legacy builtin seeded in `migrations/0002`, scope `project_id`, still served at `/api/objects/note`;
+its retirement seed is planned).
 
 > **Seeded LIVE (CASE 0008 B2).** `workspace`·`team` (G2) + `spec`·`acceptance_criterion`·`runbook`·
 > `decision`·`capability` (G6) ship as registry rows (`migrations/0011_catalog.sql`), auto-wired through the
 > generic handler — no engine code. An **optional** scope_parent (`runbook.case_id`, `capability.project_id`)
-> may be absent → the object creates at root; a **required** one missing is a `422`. *(Still deferred per
-> G5/G7: the orchestrator tables + `changeset`, and `connector`/`secret`/`skill`/`milestone`.)*
+> may be absent → the object creates at root; a **required** one missing is a `422`. *(G5's orchestrator
+> tables and G7's `connector`/`secret`/`skill`/`milestone` are LIVE too — see their callouts; the
+> `changeset` CI ingest is the remaining deferred piece.)*
 
 ---
 
@@ -191,7 +197,7 @@ because the workflow engine needs typed `status`/indexes/triggers.)
 | `data` | json | the field values keyed by `type_fields.field` |
 | `scope_parent_id` | text → entities **ON DELETE SET NULL** | the real reach edge — **IDOR backstop** (a dangling or foreign parent is unrepresentable) |
 | `version` | int | optimistic-lock counter, bumped on every write; source of the `ETag: W/"<version>"` (lost-update protection — see [`HTTP.md`](HTTP.md)) |
-| `updated_at` | timestamptz | last-write time; the `Last-Modified` source |
+| `updated_at` | timestamptz | last-write time; the planned `Last-Modified` source (the header is not yet emitted — [`HTTP.md`](HTTP.md) §3) |
 
 ---
 
@@ -210,9 +216,9 @@ Teams, Departments, and per-object sharing — the member end may itself be a te
 | `context_role` | text | cosmetic label (job title, "reporter") — **never read by enforcement** |
 | `created_at` | timestamptz | `system` |
 
-> Reach resolves later via one generated recursive CTE over `scope_parents` (server-only; the portable
-> subset resolves it in Rust→wasm for client demos). Schema must support it now; the resolver is a
-> follow-on slice.
+> Reach resolves via one generated recursive CTE over `scope_parents` (server-only; the portable
+> subset resolves it in Rust→wasm for client demos). **LIVE** — the resolver ships in
+> `crates/api/src/rbac.rs` (CASE 0005).
 
 > **`context_role`** is also numu's whole answer to SF `CaseContactRole` (and `OpportunityContactRole`,
 > and every other `XxxContactRole`): *one* cosmetic role label on *one* edge, on *any* object — no
@@ -306,7 +312,7 @@ this is the most project-shaped object — repo/stack/lifecycle fields are where
 |---|---|---|---|---|---|---|
 | `name` | Name | text | yes | yes | standard | |
 | `slug` | Slug | text | yes | no | standard | unique within workspace |
-| `workspace_id` | Workspace | ref | yes | no | standard | `ref→ORG`; scope_parent |
+| `workspace_id` | Workspace | ref | no | no | standard | `ref→ORG`; **optional** scope_parent (absent → the project sits at root; `migrations/0015`) |
 | `status` | Status | enum | yes | yes | standard | `planning` · `active` · `paused` · `archived` |
 | `description` | Description | text | no | yes | standard | |
 | `repo_url` | Repository | text | no | yes | standard | validate URL |
@@ -336,8 +342,9 @@ capture is never filtered.
 | `request_id` | text | the edge-stamped correlation id (`X-Request-Id`); indexed — joins a wire error to its full server trace (see [`OBSERVABILITY.md`](OBSERVABILITY.md)) |
 | `trace_id` | text | root tracing-span id; the join key to the live log stream |
 
-> Every unsafe HTTP verb (POST/PUT/PATCH/DELETE) writes one `events` row carrying the field diff + the
-> request's `request_id`, so a user-reported error id (`instance` in the problem+json body) resolves the
+> Every unsafe HTTP verb (POST/PUT/PATCH/DELETE) writes one `events` row carrying the full post-write
+> `data` snapshot (`{}` on delete — diffing is a consumer concern) + the request's `request_id`, so a
+> user-reported error id (`instance` in the problem+json body) resolves the
 > whole mutation. The `request_id`/`trace_id` columns are the schema half of P-DEBUG — see
 > [`OBSERVABILITY.md`](OBSERVABILITY.md).
 
@@ -398,7 +405,8 @@ DB-enforced close gate.
 > **Engine status (CASE 0006).** G4.1 is **live**: the `default` workflow + `case` type are seeded; a
 > `workflow` cache validates status changes (illegal move → `422 illegal_transition`); the typed `cases`
 > table is a synced projection of `entity_data` (the engine + status index operate on it). The
-> `cases_guard` close-gate trigger (G4.2) and `comment`/`attachment` (G4.3) follow.
+> `cases_guard` close-gate trigger (G4.2, `migrations/0008`) and `comment`/`attachment` (G4.3,
+> `migrations/0009`) are **live** too.
 
 ### `workflows` `[SYSTEM]` — workflow-as-data
 A new workflow is a row, not a recompile. Transitions are **permissive** (forward + one-step-back +

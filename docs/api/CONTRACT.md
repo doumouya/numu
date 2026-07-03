@@ -8,7 +8,7 @@ this is the stable surface to factor the frontend against. Detail lives in [`HTT
 
 **Every object is a row in one registry, served by one generic handler.** So the frontend never needs
 per-type API code: `OPTIONS /api/objects/:type` returns the *live* schema (fields, kinds, enum vocab,
-required set, ref targets, per-caller `can_read`/`can_write`, allowed verbs). A single generic
+required set, ref targets, per-caller `can_read` — `can_write` is the schema's editability, allowed verbs). A single generic
 list/detail/form component, driven by OPTIONS, renders **any** type — the factorization win is built in.
 
 ## Auth
@@ -26,10 +26,11 @@ list/detail/form component, driven by OPTIONS, renders **any** type — the fact
 | `actor` | USR | — (root) | identity |
 | `workspace` | ORG | — (root) | org |
 | `team` | TEM | `workspace_id` | org |
-| `project` | PRJ | — (root) | org |
+| `project` | PRJ | `workspace_id` (optional) | org |
 | `case` | CAS | `project_id` | work (workflow-tracked) |
 | `comment` | CMT | `subject_id` (any) | work |
 | `attachment` | ATT | `subject_id` (any) | work |
+| `note` | NOT | `project_id` | work (legacy builtin, seeded `0002` — retirement seed planned) |
 | `spec` | SPC | `case_id` | build-knowledge |
 | `acceptance_criterion` | ACR | `spec_id` | build-knowledge |
 | `runbook` | RBK | `case_id` (optional) | build-knowledge |
@@ -52,7 +53,8 @@ Register more at runtime: `POST /api/types` (admin). `GET /api/types` lists the 
   `412` stale). PUT = full replace, PATCH = JSON Merge Patch.
 - `DELETE /api/objects/:type/:id` → `204` (`If-Match` required).
 - `HEAD` (existence/ETag) · `OPTIONS` (the live, per-caller schema + RBAC verdict).
-- Membership/sharing: `GET/POST/DELETE /api/objects/:type/:id/members`. Cases: `POST .../:id/checks/:name`.
+- Membership/sharing: `GET/POST /api/objects/:type/:id/members` · `PATCH/DELETE .../members/:member_id`
+  (role change / revoke). Cases: `POST .../:id/checks/:name`.
 
 **Cross-type surfaces:**
 - `POST /api/types` (admin) · `GET /api/types` · `GET /api/types/:type` — register/introspect types.
@@ -71,13 +73,15 @@ Register more at runtime: `POST /api/types` (admin). `GET /api/types` lists the 
 - **Errors** are RFC 9457 problem+json: `{type, title, status, detail, instance, kind}` with `instance` =
   the request-id. One shape for every endpoint.
 - **RBAC is leak-free:** can't-reach → `404` (never `403` for existence); a field you can't write → `403`
-  naming the field; a field you can't read is silently omitted. So a `404` means "gone or not yours" —
-  identical, by design.
+  naming the field (on PUT/PATCH; create is schema-gated → `400`); a field you can't read is silently
+  omitted from reads. So a `404` means "gone or not yours" — identical, by design.
 - **Concurrency:** every item has `version` + `ETag: W/"<version>"`; mutations send `If-Match`.
 - **Status codes:** `400` bad input · `401` no session · `403` field/role denial · `404` leak-free denial ·
   `409` conflict (unique/dup) · `412/428` concurrency · `422` domain rule (validation, illegal transition,
   close-gate, unknown enum) · `429` `/auth` rate-limit · `503` infra.
-- **Pagination:** `?limit` (≤200) `&offset` on every collection.
+- **Pagination:** `?limit` (≤200) `&offset` on the object collections (`/api/objects/:type`).
+  `/api/search` caps `?limit` at 100 (no offset); `/api/relations`, `/api/feature-runs` and `/api/types`
+  are unpaginated.
 
 ## Deferred (external-decision-gated — do not block the frontend)
 

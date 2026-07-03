@@ -3,8 +3,10 @@
 numu's look is a theme ON amenan-ui's platform, not a fork of it. A look is two
 document attributes — `html[data-theme="numu"|"numu-blue"]` ×
 `html[data-mode="light"|"dark"]` — and a switch is ONE attribute write
-re-resolved by the CSS cascade (`set:theme.mode=dark` and the rail buttons are
-the same write).
+re-resolved by the CSS cascade (`set:theme.mode=dark` and the topbar buttons
+are the same write). The console adds a third, console-local axis: the **skin**
+(`data-skin` on the app root, the `--brand` channel — midnight + the gradient
+trio; see CONSOLE.md §Appearance).
 
 ## Where each tier lives
 
@@ -13,16 +15,20 @@ the same write).
 | palette (numu ink) | `amenan-ui src/theme/themes/numu.css` | amenan-ui — real brand values (formalized from the design system, value-preserved) |
 | palette (blue alternate) | `amenan-ui src/theme/themes/numu-blue.css` | amenan-ui |
 | structure (shared scales) | `amenan-ui src/theme/base.css` | amenan-ui |
+| structure (numu-family retune) | `amenan-ui src/theme/themes/numu.css` (mode-independent block, shared with numu-blue) | amenan-ui |
+| skins (`data-skin`, the `--brand` channel) + media conventions | `web/styles/numu-skins.css` | numu (appearance tier — exempt from C1) |
 | **numu structure overlay** | `web/styles/numu-structure.css` | numu — concatenated AFTER base.css in `web/tokens.css`, so it wins here without touching other amenan consumers |
 | app classes | `web/styles/app.css` | numu — `.nu-*` ONLY |
 
-The overlay does two things: **adds** the structural tokens the design system
-defines and amenan-ui's base doesn't yet (font shorthands `--font-body/-title/
--code` + weights/leadings/tracking/numerics, focus geometry, `--ease-out` +
-transition composites, chart structural aliases `--chart-axis/grid/track/
-tooltip-*`, `--text-2xs/-3xl`, `--ctl-h-sm/-lg`, `--tap-min`) and **settles the
-value drift** in numu's favor (numu is tighter/denser: `--sp-5/6/8`,
-`--radius-sm`, `--text-md`, `--ctl-h`, `--pad-x`, `--fast/--slow`).
+**Ownership rule (one token, one home):** the numu-family structural RETUNE —
+density steps, radii, control heights, tap/focus geometry — lives in
+**amenan-ui's `themes/numu.css`** as a mode-independent block shared by numu +
+numu-blue (`html[data-theme="numu"], html[data-theme="numu-blue"]`, absorbed
+@267b50c; it wins by attribute specificity). The app-side overlay carries only
+what remains: font shorthands `--font-body/-title/-code` +
+weights/leadings/tracking/numerics, `--ease-out` + transition composites,
+chart structural aliases `--chart-axis/grid/track/tooltip-*`, and the residual
+value drift (`--sp-6/8`, `--text-md`, `--fast/--slow`).
 
 `--selection-bg` is a numu EXTRA declared per-theme (beyond amenan's frozen
 40-token palette contract — the contract is a floor, not a ceiling); app.css
@@ -30,10 +36,12 @@ consumes it via `::selection`.
 
 ## tokens.css (the built closure)
 
-`tools/web-build.sh` concatenates: amenan `base.css` → the overlay → `numu.css`
-→ `numu-blue.css` → the component sheets the console actually composes (atoms ·
-code · kindLabel · field · toast). Add a sheet to that list when a new amenan
-component lands in TS — the gate below catches you if you forget.
+`tools/web-build.sh` concatenates: amenan `base.css` → the `numu-structure.css`
+overlay → `numu.css` → `numu-blue.css` → `numu-skins.css` (the console
+appearance tier: skins + media conventions) → the component sheets the console
+actually composes (atoms · code · kindLabel · field · toast · tabs · select ·
+empty-state). Add a sheet to that list when a new amenan component lands in TS
+— the gate below (C4) catches you if you forget.
 
 ## Charts
 

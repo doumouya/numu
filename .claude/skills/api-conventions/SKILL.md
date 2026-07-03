@@ -19,8 +19,8 @@ A numu handler is judged by one question: **when it fails at 3am, can the on-cal
 one log line and one response body?** Everything below serves that. The rules aren't taste — each closes a
 specific way an API becomes undebuggable in production.
 
-> Contracts: [`docs/OBSERVABILITY.md`](../../../docs/OBSERVABILITY.md) (the P-DEBUG rules + the gate) and
-> [`docs/HTTP.md`](../../../docs/HTTP.md) (verb/status surface). This skill is the how-to; those are the
+> Contracts: [`docs/api/OBSERVABILITY.md`](../../../docs/api/OBSERVABILITY.md) (the P-DEBUG rules + the gate) and
+> [`docs/api/HTTP.md`](../../../docs/api/HTTP.md) (verb/status surface). This skill is the how-to; those are the
 > spec. For the generic RFC-9110/9457 semantics underneath, see the **http** skill.
 
 ## 1. Errors: one type, one envelope
@@ -142,7 +142,7 @@ just take `Extension<RequestCtx>` and thread `ctx.request_id` into every `AppErr
 ## The gate — `debuggability-audit`
 
 [`tools/debuggability-audit/audit.sh`](../../../tools/debuggability-audit/audit.sh) (run by `ci.sh`)
-statically enforces this skill, per [`OBSERVABILITY.md`](../../../docs/OBSERVABILITY.md) §6:
+statically enforces this skill, per [`OBSERVABILITY.md`](../../../docs/api/OBSERVABILITY.md) §6:
 
 | rule | checks |
 |---|---|

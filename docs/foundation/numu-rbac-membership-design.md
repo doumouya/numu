@@ -5,7 +5,7 @@
 > to run the service. Part 1 is the shipped model; Parts 2–4 are a **design proposal** (decisions flagged ⚠
 > for Em), not yet implemented.
 >
-> **Sources.** numu `docs/RBAC.md`, `docs/AUTH.md`, `crates/api/src/{rbac,caller,members,field_perms,
+> **Sources.** numu `docs/api/RBAC.md`, `docs/api/AUTH.md`, `crates/api/src/{rbac,caller,members,field_perms,
 > objects}.rs`, `migrations/0003_rbac.sql`, `0004_field_perms.sql`; redpash `backend/crates/api/src/{rbac,
 > field_perms,session}.rs`, `docs/internal/runbooks/objects-scope-parent-idor.md`, `docs/decisions/day-one.md`.
 > **Companions:** [numu-objects-schema.md](numu-objects-schema.md) · [numu-legal-privacy-data-compliance.md](numu-legal-privacy-data-compliance.md)
@@ -68,7 +68,7 @@ label, never read by a gate** (an invariant the `rbac-audit` CI gate proves). `/
 `is_platform_admin` (numu: `actor.platform_role == 'admin'` — `member` is the non-admin default, so a plain
 member is **not** a platform admin; `{member, admin}` is just the column's enum domain. redpash:
 `users.role == 'admin'`) is resolved on the `Caller` at auth time and **bypasses both planes in O(1)**. It is distinct from `memberships.role` (per-object
-reach). Auth itself (OAuth `openid email profile`, sessions, dev-login) is in `docs/AUTH.md`. redpash adds a
+reach). Auth itself (OAuth `openid email profile`, sessions, dev-login) is in `docs/api/AUTH.md`. redpash adds a
 horizontal **`company_rbac`** versioned contract (effective = tier ∩ contract) + `type_scope_roles`; numu v0
 is tier-only (contract layer deliberately deferred — `RBAC.md` §6).
 

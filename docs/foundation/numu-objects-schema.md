@@ -8,7 +8,7 @@
 > picture.
 >
 > **Source of truth.** Live introspection of both Postgres DBs (cluster 18, port 5433) on 2026-06-28, plus
-> `numu/docs/OBJECTS.md`, `numu/crates/api/src/**`, and redpash `backend/{migrations,crates}/**`. Where a
+> `numu/docs/api/OBJECTS.md`, `numu/crates/api/src/**`, and redpash `backend/{migrations,crates}/**`. Where a
 > type lives in both catalogs the field set is **reconciled** (see [§2](#2-reconciliation-overlapping-concepts)).
 >
 > **Companion docs:** [numu-gluesql-postgres.md](numu-gluesql-postgres.md) (where the data lives) ·
@@ -353,7 +353,7 @@ The §3 contexts are a planning lens. They line up with the real surfaces so not
   (channel/message), **Settings** (preference). Server-driven nav via `GET /api/rail/:view`
   (`backend/crates/api/src/rail.rs`): workspace · org · registry · settings · console · cases · monitoring ·
   designer · messaging.
-- **numu groups** (`numu/docs/OBJECTS.md`): G1 registry spine · G2 access/org · G3 audit · G4 work-tracking ·
+- **numu groups** (`numu/docs/api/OBJECTS.md`): G1 registry spine · G2 access/org · G3 audit · G4 work-tracking ·
   G5 orchestrator · G6 build-knowledge · G7 integration.
 
 | §3 context | redpash app / rail | numu group |

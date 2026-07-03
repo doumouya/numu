@@ -2,7 +2,7 @@
 # rbac-audit — the RBAC enforcement gate (slice B2). Static checks that the Plane-A invariants hold across
 # crates/api/src, so a NEW handler can't silently drop a gate while CI stays green. Read-only grep/awk;
 # exits 0 (clean) / 1 (+ a FINDING list). Auto-run by tools/ci.sh's tools/*-audit loop — no ci.sh edit.
-# (docs/HTTP.md §4, plan slices B1/B2, CASE 0005.)
+# (docs/api/HTTP.md §4, plan slices B1/B2, CASE 0005.)
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 SRC=crates/api/src
@@ -46,6 +46,6 @@ if [ "$findings" -eq 0 ]; then
   echo "  rbac-audit: clean (0 findings)"
   exit 0
 else
-  echo "  rbac-audit: $findings finding(s) — see docs/HTTP.md §4"
+  echo "  rbac-audit: $findings finding(s) — see docs/api/HTTP.md §4"
   exit 1
 fi
