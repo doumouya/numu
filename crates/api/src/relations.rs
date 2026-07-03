@@ -3,7 +3,7 @@
 //! mirrors the doc: an edge is **readable iff the caller reaches BOTH endpoints** (so it never leaks an
 //! entity they couldn't already see), and **writable iff they can edit the subject**. The `relation_type`
 //! is a registered vocab (unknown → 422); the DB's unique triple backstops duplicates (→ 409, via the
-//! 23505 mapping). (docs/OBJECTS.md G2, docs/cases/0008-backend-completion.md.)
+//! 23505 mapping). (docs/api/OBJECTS.md G2, docs/cases/0008-backend-completion.md.)
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};

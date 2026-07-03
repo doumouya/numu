@@ -1,7 +1,7 @@
 //! G4 — workflow-as-data: the in-process cache + transition validation. Workflows are rows
 //! (`workflows`), loaded once at boot like `TypeDefCache`; `validate` checks a case's status change against
 //! the workflow's transitions (illegal move → `422 illegal_transition`). The `cases_guard` trigger (0008)
-//! is the DB backstop + owns the close-gate. (docs/OBJECTS.md G4, CASE 0006.)
+//! is the DB backstop + owns the close-gate. (docs/api/OBJECTS.md G4, CASE 0006.)
 
 use std::collections::HashMap;
 

@@ -1,5 +1,5 @@
 //! Liveness + readiness. `/healthz` never touches the DB (for the load balancer); `/readyz` pings PG and
-//! reports degraded (503) when a dependency is down. Both report the build version. (docs/OBSERVABILITY.md §5)
+//! reports degraded (503) when a dependency is down. Both report the build version. (docs/api/OBSERVABILITY.md §5)
 
 use axum::extract::State;
 use axum::http::StatusCode;

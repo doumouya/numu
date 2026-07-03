@@ -1,6 +1,6 @@
 //! D1 of P-DEBUG: one correlation id, edge to everywhere. Generate-or-propagate `X-Request-Id`, open the
 //! root tracing span with it, echo it on the response. Handlers read `Extension<RequestCtx>`; every
-//! `events` row carries it. (docs/OBSERVABILITY.md §2)
+//! `events` row carries it. (docs/api/OBSERVABILITY.md §2)
 
 use axum::extract::Request;
 use axum::http::HeaderValue;

@@ -5,7 +5,7 @@
 //!   - `reachable_entity_ids` — the set of a type's entities the caller can reach (cascades DOWN from the
 //!     objects they hold membership on), used to reach-filter the collection LIST.
 //!
-//! Invariants (docs/HTTP.md §4, plan slice B1):
+//! Invariants (docs/api/HTTP.md §4, plan slice B1):
 //!   - **Principals** = the actor + every team they transitively belong to (recursive over team edges).
 //!   - **Reach** = a principal holds a membership on the object OR one of its scope ancestors.
 //!   - **NULL parent policy**: a top-level row (`scope_parent_id IS NULL`) is reachable ONLY via a direct

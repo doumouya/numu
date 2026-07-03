@@ -2,7 +2,7 @@
 //! handler); this adds the one behavior beyond CRUD: `POST /api/connectors/:id/run` fetches the connector's
 //! `target` through the SSRF gate and returns the result. Reach-gated (Edit on the connector). v1 runs
 //! `http_json` sources, reusing `http_client::SsrfFetcher` (already https-only + IP-pinned + metadata-
-//! blocked); other kinds → 422 until their target/runtime is chosen. (docs/OBJECTS.md G7, CASE 0011.)
+//! blocked); other kinds → 422 until their target/runtime is chosen. (docs/api/OBJECTS.md G7, CASE 0011.)
 
 use axum::extract::{Path, State};
 use axum::http::{header, StatusCode};

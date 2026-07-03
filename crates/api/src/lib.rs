@@ -1,6 +1,6 @@
 //! numu-api library — the modules + `run()`. `main.rs` is a thin binary over `run()`; integration tests
 //! (`tests/`) link this lib to exercise the registry, the reach resolver, and the handlers directly.
-//! (docs/HTTP.md, docs/OBSERVABILITY.md)
+//! (docs/api/HTTP.md, docs/api/OBSERVABILITY.md)
 
 pub mod auth;
 pub mod caller;

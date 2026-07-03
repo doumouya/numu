@@ -1,7 +1,8 @@
-//! RBAC — the verb→Action map + the gate seam. v0 is single-user dev: `require_action` always allows, but
-//! the two-stage structure and the verb→Action map are real, so the reach resolver (memberships +
-//! scope_parents) drops in HERE later: object-level denial returns false → the handler maps it to a
-//! leak-free 404; the field-level gate stays in objects.rs (→ 403, after existence). (docs/HTTP.md §4)
+//! RBAC — the verb→Action map + the object-level gate (Plane A). `require_action` is live: it resolves the
+//! caller's effective rank on the object via the reach resolver (memberships + scope_parents,
+//! `rbac::effective_rank`) and compares it to the Action's rank floor; a platform-admin bypasses. An
+//! object-level denial returns `false` → the handler maps it to a leak-free 404; the field-level gate
+//! stays in objects.rs (→ 403, after existence). (docs/api/HTTP.md §4)
 
 use sqlx::PgPool;
 
@@ -12,19 +13,10 @@ use crate::state::AppState;
 #[derive(Clone, Debug)]
 pub struct Caller {
     pub actor_id: String,
-    /// Wired by the auth slice (gates `/api/admin/*` + the debug-echo). Staged seam.
-    #[allow(dead_code)]
+    /// Resolved from `actor.platform_role` by the session extractor (auth.rs). Load-bearing:
+    /// bypasses both RBAC planes (`require_action`, field-perm floors, `require_rank`) and gates
+    /// `POST /api/types` + the `/api/_debug/*` surface.
     pub is_platform_admin: bool,
-}
-
-impl Caller {
-    /// The dev single-user principal (until auth lands).
-    pub fn dev() -> Self {
-        Self {
-            actor_id: "USR_dev".to_string(),
-            is_platform_admin: true,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

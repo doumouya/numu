@@ -1,6 +1,6 @@
 //! The ONE generic handler set over the registry: `/api/objects/:type[/:id]`. Every registered type gets
 //! the full safe verb surface (GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS) from these functions — zero
-//! per-type code. Implements the docs/HTTP.md contract: the gate order, If-Match/version concurrency,
+//! per-type code. Implements the docs/api/HTTP.md contract: the gate order, If-Match/version concurrency,
 //! OPTIONS self-description, method_policy masking, problem+json, and an events row per mutation.
 
 use axum::body::Bytes;

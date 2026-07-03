@@ -2,7 +2,7 @@
 //! object is a row in one store). `GET /api/search?q=<text>[&type=<type>][&limit=N]`: matches the
 //! `entity_data.search_vector` (a GIN tsvector over the string values of `data`), ranks by `ts_rank`, and —
 //! like every read — returns only entities the caller can reach. So search isn't bolted onto one screen;
-//! it's a property of the registry the whole app inherits. (docs/OBJECTS.md G3, CASE 0008 B3.)
+//! it's a property of the registry the whole app inherits. (docs/api/OBJECTS.md G3, CASE 0008 B3.)
 
 use axum::extract::{Query, State};
 use axum::response::{IntoResponse, Response};

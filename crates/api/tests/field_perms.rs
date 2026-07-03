@@ -1,5 +1,5 @@
-//! D — field perms (Plane B) tests. Exercises field_perms directly with NON-admin callers (handlers use
-//! Caller::dev()=admin until A2, so the gate is proven here). Covers the rank-driven class floors, the
+//! D — field perms (Plane B) tests. Exercises field_perms directly with NON-admin callers (handlers
+//! resolve their `Caller` from the session extractor; the gate logic is proven here at function level). Covers the rank-driven class floors, the
 //! WRITE gate (403 on an owner_grade field for a member), the READ filter (a member doesn't see an
 //! owner_grade field), and a field_permissions OVERRIDE lowering a floor. The `actor` type (seeded by 0003)
 //! has owner_grade fields (email, platform_role) + standard fields, so it's the natural fixture.

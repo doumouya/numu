@@ -1,7 +1,7 @@
 //! B1 — reach resolver (Plane A) tests. Exercises `rbac::effective_rank` / `rbac::reachable_entity_ids`
-//! and the `caller::require_action` gate directly against the ephemeral PG, with NON-admin callers (the
-//! handlers still use `Caller::dev()` until A2 wires the real extractor, so the enforcement logic is
-//! proven here at the function level; the handler WIRING is enforced statically by tools/rbac-audit in B2).
+//! and the `caller::require_action` gate directly against the ephemeral PG, with NON-admin callers
+//! (handlers resolve their `Caller` from the session extractor in auth.rs; the enforcement logic is
+//! proven here at the function level; the handler WIRING is enforced statically by tools/rbac-audit).
 //! Covers: direct + scope cascade, cross-tenant isolation (→404), tier floors, team-inherited reach, the
 //! reach-scoped LIST, and the platform-admin bypass. See docs/cases/0005-rbac-enforcement.md.
 #![cfg(feature = "db-tests")]

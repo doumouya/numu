@@ -126,8 +126,8 @@ impl AppError {
     pub fn internal(d: impl Into<String>) -> Self {
         Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", d)
     }
-    /// Dependency down. `/readyz` already returns 503 directly; kept for handler use. Staged seam.
-    #[allow(dead_code)]
+    /// Dependency down — used by `PATCH /api/_debug/log-level` (503 when no log-reloader is
+    /// installed); `/readyz` returns its 503 directly.
     pub fn unavailable() -> Self {
         Self::new(
             StatusCode::SERVICE_UNAVAILABLE,

@@ -4,7 +4,7 @@
 //! in-process registry (the `AppState` `ArcSwap`) — so the new type's full `/api/objects/:type` surface is
 //! live with NO restart. Validation is the Rust gate; the DB's unique constraints are the backstop (a dup
 //! id_prefix/type_id → 409, never a 500). Registering a type is a platform-schema change → admin-only.
-//! (docs/OBJECTS.md, docs/HTTP.md, docs/cases/0007-type-registration-api.md.)
+//! (docs/api/OBJECTS.md, docs/api/HTTP.md, docs/cases/0007-type-registration-api.md.)
 
 use std::collections::HashSet;
 use std::sync::Arc;

@@ -28,3 +28,9 @@ boot on a dev secret.**
   route (noted in `api/HTTP.md`).
 - The `db-health` collector + `monitoring` schema (`ops/DATABASE.md`) — its own Case when the
   self-host slice starts.
+
+## Landed
+
+Crate work committed with this Case (staging-truth headers · `Caller::dev()` removal ·
+`config::validate_secret` + unit tests · the stale-staging gate · the docs-path re-point);
+verified by the full 13-gate ci run.

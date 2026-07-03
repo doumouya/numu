@@ -3,8 +3,9 @@
 //! SEV-0 guards: reach-aware manage authority (admin+), no privilege escalation (can't grant above your
 //! own rank), the last-owner guard, self-leave, the team-nesting cycle guard, leak-free denials, and an
 //! audit event on every grant/revoke/change. `context_role` is a cosmetic label, never read by a gate.
-//! (docs/HTTP.md §4, CASE 0005.) Handlers use `Caller::dev()` until A2 wires the real extractor; the
-//! caller-authority guards are proven at the function level (require_rank), the data invariants via HTTP.
+//! (docs/api/HTTP.md §4, CASE 0005.) Handlers receive the `Caller` from the session extractor (auth.rs
+//! `FromRequestParts`); the caller-authority guards are enforced per function (require_rank), the data
+//! invariants proven via HTTP tests.
 
 use axum::body::Bytes;
 use axum::extract::{Path, State};
@@ -317,7 +318,7 @@ async fn remove_member(
         .execute(&st.pool)
         .await?;
 
-    // A2: invalidate(member_id) in the session cache here (the cache lands with the extractor).
+    // When the deferred 60s Caller cache lands (AUTH.md §1), invalidate(member_id) here.
     db::record_event(
         &st.pool,
         &ctx,

@@ -14,11 +14,37 @@ pub struct Config {
     pub cors_origins: Vec<String>,
 }
 
+/// The insecure dev fallback for `NUMU_SECRET` (oauth.rs signs the OAuth state cookie with it).
+/// A release build must never run on this value — see `validate_secret`.
+pub(crate) const DEV_SECRET: &str = "dev-insecure-secret-change-me";
+
+/// `NUMU_SECRET` boot guard (ASSESSMENT S-1, CASE 0013): in a release build, an unset or
+/// dev-literal secret is a boot ERROR — a forgotten env var must not ship a forgeable OAuth
+/// state cookie. Dev builds keep the fallback (oauth.rs) but get a loud stderr warning here.
+fn validate_secret(secret: Option<&str>, release: bool) -> Result<(), String> {
+    match secret {
+        Some(s) if !s.is_empty() && s != DEV_SECRET => Ok(()),
+        _ if !release => {
+            eprintln!(
+                "WARN: NUMU_SECRET is unset or the dev literal — OK in dev, a release build refuses to boot on this."
+            );
+            Ok(())
+        }
+        _ => Err(
+            "NUMU_SECRET is unset or equals the dev literal — a release build refuses to boot \
+             (the OAuth state cookie would be forgeable). Set NUMU_SECRET to a strong random value."
+                .to_string(),
+        ),
+    }
+}
+
 impl Config {
     pub fn from_env() -> Result<Self, String> {
         let database_url = std::env::var("DATABASE_URL").map_err(|_| {
             "DATABASE_URL is not set (e.g. postgres://user@localhost/numu)".to_string()
         })?;
+        let secret = std::env::var("NUMU_SECRET").ok();
+        validate_secret(secret.as_deref(), !cfg!(debug_assertions))?;
         Ok(Self {
             bind: std::env::var("NUMU_BIND").unwrap_or_else(|_| "127.0.0.1:8080".to_string()),
             database_url,
@@ -54,4 +80,30 @@ fn env_parse<T: std::str::FromStr>(key: &str, default: T) -> T {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_secret_release_should_refuse_unset() {
+        assert!(validate_secret(None, true).is_err());
+    }
+
+    #[test]
+    fn validate_secret_release_should_refuse_dev_literal() {
+        assert!(validate_secret(Some(DEV_SECRET), true).is_err());
+    }
+
+    #[test]
+    fn validate_secret_release_should_accept_real_value() {
+        assert!(validate_secret(Some("a-strong-random-value"), true).is_ok());
+    }
+
+    #[test]
+    fn validate_secret_dev_should_allow_fallback() {
+        assert!(validate_secret(None, false).is_ok());
+        assert!(validate_secret(Some(DEV_SECRET), false).is_ok());
+    }
 }

@@ -4,7 +4,7 @@
 //! per run, else the run **escalates** (a human is needed). Each handoff's `role` must match the current
 //! phase, so the chain order is enforced, not hoped. Surfaces: `POST /api/feature-runs` (start),
 //! `POST .../:id/handoffs` (advance), `GET .../:id` (state + history), `GET /api/feature-runs?case_id=`
-//! (list). (docs/OBJECTS.md G5, docs/cases/0010-orchestrator.md.)
+//! (list). (docs/api/OBJECTS.md G5, docs/cases/0010-orchestrator.md.)
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};

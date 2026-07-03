@@ -1,9 +1,10 @@
-//! E1 — OAuth (authorization-code) spine + Google. `GET /auth/:provider/start` redirects to the provider
-//! with an HMAC-signed state cookie (CSRF; no oauth_state table — the cookie IS the state); the callback
-//! verifies state, exchanges code→token→userinfo through the SSRF-gated `Fetcher`, upserts by
-//! (provider, sub) (NEVER email), mints a session. The provider abstraction is shaped around the OUTPUT
-//! {sub, email, name}, so OIDC-SSO is a future config and Apple (E2) is the same trait via JWT. The flow
-//! core (`complete_login`) takes a `&dyn Fetcher`, so it's tested with a mock — no live server. (plan E1.)
+//! OAuth (authorization-code) spine — four live providers: google · apple · facebook · tiktok.
+//! `GET /auth/:provider/start` redirects with an HMAC-signed state cookie (CSRF; no oauth_state table —
+//! the cookie IS the state, signed with NUMU_SECRET); the callback verifies state, exchanges
+//! code→token→userinfo through the SSRF-gated `Fetcher`, upserts by (provider, sub) (NEVER email), mints
+//! a session. Apple's id_token is verified in-module (`verify_id_token`). The provider abstraction is
+//! shaped around the OUTPUT {sub, email, name}, so OIDC-SSO stays a config away. The flow core
+//! (`complete_login`) takes a `&dyn Fetcher`, so it's tested with a mock — no live server.
 
 use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode};
@@ -129,8 +130,10 @@ fn provider(name: &str) -> Option<Provider> {
 
 // ── HMAC-signed, stateless state ──────────────────────────────────────────────
 fn secret() -> Vec<u8> {
+    // The dev fallback is guarded at boot: a release build refuses to start on it
+    // (config::validate_secret, CASE 0013) — so this branch only runs in dev.
     std::env::var("NUMU_SECRET")
-        .unwrap_or_else(|_| "dev-insecure-secret-change-me".into())
+        .unwrap_or_else(|_| crate::config::DEV_SECRET.into())
         .into_bytes()
 }
 
