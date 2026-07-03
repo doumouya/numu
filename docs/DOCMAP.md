@@ -68,6 +68,7 @@
 | [`frontend/IMPERSONATION.md`](frontend/IMPERSONATION.md) | the Impersonation Rail: canon, flow, and the audit-performance + RBAC-respect assessment (enforced ✔ / display-only ⚠ / phase-B ✗) | `web/src/console/impersonation-rail.ts` · `web/src/app.ts` | **LIVE** (assessed) |
 | [`frontend/THEME.md`](frontend/THEME.md) | numu ⇄ amenan-ui theming: tier ownership, the overlay, chart color synthesis, the css-drift queries | `web/styles/` · `tools/css-drift-audit/` | **LIVE** |
 | [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | the design-project round-trip: verbatim set, the manifest, the no-fork gate, upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` | **LIVE** |
+| [`apps/`](apps/README.md) | the consolidated app catalog — one generic app per purpose-type, brands become sources ([README doctrine](apps/README.md) + 9 proposals: wallet · player · video · mail · files · calendar · sheets · insights · releases) | future `web/src/apps/` · the Store regroup in the Design project | **proposal** (docs-authoritative until code lands) |
 
 ### Layer 3 · nacl
 
