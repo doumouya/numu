@@ -28,8 +28,12 @@ sim/numu-seed.js         web/sim/numu-seed.js
 sim/server.node.js       web/sim/server.node.js
 uploads/nacl-commands.js web/data/nacl-commands.js
 uploads/dossier.csv      web/data/uploads/dossier.csv
-ui_kits/console/console-data.js web/data/console-data.js
+ui_kits/console/console-data.js  web/data/console-data.js
+ui_kits/console/bi-icon-names.js web/data/bi-icon-names.js
+ui_kits/console/claude-mark.png  web/assets/claude-mark.png
 "
+
+mkdir -p web/assets/logos
 
 echo "$SYNC" | while read -r from to; do
   [ -n "$from" ] || continue
@@ -42,6 +46,9 @@ echo "$SYNC" | while read -r from to; do
   fi
 done
 
+# the connector/app brand logos (a directory — synced wholesale)
+cp "$SRC/ui_kits/console/logos/"*.png web/assets/logos/
+
 # the manifest: sha256 over every synced dest, consumed by sim-verbatim-audit
-echo "$SYNC" | awk 'NF { print $2 }' | xargs sha256sum > web/.sync-manifest
+{ echo "$SYNC" | awk 'NF { print $2 }'; ls web/assets/logos/*.png; } | xargs sha256sum > web/.sync-manifest
 echo "wrote web/.sync-manifest ($(wc -l < web/.sync-manifest) files)"

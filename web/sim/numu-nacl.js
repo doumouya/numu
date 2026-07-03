@@ -116,7 +116,7 @@
         hits.forEach(function (o) {
           var at = o.data.attributes || {};
           blocks.push({ type: "object", objType: fam, objIcon: at.icon || (fam === "audio" ? "music-note-beamed" : fam === "video" ? "camera-video-fill" : "images"),
-            accentColor: at.accent || "var(--chart-3)", title: o.data.filename, meta: at.meta || fam, objRef: at.consoleRef || o.id });
+            accentColor: at.accent || "var(--chart-3)", title: o.data.filename, meta: at.meta || fam, objRef: o.id });
         });
         return { blocks: blocks, effects: effects };
       }
@@ -142,12 +142,16 @@
         var rows = res.body || [];
         if (attr === "id" || attr === "code") rows = rows.filter(function (e) { return e.id.toLowerCase().indexOf(String(c.value).toLowerCase()) !== -1 || String((e.data.attributes || {}).code || "").toLowerCase() === String(c.value).toLowerCase(); });
         blocks.push(stepBlock(t, "read", "SELECT * FROM " + type + (attr ? " WHERE " + attr + "='" + c.value + "'" : "") + " · " + rows.length + " rows · RBAC-scoped"));
-        rows.slice(0, 4).forEach(function (e) {
-          blocks.push({ type: "object", objType: type === "booking" ? (e.data.kind === "hold" ? "hold" : "session") : type,
-            objIcon: type === "booking" ? "record-circle" : type === "case" ? "kanban" : "collection",
-            accentColor: "var(--chart-2)", title: e.data.name || e.data.title || e.id,
-            meta: (e.data.status || "") + (e.data.starts_at ? " · " + e.data.starts_at.replace("T", " ") : "") + " · v" + e.version, objRef: e.id });
-        });
+        var oIcon = type === "booking" ? "record-circle" : type === "case" ? "kanban" : type === "project" ? "kanban" : type === "user" ? "person" : "collection";
+        var mkCard = function (e) { return { type: "object", objType: type === "booking" ? (e.data.kind === "hold" ? "hold" : "session") : type,
+          objIcon: oIcon, accentColor: "var(--chart-2)", title: e.data.name || e.data.title || e.data.display_name || e.id,
+          meta: (e.data.status || "") + (e.data.starts_at ? " · " + e.data.starts_at.replace("T", " ") : "") + " · v" + e.version, objRef: e.id }; };
+        if (rows.length === 1) { blocks.push(mkCard(rows[0])); }
+        else if (rows.length > 1) {
+          blocks.push({ type: "objectTable", objType: type, icon: oIcon, title: type + " · " + rows.length + " rows",
+            rows: rows.slice(0, 40).map(function (e) { return { id: e.id, title: e.data.name || e.data.title || e.data.display_name || e.id,
+              status: e.data.status || "", meta: (e.data.starts_at ? e.data.starts_at.replace("T", " ") + " · " : "") + "v" + e.version, objRef: e.id }; }) });
+        }
         if (rows.length === 1 && chain.length) {
           var target = rows[0];
           chain.forEach(function (k) {

@@ -11,7 +11,7 @@
   root.NumuClient = mod;
 })(typeof window !== "undefined" ? window : globalThis, function (Eng, Nacl, root) {
 
-  var LS_KEY = "numu_sim_v2";
+  var LS_KEY = "numu_sim_v5";
   var BLOB_LIMIT = 250 * 1024;             // persist small blobs only; big ones refetch from src
 
   function localClient() {
@@ -80,13 +80,13 @@
 
   function httpClient(base) {
     base = (base || "").replace(/\/$/, "");
-    var actor = "USR_jm";
+    var api = { kind: "http", actor: "USR_jm" };
     function req(method, path, opts) {
       opts = opts || {};
       var q = opts.query ? "?" + Object.keys(opts.query).map(function (k) { return k + "=" + encodeURIComponent(opts.query[k]); }).join("&") : "";
       return fetch(base + path + q, {
         method: method,
-        headers: Object.assign({ "content-type": "application/json", "x-numu-actor": actor }, opts.headers || {}),
+        headers: Object.assign({ "content-type": "application/json", "x-numu-actor": api.actor }, opts.headers || {}),
         body: opts.body && method !== "GET" && method !== "HEAD" ? JSON.stringify(opts.body) : undefined
       }).then(function (r) {
         return r.text().then(function (txt) {
@@ -95,8 +95,8 @@
         });
       });
     }
-    return {
-      kind: "http", actor: actor, request: req,
+    return Object.assign(api, {
+      request: req,
       ensureBlob: function () { return Promise.resolve(true); },  // server owns the blobs
       nacl: function (text, ctx) { return req("POST", "/api/nacl", { body: { text: text, ctx: ctx } }).then(function (r) { return r.body; }); },
       uploadCsv: function (projectId, filename, csvText) { return req("POST", "/api/files", { body: { project_id: projectId, filename: filename, csv: csvText } }); },
@@ -105,7 +105,7 @@
       setFeed: function (key, blocks) { return req("POST", "/api/conversations/" + key + "/feed", { body: { blocks: blocks, replace: true } }); },
       manifest: function (workspace) { return req("GET", "/api/manifest", { query: { workspace: workspace } }).then(function (r) { return r.body; }); },
       values: function (fileId, col) { return req("GET", "/api/values", { query: { file: fileId, col: col } }).then(function (r) { return r.body; }); }
-    };
+    });
   }
 
   return { local: localClient, http: httpClient };

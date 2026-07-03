@@ -112,51 +112,13 @@
   var E = [
     ["ORG_numu",   "workspace", { name: "numu", slug: "numu", status: "active", default_currency: "EUR" }, null],
     ["ORG_orvcle", "workspace", { name: "orvcle-studio", slug: "orvcle", status: "active", default_currency: "EUR" }, null],
-
-    ["USR_jm",   "user", { display_name: "Jean Mensah", handle: "jm", email: "jm@numu.dev", kind: "human", status: "active", attributes: { platform_role: "admin" } }, null],
-    ["USR_marc", "user", { display_name: "Marc Okoro", handle: "marc", kind: "human", status: "active", attributes: { specialty: "mix", contract: "salarie" } }, null],
-    ["USR_nova", "user", { display_name: "NOVA", handle: "nova", kind: "human", status: "active", attributes: { artist_name: "NOVA", genre: "Alt-R&B" } }, null],
-    ["USR_kessy","user", { display_name: "KESSY", handle: "kessy", kind: "human", status: "active", attributes: { artist_name: "KESSY" } }, null],
-
-    ["ADR_sa", "address", { subject_id: "ORG_orvcle", kind: "venue", line1: "Studio A", city: "Paris", country: "FR", attributes: { capacity: 6 } }, "ORG_orvcle"],
-    ["ADR_sb", "address", { subject_id: "ORG_orvcle", kind: "venue", line1: "Studio B", city: "Paris", country: "FR", attributes: { capacity: 3 } }, "ORG_orvcle"],
-
-    ["PRJ_a1", "project", { workspace_id: "ORG_orvcle", name: "NOVA — debut EP", slug: "nova-ep", status: "active", origin: "manual", attributes: { channel: "artists", pinned: true } }, "ORG_orvcle"],
-    ["PRJ_a2", "project", { workspace_id: "ORG_orvcle", name: "KESSY — single", slug: "kessy-single", status: "active", origin: "manual", attributes: { channel: "artists" } }, "ORG_orvcle"],
-    ["PRJ_a3", "project", { workspace_id: "ORG_orvcle", name: "Studio A — 12 Jul", slug: "studio-a-12jul", status: "active", origin: "manual", attributes: { channel: "sessions" } }, "ORG_orvcle"],
-    ["PRJ_a4", "project", { workspace_id: "ORG_orvcle", name: "FW26 EP — master", slug: "fw26-master", status: "active", origin: "manual", attributes: { channel: "releases" } }, "ORG_orvcle"],
-    ["PRJ_q",  "project", { workspace_id: "ORG_orvcle", name: "Réservations entrantes", slug: "inbox", status: "active", origin: "web", attributes: { channel: "sessions", queue: true } }, "ORG_orvcle"],
-
-    ["CAS_m1", "case", { project_id: "PRJ_a1", title: "midnight-run — mix", type: "task", status: "mix", workflow_id: "orvcle_production", assignee_id: "USR_marc", attributes: { track: 1 } }, "PRJ_a1"],
-    ["CAS_m2", "case", { project_id: "PRJ_a1", title: "lowlight — recording", type: "task", status: "recording", workflow_id: "orvcle_production", attributes: { track: 2 } }, "PRJ_a1"],
-    ["CAS_r1", "case", { project_id: "PRJ_q", title: "Demande — Léa · premier EP", type: "request", status: "nouvelle", workflow_id: "orvcle_request", origin: "web", reporter_id: "USR_nova", description: "semaine du 20 juil · enregistrement voix" }, "PRJ_q"],
-
-    ["BKG_s1", "booking", { workspace_id: "ORG_orvcle", name: "Recording — Studio A", kind: "session", starts_at: "2026-07-12T14:00", ends_at: "2026-07-12T18:00", status: "confirmed", address_id: "ADR_sa", subject_id: "PRJ_a1", attributes: { code: "SES_118" } }, "ORG_orvcle"],
-    ["BKG_h1", "booking", { workspace_id: "ORG_orvcle", name: "Marc — disponible", kind: "hold", starts_at: "2026-07-12T10:00", ends_at: "2026-07-12T20:00", status: "confirmed", subject_id: "USR_marc", attributes: { recurrence: "weekdays" } }, "ORG_orvcle"],
-
-    ["TXN_p1", "transaction", { workspace_id: "ORG_orvcle", kind: "payout", status: "settled", amount: 184000, currency: "EUR", party_id: "USR_nova" }, "ORG_orvcle"],
-
-    ["CAS_b1", "case", { project_id: "PRJ_b1", title: "Add Payout flow", type: "feature", status: "in_review", workflow_id: "default" }, "PRJ_b1"],
-    ["PRJ_b1", "project", { workspace_id: "ORG_numu", name: "Add Payout type", slug: "payout-type", status: "active", origin: "manual", attributes: { channel: "build", pinned: true } }, "ORG_numu"],
-    ["PRJ_b2", "project", { workspace_id: "ORG_numu", name: "RBAC reach audit", slug: "rbac-audit", status: "active", origin: "manual", attributes: { channel: "build" } }, "ORG_numu"]
+    ["USR_jm", "user", { display_name: "Jean Mensah", handle: "jm", email: "jm@numu.dev", kind: "human", status: "active", attributes: { platform_role: "admin" } }, null]
   ];
-    /* media files (ORVCLE demo) — registry rows so read:file.type=mp3 is a real reach-filtered SELECT.
-       consoleRef points at the console kit's viewer object; no blob (metadata-only). */
-    E.push(
-      ["FIL_o1", "file", { project_id: "PRJ_a1", filename: "nova-midnight-run.wav", file_type: "audio", attributes: { consoleRef: "o1", icon: "music-note-beamed", accent: "var(--chart-3)", meta: "NOVA · rough mix · 3:48" } }, "PRJ_a1"],
-      ["FIL_o2", "file", { project_id: "PRJ_a2", filename: "kessy-lowlight.wav", file_type: "audio", attributes: { consoleRef: "o2", icon: "music-note-beamed", accent: "var(--chart-5)", meta: "KESSY · master v3 · 3:12" } }, "PRJ_a2"],
-      ["FIL_o3", "file", { project_id: "PRJ_a3", filename: "studio-A-live.mp4", file_type: "video", attributes: { consoleRef: "o3", icon: "camera-video-fill", accent: "var(--chart-2)", meta: "8:20 · session" } }, "PRJ_a3"],
-      ["FIL_o4", "file", { project_id: "PRJ_a1", filename: "EP artwork · NOVA", file_type: "image", attributes: { consoleRef: "o4", icon: "images", accent: "var(--chart-4)", meta: "6 shots" } }, "PRJ_a1"]
-    );
 
   /* memberships: [object_id, member_id, role, context_role] */
   var M = [
     ["ORG_numu", "USR_jm", "owner", "founder"],
-    ["ORG_orvcle", "USR_jm", "owner", "operator"],
-    ["ORG_orvcle", "USR_marc", "member", "engineer"],
-    ["PRJ_a1", "USR_nova", "viewer", "artist"],
-    ["PRJ_a2", "USR_kessy", "viewer", "artist"],
-    ["BKG_s1", "USR_marc", "member", "engineer"]
+    ["ORG_orvcle", "USR_jm", "owner", "operator"]
   ];
 
   return { TYPES: TYPES, WORKFLOWS: WORKFLOWS, ROLES: ROLES, ENTITIES: E, MEMBERSHIPS: M };
