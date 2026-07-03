@@ -1,0 +1,17 @@
+{
+  "name": "numu-web",
+  "version": "0.1.0",
+  "description": "The numu console — the chat-driven data workspace front-end, on amenan-ui (vanilla TS, zero runtime deps) over the NumuClient seam (in-browser sim ⇄ HTTP).",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "sh tools/web-build.sh",
+    "dev": "node tools/web-dev-server.mjs",
+    "test": "node --test web/tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "esbuild": "^0.23.1",
+    "typescript": "^5.6.3"
+  }
+}

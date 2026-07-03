@@ -6,3 +6,9 @@
 
 # transient rustc internal-compiler-error dumps
 rustc-ice-*.txt
+
+# web build artifacts (tools/web-build.sh regenerates; commit-at-deploy is a
+# phase-B decision) + the sim node server's local state
+web/app.js
+web/tokens.css
+web/sim/data/

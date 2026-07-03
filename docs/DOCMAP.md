@@ -16,8 +16,13 @@
    - ⭐ [`CONTRACT.md`](CONTRACT.md) — **the one-page frozen surface for the frontend** (every type + endpoint + rule).
    - [`RUNNING.md`](RUNNING.md) — boot the binary + connect a frontend (CORS / proxy).
 5. [`OBSERVABILITY.md`](OBSERVABILITY.md) — debuggable-by-construction: request-id spine, problem+json, the 5th gate.
-6. [`cases/0001-object-catalog.md`](cases/0001-object-catalog.md) — the live coordination thread for the catalog work.
-7. **Foundation / planning docs** — the [object model](numu-objects-schema.md), [data plane](numu-gluesql-postgres.md) + [CSV datatypes](numu-csv-flow-and-datatypes.md), [RBAC + operator access](numu-rbac-membership-design.md), and [legal/privacy](numu-legal-privacy-data-compliance.md) for the numu frontend + customer data. *Forward-looking.*
+6. **The frontend** — [`frontend/CONSOLE.md`](frontend/CONSOLE.md) (the console architecture) →
+   [`frontend/SEAM.md`](frontend/SEAM.md) (**the NumuClient contract — the phase-B API spec**) →
+   [`frontend/THEME.md`](frontend/THEME.md) (tokens + drift gates) →
+   [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) (the design-project round-trip) →
+   [`nacl/README.md`](nacl/README.md) (the command-language doctrine home).
+7. [`cases/0001-object-catalog.md`](cases/0001-object-catalog.md) — the live coordination thread for the catalog work.
+8. **Foundation / planning docs** — the [object model](numu-objects-schema.md), [data plane](numu-gluesql-postgres.md) + [CSV datatypes](numu-csv-flow-and-datatypes.md), [RBAC + operator access](numu-rbac-membership-design.md), and [legal/privacy](numu-legal-privacy-data-compliance.md) for the numu frontend + customer data. *Forward-looking.*
 
 ## The map — doc ⇄ code-area
 
@@ -39,6 +44,11 @@ docs-currency gate); until then, the doc *is* the contract.
 | [`.claude/skills/rbac/`](../.claude/skills/rbac/SKILL.md) | How-to: gate access the two-plane, leak-free way (reach → 404, field perms → 403; roles-as-data; membership SEV-0 guards) — *applies* `RBAC.md` | `crates/api/src/{rbac,caller,members,field_perms}.rs` · `tools/rbac-audit` | **shipped** |
 | [`.claude/skills/api-conventions/`](../.claude/skills/api-conventions/SKILL.md) | How-to: the handler house-style (one `AppError`→problem+json, no-unwrap, mutation events, `Caller`, `If-Match`) — *applies* `OBSERVABILITY.md` + `HTTP.md` | `crates/api/src/{error,auth,objects,db}.rs` · `tools/debuggability-audit` | **shipped** |
 | [`.claude/skills/enforcement-gates/`](../.claude/skills/enforcement-gates/SKILL.md) | How-to: author a `tools/*-audit` gate (`ci.sh` auto-discovery, the ratchet) + the Rust-gate/DB-backstop doubling — *applies* `tools/README.md` | `tools/ci.sh` · `tools/*-audit/` · `migrations/0008` | **shipped** |
+| [`frontend/CONSOLE.md`](frontend/CONSOLE.md) | The console: layout regions, module map, the feed block vocabulary, the viewer registry, nacl-in-the-console, the verified phase-A walk | `web/src/` · `web/styles/` · `web/index.html` | **LIVE** (phase A) |
+| [`frontend/SEAM.md`](frontend/SEAM.md) | **The NumuClient contract** — client methods ⇄ HTTP routes, wire shapes, the verified error contract, faithful-vs-simulated, the phase-B route map | `web/src/client.ts` · `web/src/numu-sim.d.ts` · phase B: `crates/api/src/{nacl,manifest,values,conversations,pipeline}.rs` | **LIVE** (contract) |
+| [`frontend/THEME.md`](frontend/THEME.md) | numu ⇄ amenan-ui theming: tier ownership, the structure overlay, chart color synthesis, the css-drift-audit's four queries | `web/styles/` · `tools/css-drift-audit/` · amenan-ui `themes/numu*.css` | **LIVE** |
+| [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | The design-project round-trip: what syncs verbatim, the manifest, the no-fork gate, known upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` · `web/sim/` · `web/data/` | **LIVE** |
+| [`nacl/README.md`](nacl/README.md) | nacl orientation (grammar, verbs, pipeline words, "it") — canon = the synced `web/data/nacl-commands.js` | `web/data/nacl-commands.js` · phase B: `crates/api/src/nacl.rs` | **LIVE** (doctrine) |
 | [`cases/`](cases/) | On-disk Case stubs — the case-first fallback when no Cases backend is reachable | the coordination surface | living |
 
 ## Foundation / planning docs (the numu frontend + customer data)
