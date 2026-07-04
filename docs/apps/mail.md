@@ -27,20 +27,19 @@ UI**. The brand survives as a Sources row (the existing `connector` viewer), nev
 
 ## Objects
 
-**No new content types — that is the design point.** Provider threads map onto numu's core
-message/conversation objects; attachments onto `FIL_`. The only registration this app adds is
-the source row.
+**No new types at all — that is the design point.** Provider threads map onto numu's core
+message/conversation objects; attachments onto `FIL_`; the mailbox itself is a connector row.
+This app registers **nothing** ([DATA-MODEL.md](DATA-MODEL.md)).
 
 | type | `PREFIX_` | role |
 |---|---|---|
-| `conversation` | `CNV_` | core — one per provider thread; the feed is the thread |
-| `message` | `MSG_` | core (universal catalog) — one per provider message: in/outbound direction · delivery lifecycle · `subject_id` → its conversation |
+| `conversation` | — | core (the phase-B conversations port; its prefix is assigned at registration) — one per provider thread; the feed is the thread |
+| `message` | `MSG_` | **the universal catalog type** (CATALOG.md): `channel=email` · `direction` · delivery lifecycle `draft→queued→sent→delivered/failed/received` · `external_ref` = the provider message id · `subject_id` → its conversation |
 | `file` | `FIL_` | core — attachments, saved through the existing save-to-chat path |
-| `mailAccount` | `MAC_` | **new — this app's only registration**: address · provider · scopes · sync state (cursor, last-sync); the Sources row |
+| mail account | `CON_` | a **`connector` instance — the existing type**: address · provider · scopes · sync cursor/last-sync in attributes; the Sources row |
 
-`CNV`/`MAC` are collision-free against the live prefix map (`object-model/numu_id.md`). Because
-the nouns are registered types, RBAC (leak-free 404), audit events, ETag/If-Match, and workflow
-apply for free — a mailbox you can't reach is a thread list you never see.
+Because the nouns are registered types, RBAC (leak-free 404), audit events, ETag/If-Match, and
+workflow apply for free — a mailbox you can't reach is a thread list you never see.
 
 ## Views
 
@@ -101,12 +100,12 @@ docked composer switched to its Email channel, not a pane-local editor.
 
 ## Sources model
 
-- **Connected**: one `MAC_` row per mailbox (Gmail today). Two-way sync — send from the
-  composer's Email channel delivers through the account; provider-side reads/labels sync back.
+- **Connected**: one `CON_` connector row per mailbox (Gmail today). Two-way sync — send from
+  the composer's Email channel delivers through the account; provider-side reads/labels sync back.
 - **Local**: outbound messages composed in numu exist as `MSG_` rows first; delivery state rides
   the message lifecycle.
 - **The aggregation rule**: *All inboxes* is the union of conversations across every reachable
-  `MAC_` row, ordered by last-message time. Folders are provider labels mapped by the adapter
+  `CON_` mailbox row, ordered by last-message time. Folders are provider labels mapped by the adapter
   onto a fixed set (inbox · sent · archive · spam). A new provider is one adapter + one row —
   the thread list, the reading pane, and triage don't change.
 
@@ -117,7 +116,7 @@ docked composer switched to its Email channel, not a pane-local editor.
 | email block (sender/time head · subject · body · CSV attachment row + **Save to chat**) | `web/src/console/feed.ts` | the reading pane — one block per message |
 | composer + Email channel | `web/src/console/composer.ts` (+ `composerChannels`, `web/data/console-data.js`) | compose/reply — no second editor |
 | `objectTable` block | `web/src/console/feed.ts` | `read:` results in the feed |
-| `connector` viewer | `web/src/console/context-panel.ts` | the `MAC_` Sources row (account · scopes · last-sync) |
+| `connector` viewer | `web/src/console/context-panel.ts` | the `CON_` mailbox Sources row (account · scopes · last-sync) |
 | `saveAttachment` path | `web/src/app.ts` | attachment → `FIL_` (`saved · on device`) |
 
 ## nacl surface
@@ -146,7 +145,7 @@ Appearance slots: icon `envelope` · accent `var(--chart-6)`. Customization
 - **Phase A (sim)** — threads seeded as conversation objects; the ORVCLE feed already carries
   the dossier email block (`feed.ts`). The three-pane view, push navigation, and triage chips
   render from seeded data; accept/reject mutates sim state only.
-- **Phase B (routes/connectors)** — register `mailAccount` (`MAC_`) in the type registry; real
-  Gmail OAuth + two-way sync via the numu-sync service account; the adapter maps threads /
-  messages / attachments onto `CNV_` / `MSG_` / `FIL_`; Inbox Triage hooks onto inbound
+- **Phase B (routes/connectors)** — the mailbox is a `CON_` connector row (nothing to register);
+  real Gmail OAuth + two-way sync via the numu-sync service account; the adapter maps threads /
+  messages / attachments onto conversations / `MSG_` / `FIL_`; Inbox Triage hooks onto inbound
   `on:message` events and writes its suggestion + draft for the chips.

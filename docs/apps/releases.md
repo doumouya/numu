@@ -28,14 +28,21 @@ error contract phase A already verified — [CONSOLE.md](../frontend/CONSOLE.md)
 
 | type | PREFIX_ | role |
 |---|---|---|
-| release | `REL_` | title · artist ref · date · **workflow status** — the seed already shows `REL_44 · backlog` |
+| release | `RLS_` | title · artist ref · date · **workflow status** — the seed already shows `RLS_44 · backlog` |
 | credit | `CRD_` | role · person/user ref · `source: muso\|manual` · verified flag |
 | split | `SPL_` | payee user ref · percent |
 
-All three are registered types (type-registry rows, never migrations): RBAC leak-free 404,
-audit events, ETag/If-Match, and the workflow engine apply for free. The release workflow —
-`draft → prep → submitted → delivered → live` — is data; the `submitted` transition carries
-the close-gate: credits complete · Σ splits = 100% · every payee KYC-verified.
+All three are **app-registered** types (type-registry rows, never migrations — the tier above
+the universal catalog, [DATA-MODEL.md](DATA-MODEL.md)): RBAC leak-free 404, audit events,
+ETag/If-Match, and the workflow engine apply for free. Prefix note: `REL` is the LIVE system
+prefix for relation edges (`relations.rs`), so release mints `RLS_` — the day-one rule (one
+prefix, one type, forever); the Design-project seed's `REL_44` label is an upstream nit to fix
+at the next re-sync. The catalog's lean alternative — `project.attributes.royalty_splits` — is
+the phase-A shortcut; `CRD_`/`SPL_` rows exist so RBAC and the KYC gate reach each payee
+independently. The release workflow — `draft → prep → submitted → delivered → live` — is data;
+the `submitted` transition carries the close-gate: credits complete · Σ splits = 100% · every
+payee KYC-verified. **Dependency:** workflows on registered types is CATALOG open question 1
+(the engine is case-only today) — this app is its motivating use case.
 
 ## Views
 
@@ -47,11 +54,11 @@ Areas stack in source order below `--bp-md`; the board collapses to horizontal-s
 ┌────────────────────────────────┐
 │ ◉ releases                   + │
 │ ┌draft──┐┌prep───┐┌submitt…  ▸ │  ← columns snap-scroll
-│ │REL_44 ││REL_31 ││            │
-│ │REL_45 ││       ││            │
+│ │RLS_44 ││RLS_31 ││            │
+│ │RLS_45 ││       ││            │
 │ └───────┘└───────┘└─────────── │
 ├────────────────────────────────┤
-│ REL_44 · Nuit Fauve    backlog │
+│ RLS_44 · Nuit Fauve    backlog │
 │ CREDITS  prod ✓muso · mix ✓muso│
 │ SPLITS   Em 50% ✓ · NOVA 50% ⚠ │
 │          Σ 100 · KYC 1/2       │
@@ -71,9 +78,9 @@ full width, the same mount renders the desktop layout. No forked code.
 ```
 ┌─ board ──────────────────────────────────────────────────────────────┐
 │ draft          prep          submitted    delivered      live        │
-│ ┌REL_44─────┐ ┌REL_31─────┐ ┌──────────┐ ┌REL_18─────┐ ┌REL_07────┐ │
+│ ┌RLS_44─────┐ ┌RLS_31─────┐ ┌──────────┐ ┌RLS_18─────┐ ┌RLS_07────┐ │
 │ │Nuit Fauve │ │Ébène EP   │ │          │ │Deux Rives │ │Sika      │ │
-│ ├REL_45─────┤ └───────────┘ └──────────┘ └───────────┘ ├REL_02────┤ │
+│ ├RLS_45─────┤ └───────────┘ └──────────┘ └───────────┘ ├RLS_02────┤ │
 │ │Aya (Rmx)  │                                          │Mansa V.1 │ │
 ├─ credits ──────────────┬─ splits ──────────────┬─ delivery ─────────┤
 │ producer   Em   ✓ muso │ Em    50%    KYC ✓    │ Spotify  delivered │
@@ -121,8 +128,8 @@ Selecting a board card fills the detail row (credits · splits · delivery) for 
 | input | result |
 |---|---|
 | `read:release` | `objectTable` — one row per reachable release, status badge = workflow state |
-| `read:credits.release=REL_44` | `objectTable` — credit rows with role, source, verified badge |
-| `new:release.title=…` | `object` card + `openObjectId` effect (panel opens on the new `REL_`) |
+| `read:credits.release=RLS_44` | `objectTable` — credit rows with role, source, verified badge |
+| `new:release.title=…` | `object` card + `openObjectId` effect (panel opens on the new `RLS_`) |
 | `set:release.status=submitted` | `step` ✓ on pass; **422 `close_preconditions_unmet`** → `step` ⚠ listing each unmet precondition (credits incomplete · Σ ≠ 100% · payee KYC pending) |
 
 ## Touch & appearance
@@ -144,8 +151,8 @@ ramp; label + density customizable through the shared pickers.
 
 ## Phasing
 
-- **Phase A (sim)** — `REL_` / `CRD_` / `SPL_` registered in the sim's type registry;
-  `REL_44` rides the seeded default workflow (hence `backlog`) until the release workflow
+- **Phase A (sim)** — `RLS_` / `CRD_` / `SPL_` registered in the sim's type registry;
+  `RLS_44` rides the seeded default workflow (hence `backlog`) until the release workflow
   (`draft → … → live`) registers; close-gates simulated in the sim engine returning the
   shipped 422 `close_preconditions_unmet` shape; muso/distrokid data static from the seed;
   Release Prep scripted against it.

@@ -1,11 +1,11 @@
-# calendar — one calendar for events, sessions, and availability
+# calendar — one calendar for bookings, sessions, and availability
 
 > Status: proposal (phase A sim / phase B routes). Doctrine + template:
 > [README.md](README.md); grid + touch canon: the `amenan-typescript` skill's numu-layout DSL.
 
 ## Purpose
 
-One calendar per workspace. Engine events (`EVT_`), ORVCLE session/booking cases (`SES_`), and
+One calendar per workspace. Engine bookings (`BKG_`), ORVCLE session/booking cases (`SES_`), and
 connected Google Calendar entries render on a single month/week/day surface — no per-brand
 calendar UI. Google Meet survives as the **Join** action on an event, never its own tile. The
 Session Scheduler agent works *inside* this surface: it reads bookings + availability, proposes
@@ -27,8 +27,8 @@ here: proposals render as ghost events; accept holds the slot, decline releases 
 
 | type | prefix | role |
 |---|---|---|
-| event | `EVT_` | start/end · room/resource · attendee user refs · optional link to a session case (`SES_`) or project (`PRJ_`) |
-| session case | `SES_` | **already a registered case** (seed: `SES_118`, `SES_121`) — the calendar renders it at its booked time; it never duplicates a case into an `EVT_` |
+| booking | `BKG_` | **the universal catalog type** (CATALOG.md **locked decision 4**: the scheduled occurrence is `booking`, never `event` — the `events` audit-table collision is why): `kind` enum already carries `meeting` (Meet) and `session` · `starts_at`/`ends_at` · venue = an `ADR_` ref · attendees = memberships with `context_role` · optional `subject_id` → a case or project ([DATA-MODEL.md](DATA-MODEL.md)) |
+| session case | `SES_` | **already a registered case** (seed: `SES_118`, `SES_121`) — the calendar renders it at its booked time; it never duplicates a case into a `BKG_` |
 
 Availability is a projection — the union of busy blocks across sources, computed per render. No
 availability type, no stored free/busy rows; there is nothing to drift.
@@ -74,7 +74,7 @@ Rail = mini-month + agenda (7 wide) · canvas = month/week/day (23 wide).
 │ M T W T F… │────────────────────────────────────────────────│
 │ mini-month │     Mon 6   Tue 7   Wed 8   Thu 9    Fri 10 …  │
 │            │ 09          ┌─────┐                            │
-│────────────│ 10          │EVT_…│         ┌────────┐         │
+│────────────│ 10          │BKG_…│         ┌────────┐         │
 │ AGENDA     │ 11          └─────┘         │SES_118 │         │
 │ Thu 9      │ 12                          │Studio A│         │
 │ 10:00 Mix… │ 13                          └────────┘         │
@@ -94,11 +94,11 @@ Rail = mini-month + agenda (7 wide) · canvas = month/week/day (23 wide).
 
 | source | kind | contributes |
 |---|---|---|
-| engine | local, always on | `EVT_` events + `SES_` session cases (reach-filtered) |
+| engine | local, always on | `BKG_` bookings + `SES_` session cases (reach-filtered) |
 | `gcal` | connected | external events in, engine events + derived availability out (two-way) |
 | `gmeet` | connected, action-only | Meet links on Join; recordings → video objects (the `video` app) |
 
-One merged timeline; every entry carries a source chip. A GCal copy of a synced `EVT_` collapses
+One merged timeline; every entry carries a source chip. A GCal copy of a synced `BKG_` collapses
 to the engine object (the sync id is the dedup key) — one entry, never two. The Sources panel is
 the existing `connector` viewer rows (account · scopes · last-sync); disconnecting a source
 removes its entries from the projection, never engine data.
@@ -116,10 +116,10 @@ removes its entries from the projection, never engine data.
 
 | input | result |
 |---|---|
-| `read:calendar.week=2026-W28` | `objectTable` of the week's events, merged + reach-filtered |
-| `read:event` (single row) | `object` card → opens the panel via `objRef` |
-| `new:event.title=Mix review.start=2026-07-09T10:00` | INSERT `EVT_` → object card + `openObjectId` effect |
-| `set:event.room=Studio A` | room update on the focused event; a conflicting hold is a `422` in phase B (advisory ⚠ in phase A) |
+| `read:calendar.week=2026-W28` | `objectTable` of the week's entries, merged + reach-filtered |
+| `read:booking` (single row) | `object` card → opens the panel via `objRef` |
+| `new:booking.name=Mix review.starts_at=2026-07-09T10:00` | INSERT `BKG_` → object card + `openObjectId` effect |
+| `set:booking.address_id=ADR_studioA` | venue update on the focused booking; a conflicting hold is a `422` in phase B (advisory ⚠ in phase A) |
 
 ## Touch & appearance
 
@@ -137,8 +137,8 @@ band uses `var(--muted)`. Tokens only — no raw colors.
 
 ## Phasing
 
-- **Phase A (sim):** `EVT_` registered + seeded; `SES_118` / `SES_121` render at their booked
-  times from the existing cases; Scheduler ghost slots are mocked (accept materializes an `EVT_`);
+- **Phase A (sim):** `BKG_` registered + seeded; `SES_118` / `SES_121` render at their booked
+  times from the existing cases; Scheduler ghost slots are mocked (accept materializes a `BKG_`);
   Join renders with a stub link; availability derives from the seed; room conflicts warn (⚠) only.
 - **Phase B (routes/connectors):** GCal two-way sync via numu-sync; room/engineer conflicts
   enforced server-side as `422` problem+json (`docs/api/HTTP.md` contract); Meet link minting on

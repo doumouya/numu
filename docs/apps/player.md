@@ -26,7 +26,7 @@ logo, connection state, scopes) — never its own surface.
 
 | type | `PREFIX_` | role |
 |---|---|---|
-| playlist | `PLS_` | name · owner · ordered track refs · icon/accent (Customizable slots) |
+| playlist | `PLS_` | **app-registered** type (music-only — below the catalog's ≥2-verticals bar; [DATA-MODEL.md](DATA-MODEL.md)): name · owner · ordered track refs · icon/accent (Customizable slots) |
 | audio file | `FIL_` | the local track — the existing file object with an audio blob; **no new type** |
 
 A **track** is either a `FIL_` ref or an inline provider ref `{uri, provider, duration}` carried

@@ -19,7 +19,7 @@ findings surface as `object` blocks in the wallet conversation.
 
 | store id | brand | seed kind | role as a source |
 |---|---|---|---|
-| `stripe` | Stripe | Payments (connected) | card charges + payouts → `ACC_` / `TXN_` |
+| `stripe` | Stripe | Payments (connected) | card charges + payouts → connector row / `TXN_` |
 | `wave` | Wave | Mobile money (connected) | mobile-money balance + transfers |
 | `djamo` | Djamo | Neobank | card account + spend |
 | `wero` | Wero | Payments | P2P payments |
@@ -30,8 +30,12 @@ findings surface as `object` blocks in the wallet conversation.
 
 | type | prefix | role |
 |---|---|---|
-| account | `ACC_` | one money account per source: provider · kind · currency · balance · last-sync. Customization (icon/accent) is entity data. |
-| transaction | `TXN_` | a money movement: account ref · direction `in\|out` · amount · currency · counterparty · at · status |
+| connected account | `CON_` | a **`connector` instance — the existing type, nothing new registered** ([DATA-MODEL.md](DATA-MODEL.md)): provider · kind · currency + the **balance snapshot** and last-sync in its attributes. Customization (icon/accent) is entity data. |
+| transaction | `TXN_` | **the universal catalog ledger type, adopted verbatim** (CATALOG.md): `kind` enum `payment · refund · deposit · withdrawal · payout · fee · adjustment` (sign derives from kind) · **positive** minor units + ISO-4217 currency · polymorphic `party_id` (wallet = SUM per party) · `subject_id` · `method` json for PSP/mobile-money detail · set-once ledger fields |
+
+The catalog **deliberately cut the wallet object** — a balance is derived, never stored. Wallet
+shows two derived views: the internal ledger (`SUM(TXN)` per party) and the external picture
+(Σ latest provider snapshots per connected account).
 
 A **transfer** is not a special verb: it is a new `TXN_` going through the default workflow.
 Payouts are **KYC-gated** — a payee whose KYC is pending is a `422 close_preconditions_unmet`
@@ -98,10 +102,11 @@ which is the phone view. The insight tile hosts one 15×9 chart spec (the chart-
 
 ## Sources model
 
-All six sources are **connected** connectors; a manual cash `ACC_` (no provider) is the local
-case — its balance is `TXN_` arithmetic. Aggregation rule: `total = Σ accounts (balance ×
-rate→XOF)`, subtotaled per currency; rates resolve through the `wise` source (stub table in
-phase A, live in phase B). A new fintech is a connector row + a source adapter — zero new UI.
+All six sources are **connected** connector rows; a manual cash account is a local `CON_` row
+(no provider) — its balance is pure `TXN_` arithmetic. Aggregation rule: `total = Σ accounts
+(snapshot × rate→XOF)`, subtotaled per currency; rates resolve through the `wise` source (stub
+table in phase A, live in phase B). A new fintech is a connector row + a source adapter — zero
+new UI, zero new types.
 
 ## Reuse
 
@@ -118,9 +123,9 @@ phase A, live in phase B). A new fintech is a connector row + a source adapter �
 | input | result block / effect |
 |---|---|
 | `read:wallet` | the aggregate balance `object` card (total solde + subtotals) → panel |
-| `read:account` | `objectTable` — one row per `ACC_`: provider · balance · last-sync |
+| `read:account` | `objectTable` — one row per connected `CON_` source: provider · balance snapshot · last-sync |
 | `read:transactions.account=wave` | `objectTable` — Wave `TXN_` rows, status badges |
-| `new:transaction.direction=out.amount=25000.currency=XOF.counterparty=USR_…` | INSERT `TXN_` → `object` card + `openObjectId`; payee KYC pending → `422 close_preconditions_unmet` |
+| `new:transaction.kind=payout.amount=25000.currency=XOF.party_id=USR_…` | INSERT `TXN_` (catalog fields) → `object` card + `openObjectId`; payee KYC pending → `422 close_preconditions_unmet` |
 
 ## Touch & appearance
 
@@ -135,7 +140,7 @@ Icon `wallet2` · accent `var(--chart-1)`. Account cards expose the Customizable
 
 ## Phasing
 
-- **Phase A (sim seam)** — `ACC_`/`TXN_` as seeded registry entities with fake last-sync
+- **Phase A (sim seam)** — `CON_` sources + `TXN_` as seeded registry entities with fake last-sync
   timestamps; aggregation client-side; the stub FX rate table under the `wise` source id;
   Billing Watch matches seeded payouts to seeded invoices; the KYC 422 replays from the seed.
 - **Phase B (Rust api)** — real connector OAuth + provider APIs (webhooks land as `TXN_`),

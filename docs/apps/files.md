@@ -15,7 +15,7 @@ file lands); it is noted here, not a separate app.
 
 | store id | tagline (verbatim) | becomes |
 |---|---|---|
-| `gdrive` | Browse and attach Drive files; edits sync back as file objects. | a source row (`DRV_`): pick files without leaving numu · two-way sync · respects Drive sharing |
+| `gdrive` | Browse and attach Drive files; edits sync back as file objects. | a `CON_` connector source row: pick files without leaving numu · two-way sync · respects Drive sharing |
 
 Local `FIL_` objects are the on-device source — not an absorbed store item, the substrate.
 
@@ -24,7 +24,7 @@ Local `FIL_` objects are the on-device source — not an absorbed store item, th
 | type | PREFIX_ | role |
 |---|---|---|
 | `file` | `FIL_` | **EXISTS** — the core type; every browsable item, local or synced. The csv flow (blob_ref, cleanness, columns_meta) ships on it. |
-| `driveAccount` | `DRV_` | source row: account · scopes · last-sync. One per connected Drive account; rendered by the existing `connector` viewer. |
+| drive account | `CON_` | a **`connector` instance — the existing type, nothing new registered** ([DATA-MODEL.md](DATA-MODEL.md)): account · scopes · last-sync in attributes. One per connected Drive account; rendered by the existing `connector` viewer. |
 
 Folders are **not** entities: the provider's tree is browsed live through the source
 adapter. Mirroring a folder hierarchy into the registry is drift by construction.
@@ -89,7 +89,7 @@ Preview opens in the Context panel — the shipped viewer registry, never a thir
 
 - **Local** — `FIL_` objects from the registry, reach-filtered like everything else.
   This is the default source and the only one that exists without a connector.
-- **Connected** — one `DRV_` row per account; the adapter lists the provider's tree
+- **Connected** — one `CON_` connector row per account; the adapter lists the provider's tree
   live and materializes a `FIL_` object only when a file is saved or inserted
   (derive-don't-store: bytes refetch by recorded `src`).
 - **Recent · Shared** are queries *across* all sources, not sources — the aggregation
@@ -103,7 +103,7 @@ Preview opens in the Context panel — the shipped viewer registry, never a thir
 - The viewer registry (`web/src/console/context-panel.ts`) — image · audio · video · `data` profile; files adds zero viewers.
 - `saveAttachment` + `ensureBlob` derive-don't-store path (`web/src/app.ts`) — upload and Drive ingestion ride the same seam.
 - KindLabel dtype chips (`mountKindLabel`, used in `web/src/console/feed.ts`) — the `kind` column.
-- The `connector` viewer for `DRV_` rows (account · scopes · last-sync).
+- The `connector` viewer for the `CON_` drive rows (account · scopes · last-sync).
 
 ## nacl surface
 
@@ -130,7 +130,7 @@ Save pulls a file *into* numu; Insert pushes a reachable file *into* the thread.
 
 - **Phase A (sim)** — local `FIL_` browsing is real: the registry's reach-filtered
   files, list/grid, upload through the existing seam, preview via the shipped viewers,
-  Insert into conversation. Drive rows are **seeded** `DRV_` objects (connector viewer
+  Insert into conversation. Drive rows are **seeded** `CON_` connector objects (the viewer
   shows account/scopes/last-sync); the Drive tree is sim data.
 - **Phase B (routes/connectors)** — Drive OAuth + two-way sync through the source
   adapter. Ingestion of provider bytes goes **only** through the sealed pipeline
