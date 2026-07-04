@@ -31,6 +31,11 @@ scratch + the `db-tests` suite green; psql: `count(*) where data_class is null` 
 raised exactly the 9 intended rows, and an invalid class hits the CHECK. Full `bash tools/ci.sh`
 green (data-class-audit clean; its negative fixture fires on an unraised PII field).
 
+**Landed 2026-07-05:** DB gate run on the fresh throwaway (`numu_slice_verify`, :5433) — 57
+db-tests green; psql evidence exactly as specified (0 unclassified · the 9 raised rows · CHECK
+violation on an invalid class); full `bash tools/ci.sh` green with `data-class-audit` armed
+(14 gates).
+
 ## Follow-on (recorded)
 
 GOVERNANCE #2 — the read-audit hook (`access_audit`, insert-only) at the generic-handler

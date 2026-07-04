@@ -61,6 +61,8 @@ struct FieldSpec {
     options: Value,
     #[serde(default)]
     searchable: bool,
+    #[serde(default = "default_internal")]
+    data_class: String,
 }
 
 fn default_true() -> bool {
@@ -68,6 +70,9 @@ fn default_true() -> bool {
 }
 fn default_standard() -> String {
     "standard".to_string()
+}
+fn default_internal() -> String {
+    "internal".to_string()
 }
 
 const RESERVED_TYPES: &[&str] = &[
@@ -95,6 +100,10 @@ const RESERVED_FIELDS: &[&str] = &[
 ];
 const KINDS: &[&str] = &["text", "int", "bool", "date", "json", "ref", "enum"];
 const PERM_CLASSES: &[&str] = &["system", "readonly", "standard", "owner_grade"];
+// data_class is INDEPENDENT of perm_class: perm_class gates read/write RANK; data_class drives privacy
+// (access-audit, retention, at-rest encryption) + the classification register. Default floor = internal.
+// (docs/kernel/GOVERNANCE.md §Implementation #1.)
+const DATA_CLASSES: &[&str] = &["public", "internal", "personal", "sensitive"];
 
 fn ident_ok(s: &str, max: usize) -> bool {
     !s.is_empty()
@@ -171,6 +180,12 @@ fn validate_spec(spec: &TypeSpec, current: &TypeDefCache) -> AppResult<()> {
             return Err(bad(format!(
                 "field '{}': unknown perm_class '{}'",
                 f.field, f.perm_class
+            )));
+        }
+        if !DATA_CLASSES.contains(&f.data_class.as_str()) {
+            return Err(bad(format!(
+                "field '{}': unknown data_class '{}'",
+                f.field, f.data_class
             )));
         }
         if f.kind == "enum" {
@@ -323,8 +338,8 @@ async fn create_type(
         };
         sqlx::query(
             "insert into type_fields \
-             (type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable) \
-             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+             (type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable, data_class) \
+             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
         )
         .bind(spec.type_id.as_str())
         .bind(f.field.as_str())
@@ -336,6 +351,7 @@ async fn create_type(
         .bind(f.perm_class.as_str())
         .bind(options)
         .bind(f.searchable)
+        .bind(f.data_class.as_str())
         .execute(&mut *tx)
         .await?;
     }
