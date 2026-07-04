@@ -43,6 +43,13 @@ Connectors shelf. Agents (Inbox Triage, Data Cleaner, Scheduler, Reach Auditor, 
 Billing Watch) are not apps either: each one *works inside* the app that owns its domain and is
 noted there.
 
+Two cross-cutting companions complete the catalog:
+[**DATA-MODEL.md**](DATA-MODEL.md) — how the apps sit on the universal catalog
+(`object-model/CATALOG.md`): the tier model, the per-app type adjudication, app-registered
+prefixes, and the Object-Rail **pin & icon-suggestion contract**.
+[**DISTRIBUTION.md**](DISTRIBUTION.md) — standalone ⇄ platform delivery: one origin,
+**one runtime + N installable PWA faces**, the two shells, and the no-double-storage model.
+
 ## Shared conventions (every proposal follows these — the template enforces them)
 
 1. **Objects first.** Each app's nouns are **registered types** in the type-registry
