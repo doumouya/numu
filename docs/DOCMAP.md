@@ -52,7 +52,8 @@
 
 | Doc | Governs | Code area | Status |
 |---|---|---|---|
-| [`api/OBJECTS.md`](api/OBJECTS.md) | the data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, prefixes, the seeded `default` workflow, relations, omnisearch | `migrations/` · the registry seeds | **LIVE** (+ open enrichment) |
+| [`api/OBJECTS.md`](api/OBJECTS.md) | the data model: the registry spine, every builtin `[TYPE]`/`[SYSTEM]` table, prefixes, the seeded `default` workflow, relations, omnisearch, the migrations ledger | `migrations/` · the registry seeds | **LIVE** (+ open enrichment) |
+| [`api/IDS.md`](api/IDS.md) | the id contract: `<PREFIX>_<32-hex>`, the two mint paths, the live/planned/app-registered prefix registries, the system lanes, the day-one rule, the entities handshake (moved in-repo from object-model/) | `crates/api/src/ids.rs` · `type_definitions.id_prefix` | **LIVE** |
 | [`api/HTTP.md`](api/HTTP.md) | the uniform verb surface: `/api/objects/:type[/:id]`, verb→status matrix, OPTIONS self-description, If-Match, two-stage leak-free RBAC, `method_policy`, runtime type-admin (`POST /api/types`, hot-reload) | `crates/api/src/{objects,types}.rs` | **LIVE · locked** |
 | [`api/CONTRACT.md`](api/CONTRACT.md) | the one-page frozen surface for the frontend | the whole api | **LIVE** |
 | [`api/RBAC.md`](api/RBAC.md) | the two planes: reach resolver (Plane A → 404), field perms (Plane B → 403), roles-as-data, membership SEV-0 guards | `crates/api/src/{rbac,caller,members,field_perms}.rs` · `tools/rbac-audit` | **LIVE** (CASE 0005) |

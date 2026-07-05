@@ -116,10 +116,16 @@ JSON body:
   },
   "fields": [                                  // from type_fields — EVERY field listed; can_read is per-caller
     { "field":"title","label":"Title","kind":"text","required":true,
-      "editable":true,"perm_class":"standard","can_read":true,"can_write":true },
+      "editable":true,"perm_class":"standard",
+      "data_class":"personal",                 // the 0016 privacy class (GOVERNANCE #1)
+      "semantic_type":null, "domain":null,     // the 0017 metadata layer; null = plain primitive
+      "can_read":true,"can_write":true },
     { "field":"status","label":"Status","kind":"enum","required":true,"editable":true,
-      "perm_class":"standard","can_read":true,"can_write":true,
-      "options":["backlog","todo","in_progress","in_review","done"] }
+      "perm_class":"standard","data_class":"internal","semantic_type":null,
+      "domain": { "id":"case_status","kind":"enum","label":"Case workflow state",
+                  "params":{"values":["open","in_review","blocked","done"]} },  // domain_ref resolved from field_domain at cache load
+      "can_read":true,"can_write":true,
+      "options":{"enum":["backlog","todo","in_progress","in_review","done"]} }  // the RAW type_fields.options json
     /* an unreadable field appears with can_read:false (not omitted); can_write is the SCHEMA's
        editable flag, not the caller's rank — the per-caller write verdict is planned */
   ],

@@ -23,11 +23,15 @@
   an existing actor (default the seeded `USR_dev` admin). For local RBAC work without OAuth.
 - **`POST /auth/claim-admin`** — atomic first-admin claim: promotes the caller to platform-admin IFF no
   real admin exists (the seeded dev bootstrap excluded); a single race-free UPDATE, second claim → 409.
-- **`POST /auth/logout`** — drops the caller's sessions + clears the cookie.
+- **`POST /auth/logout`** — drops **ALL** the caller's sessions (every device, one statement) +
+  clears the cookie → `204`. No per-device revoke yet — logout is total by design.
 
-These session-minting routes sit behind the per-client `/auth` rate limit
-(`NUMU_AUTH_RATE_LIMIT`/`_WINDOW_SECS` → **429**); the `/auth/:provider/*` OAuth routes (§3) are **not**
-yet behind it.
+These session-minting routes sit behind the per-client `/auth` rate limit — a **fixed window** keyed
+by the real TCP peer (unforgeable; `X-Forwarded-For` is honored ONLY under `NUMU_TRUST_PROXY=1`
+behind a real proxy), default **30 hits / 60 s** (`NUMU_AUTH_RATE_LIMIT`/`_WINDOW_SECS`), counters
+memory-capped so a spoofed-key flood can't exhaust the map. Over the limit → **429** problem+json
+carrying the request-id (no `Retry-After` header — [`HTTP.md`](HTTP.md) §6). The `/auth/:provider/*`
+OAuth routes (§3) are **not** yet behind it.
 
 ## 3. Social OAuth (authorization-code)
 

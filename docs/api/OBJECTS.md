@@ -267,6 +267,36 @@ threshold. Seeded **contiguous** so the resolver never sees a gap.
 `memberships.role` is an FK into this table, so a non-registered role is a mapped FK violation (→ `422`),
 never a silent grant.
 
+### `field_permissions` `[SYSTEM]` — the sparse Plane-B override (0004)
+The rank floors come from `perm_class`; a row here OVERRIDES one `(type, field, role)` cell.
+
+| column | kind | notes |
+|---|---|---|
+| `type_id` + `field` + `role` | text (composite PK) | the cell being overridden |
+| `can_read` / `can_write` | bool | resolved role→rank at check time ([`RBAC.md`](RBAC.md) §2) |
+
+### `sessions` `[SYSTEM]` — the opaque session store (0005)
+The cookie carries a random token; **only its sha256 hash is stored**, so a DB leak never exposes a
+live session. The `Caller` extractor resolves actor + platform_role + the acting surface from a
+non-expired row ([`AUTH.md`](AUTH.md)).
+
+| column | kind | notes |
+|---|---|---|
+| `id` | text PK | `SES_<hex>` (a system lane, not a registered type — [`IDS.md`](IDS.md)) |
+| `actor_id` | text → entities **ON DELETE CASCADE** | the authenticated principal |
+| `token_hash` | text unique | sha256(opaque cookie token), hex — never the token itself |
+| `created_at` / `expires_at` | timestamptz | 30-day expiry at mint; logout deletes ALL the actor's rows |
+
+### `auth_identities` `[SYSTEM]` — the social-login link (0006)
+ONE actor links many providers; the upsert key is **`(provider, sub)` — never email** (emails
+change and aren't unique across providers). First login mints the actor.
+
+| column | kind | notes |
+|---|---|---|
+| `provider` + `sub` | text (composite PK) | the provider's stable subject id |
+| `actor_id` | text → entities **ON DELETE CASCADE** | the linked principal |
+| `email` | text | informational snapshot only — never an identity key |
+
 ### `relation` `[SYSTEM]` — the one generic entity↔entity edge
 The M:N counterpart to `memberships` (which is entity↔*principal*). A single typed edge so numu never
 grows SF-style per-pair junction objects (`CaseArticle`, related-cases, duplicate-of, blocks…): the
@@ -712,6 +742,33 @@ never a new object with a new name** — exactly the duplication that grows SF's
 thousands.
 
 ---
+
+## The migrations ledger — every migration ⇄ its doc section
+
+The schema's whole history maps here (the doc-coverage program's rule: no migration without a
+documented home). SYSTEM machinery = real migrations; registered types = seed rows, never DDL.
+
+| migration | what | documented in |
+|---|---|---|
+| `0001_init` | the registry spine: type_definitions · type_fields · entities · entity_data | G1 |
+| `0002_seed` | the first builtin types: `project` + `note` ("a type is a row" proven) | G2 `project` |
+| `0003_rbac` | memberships (narrowed key) · roles | G2 |
+| `0004_field_perms` | `field_permissions` sparse overrides | G2 |
+| `0005_sessions` | the opaque session store (hash-only) | G2 `sessions` |
+| `0006_auth_identities` | social-login links, upsert-by-`(provider, sub)` | G2 `auth_identities` |
+| `0007_cases_engine` | the `default` workflow seed + the `case` type + the `cases` typed projection | G4 |
+| `0008_cases_guard` | `case_close_checks` + the `cases_guard` DB trigger backstop | G4 `case_close_checks` |
+| `0009_case_family` | seeds `comment` + `attachment` (the polymorphic thread/file pair) | G4 |
+| `0010_relations` | the generic `relations` edge | G2 `relation` |
+| `0011_catalog` | G2 org types (`workspace` · `team`) + the G6 build-knowledge types (spec · acceptance_criterion · runbook · decision · capability) | G2 · G6 |
+| `0012_omnisearch` | `search_vector` GIN + triggers | G3 omnisearch |
+| `0013_drop_orphan_relation` | constraint cleanup on relations | G2 `relation` |
+| `0014_g7_catalog` | G7 seeds (connector · secret · skill · milestone) | G7 |
+| `0015_catalog_reconcile` | back-fills fields the early seeds predated (`project.workspace_id` · `actor.avatar_url`) | G2 |
+| `0016_data_class` | `type_fields.data_class` floor + PII manifest (GOVERNANCE #1) | G1 `type_fields` · [`../kernel/GOVERNANCE.md`](../kernel/GOVERNANCE.md) |
+| `0017_field_semantic_type` | `semantic_type`/`domain_ref` + `field_domain` + `accent` | G1 `type_fields`/`field_domain` |
+| `0018_capability_plane` | Plane C: `capability_grant` + `condition` | G1 · [`RBAC.md`](RBAC.md) §2b |
+| `0019_access_audit` | insert-only read evidence (GOVERNANCE #2) | G1 `access_audit` |
 
 ## Open enrichment questions (for Em / other sessions)
 

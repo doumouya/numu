@@ -8,7 +8,9 @@ this is the stable surface to factor the frontend against. Detail lives in [`HTT
 
 **Every object is a row in one registry, served by one generic handler.** So the frontend never needs
 per-type API code: `OPTIONS /api/objects/:type` returns the *live* schema (fields, kinds, enum vocab,
-required set, ref targets, per-caller `can_read` — `can_write` is the schema's editability, allowed verbs). A single generic
+required set, ref targets, per-caller `can_read` — `can_write` is the schema's editability, allowed verbs —
+plus, per field, the metadata layer: `data_class` (0016 privacy class), `semantic_type`, and the resolved
+`domain` vocabulary (0017) — one source for autocomplete, validation, and rendering). A single generic
 list/detail/form component, driven by OPTIONS, renders **any** type — the factorization win is built in.
 
 ## Auth
