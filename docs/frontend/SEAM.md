@@ -1,18 +1,22 @@
 # SEAM.md — the NumuClient contract (the console ⇄ backend boundary)
 
 The console talks ONLY to `window.NumuClient` (typed in `web/src/numu-sim.d.ts`,
-faced by `web/src/client.ts`). Two drivers ship today, chosen before app code
-runs (`?http=1` in the URL → the http driver):
+faced by `web/src/client.ts`). Two drivers ship, chosen before app code runs
+(**phase B is real since CASE 0025** — served from `/console` by the api
+itself, the http driver is the DEFAULT; `?sim=1` flips back to the sim, and
+`?http=1` still opts in anywhere else):
 
 - **`NumuClient.local()`** — the in-browser sim engine (`web/sim/*`, verbatim
   from the design project). Registry/feeds persist to localStorage; CSV frames
   are **re-derived** from the blob + steps on reload (blobs ≤250 KB persist,
   larger refetch by the `src` recorded at upload).
-- **`NumuClient.http(base)`** — the same interface over fetch. Today that is
-  `web/sim/server.node.js` (`node web/sim/server.node.js` → :8787, state in
-  `web/sim/data/`); **in phase B it is the Rust api**. The console needs zero
-  code change for that swap — this file is the contract the Rust routes must
-  satisfy.
+- **`NumuClient.http(base)`** — the same interface over fetch. In production
+  that is **the Rust api, same-origin under `/console`** (the session cookie
+  rides every call; `NUMU_SERVE_CONSOLE=1` — docs/ops/DEPLOY.md). In dev it can
+  also be `web/sim/server.node.js` (:8787) behind the dev-server proxy. The
+  console needs zero code change across those — this file is the contract the
+  Rust routes satisfy. Routes the Rust api does NOT implement yet (notably
+  `POST /api/nacl`) honestly fail there; nacl verbs remain sim-only for now.
 
 ## The client interface
 

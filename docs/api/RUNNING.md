@@ -30,6 +30,7 @@ Migrations run automatically on boot (idempotent — safe to restart). `GET /hea
 | `NUMU_BIND` | `127.0.0.1:8080` | listen address (explicit override — always wins) |
 | `PORT` | — | the Cloud Run/knative contract: when `NUMU_BIND` is unset and `PORT` is a valid port, numu binds `0.0.0.0:$PORT` (`config::resolve_bind`, CASE 0020) |
 | `NUMU_APP_PORTFOLIO` | off | `numu-server` only: mounts the portfolio app at `/api/apps/portfolio` ([`../apps/PORTFOLIO.md`](../apps/PORTFOLIO.md)) |
+| `NUMU_SERVE_CONSOLE` | off | serve the committed `web/` console at `/console` (same-origin with `/api` + `/auth` — the session cookie just works; the console's http driver is the default there, `?sim=1` opts out — [`../frontend/SEAM.md`](../frontend/SEAM.md), CASE 0025) |
 | `NUMU_INGEST_RATE_LIMIT` / `_WINDOW_SECS` | `120` / `60` | per-client limit on the portfolio app's public `/ingest` (hashed keys; last-XFF under `NUMU_TRUST_PROXY`) |
 | `GITHUB_TOKEN` / `NUMU_PUBLISH_REPO` / `NUMU_PUBLISH_BRANCH` | — / `doumouya/doumouya-portfolio` / `main` | the portfolio app's publish pipeline (fine-grained PAT, contents:rw on that one repo; never logged) |
 | `NUMU_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | browser origins allowed to call the API with credentials (comma-separated) |

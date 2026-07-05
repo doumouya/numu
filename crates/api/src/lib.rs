@@ -157,6 +157,17 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         }
     }
 
+    // the console, served by the api itself (phase B — CASE 0025): same-origin with /api and
+    // /auth, so the session cookie just works. The committed web/ artifacts ship in the image;
+    // index.html falls back for client routes. Static files are public; every DATA route stays
+    // gated as always.
+    if config::env_flag("NUMU_SERVE_CONSOLE") {
+        let console = tower_http::services::ServeDir::new("web")
+            .fallback(tower_http::services::ServeFile::new("web/index.html"));
+        app = app.nest_service("/console", console);
+        tracing::info!("console served at /console (web/)");
+    }
+
     let app = app
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
