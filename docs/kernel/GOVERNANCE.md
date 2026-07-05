@@ -36,7 +36,7 @@ This is numu's identity — *disciplines are queries, not prompts* — applied t
 | # | Concern (GDPR) | Registry property | Chokepoint | Gate | Status |
 |---|---|---|---|---|---|
 | 1 | Classification / minimisation (5, 25) | `type_fields.data_class` | type-registration validator | `data-class-audit` | ✅ live (0016) |
-| 2 | Read accountability (30) | `data_class ≥ personal` | the generic GET/LIST handler | `access-audit` rule | ○ design |
+| 2 | Read accountability (30) | `data_class ≥ personal` | the generic GET/LIST handler | `access-audit` | ✅ live (0019) |
 | 3 | Operator access / purpose-limit (5(1)(b), 28) | `operator_access` edge | the reach resolver | TTL = a WHERE clause | ○ design |
 | 4 | Storage limitation / retention (5(1)(e)) | retention window on `data_class` | a kernel reaper | `retention-audit` | ◐ port |
 | 5 | Access / erasure / portability (15, 17, 20) | `scope_parent_id` graph | generic subject endpoints | — (integration test) | ◐ port |
@@ -57,11 +57,14 @@ at-rest encryption — not read/write rank). *Gate:* `data-class-audit` asserts 
 that a PII-named field (`email`/`dob`/`ssn`/…) is **raised** to `personal|sensitive` (inline or via the
 manifest), rather than left at the floor.
 
-**2 · Read-audit is a chokepoint hook.** The `events` spine logs every mutation (✅); the gap is
-*read* accountability of sensitive data. `field_perms` already computes the readable set in the one
-handler — so wire it once: a GET/LIST that returns any `personal|sensitive` field appends an
-`access_audit` row (actor, fields, purpose, request-id). Every type inherits operator-read evidence.
-*Gate:* an rbac-audit-style rule — every data-returning handler path flows through the hook.
+**2 · Read-audit is a chokepoint hook. ✅ LIVE** (`migrations/0019_access_audit.sql` ·
+`db::record_access` · `tools/access-audit/` · CASE 0017). A GET/LIST that returns any
+`personal|sensitive` field (per 0016's `data_class`, loaded on `FieldDef`) appends an **insert-only**
+`access_audit` row: actor, the acting surface (Plane C's tag), field NAMES (never values —
+OBSERVABILITY §6 rule 6), row count, the declared purpose, request-id. One row per request; every
+type inherits operator-read evidence. *Gate:* `access-audit` — the substrate exists, both generic
+read paths flow through the hook, the row carries names + request-id, and no code path ever
+UPDATEs/DELETEs the table.
 
 **3 · Operator access is a kernel edge, not app policy.** Promote `operator_access`
 ([RBAC design Part 3](../foundation/numu-rbac-membership-design.md)) into the reach resolver: a
@@ -139,12 +142,12 @@ for any runbook), and the operator-access controls (#2, #3) are **design, not bu
 
 ## Start here
 
-**#1 (`data_class` + its gate) has landed** — it is the spine the others key off (retention, read-audit,
-DSR scoping, encryption all reference the class), and it converts the privacy register from a hand-kept doc
-into a generated query. **Next: #2** (the read-audit hook — the generic GET/LIST handler appends an
-`access_audit` row when a `personal|sensitive` field is returned; this is also where the registry begins
-loading `data_class` into `FieldDef` so the hook and OPTIONS can see it) and **#3** (the `operator_access`
-edge), which together close the backend-office operator gap.
+**#1 (`data_class`) and #2 (the read-audit hook) have landed** — the classification spine plus its
+read evidence; the registry loads `data_class` on `FieldDef`, OPTIONS exposes it, and Plane C's
+`max_data_class` ceiling (CASE 0016, [`../api/RBAC.md`](../api/RBAC.md) §2b) already consumes it.
+**Next: #3** (the `operator_access` edge — the reach-resolver TTL; Plane C's `condition` kinds are
+its substrate) to close the backend-office operator gap, then #4 (retention) which keys off the
+same class column.
 
 ## Pointers
 

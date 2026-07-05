@@ -204,6 +204,17 @@ Loaded into the registry snapshot, so a field's `domain_ref` resolves with zero 
 Seeded: `currency_iso4217` (XOF · EUR · USD · GBP · NGN) and `case_status` — the domains the console
 sim already implies.
 
+### `capability_grant` + `condition` — Plane C (0018)
+The capability plane's substrate ([`RBAC.md`](RBAC.md) §2b): what a non-console **acting surface**
+(app/agent — default-deny) may do, and under which pure predicate (`kyc_verified` ·
+`purpose_limited` · `ttl` · `owner_grade` · `max_data_class`). Console is default-allow; a grant is
+`(surface_kind, surface_id, type_id|'*', action|'*', scope_id?, condition_id?)`.
+
+### `access_audit` — read evidence (0019)
+INSERT-ONLY ([GOVERNANCE #2](../kernel/GOVERNANCE.md)): one row per read request that returned any
+`personal|sensitive` field — actor · acting surface · type/entity · action `view|list` · field
+**names** (never values) · row count · declared purpose · request-id.
+
 ### `entity_data` — the all-JSONB store
 Generic storage for every type. (The sole typed-table opt-in is `cases`, see G4 — it earns one
 because the workflow engine needs typed `status`/indexes/triggers.)
