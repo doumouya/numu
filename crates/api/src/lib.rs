@@ -89,14 +89,18 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
     let state = AppState::new(pool, registry, workflows);
 
     // brute-force backstop on /auth ONLY (not the object surface): a per-client fixed window.
+    // The OAuth start/callback routes ride the SAME limiter (CASE 0021 — closing the gap
+    // RUNNING.md used to document).
     let limiter = RateLimiter::new(
         cfg.auth_rate_limit,
         Duration::from_secs(cfg.auth_rate_window_secs),
     );
-    let auth_routes = auth::router().route_layer(middleware::from_fn(move |req, next| {
-        let limiter = limiter.clone();
-        async move { ratelimit::enforce(limiter, req, next).await }
-    }));
+    let auth_routes = auth::router()
+        .merge(oauth::router())
+        .route_layer(middleware::from_fn(move |req, next| {
+            let limiter = limiter.clone();
+            async move { ratelimit::enforce(limiter, req, next).await }
+        }));
 
     // CORS so a browser frontend on another origin can call the API WITH its session cookie. Credentials
     // require explicit origins (never `*`), so we allow the configured list and expose the ETag/Location
@@ -134,7 +138,6 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         .merge(orchestrator::router())
         .merge(connectors::router())
         .merge(auth_routes)
-        .merge(oauth::router())
         .merge(debug::router())
         .route("/healthz", get(health::healthz))
         .route("/readyz", get(health::readyz));

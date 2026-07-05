@@ -22,13 +22,30 @@ use crate::error::{AppError, AppResult};
 use crate::ids;
 use crate::state::AppState;
 
-const SESSION_COOKIE: &str = "numu_session";
 /// `Secure` only in release — dev (http://localhost) must keep the cookie. cfg-flip, not an env var.
 const SECURE: &str = if cfg!(debug_assertions) {
     ""
 } else {
     "; Secure"
 };
+
+/// The session cookie NAME, configurable via `NUMU_SESSION_COOKIE` (default `numu_session`).
+/// Why configurable: Firebase Hosting rewrites forward exactly ONE cookie to Cloud Run — one
+/// literally named `__session` — so production behind the rewrite sets
+/// `NUMU_SESSION_COOKIE=__session` or auth silently breaks (CASE 0021; docs/ops/DEPLOY.md).
+/// The OAuth state cookie MULTIPLEXES onto this same name (`st.<signed>` values — oauth.rs)
+/// for the same reason.
+pub(crate) fn session_cookie_name() -> &'static str {
+    use std::sync::OnceLock;
+    static NAME: OnceLock<String> = OnceLock::new();
+    NAME.get_or_init(|| {
+        std::env::var("NUMU_SESSION_COOKIE").unwrap_or_else(|_| "numu_session".to_string())
+    })
+}
+
+/// Marks an in-flight OAuth state value riding the session cookie (oauth.rs). Session tokens are
+/// hex-only, so the prefix can never collide with a real token.
+pub(crate) const OAUTH_STATE_PREFIX: &str = "st.";
 
 fn sha256_hex(s: &str) -> String {
     let mut h = Sha256::new();
@@ -40,7 +57,9 @@ fn cookie_token(header_value: &str) -> Option<String> {
     header_value
         .split(';')
         .map(str::trim)
-        .find_map(|kv| kv.strip_prefix(&format!("{SESSION_COOKIE}=")))
+        .find_map(|kv| kv.strip_prefix(&format!("{}=", session_cookie_name())))
+        // an in-flight OAuth state value is not a session — treat it as absent (401), never query it.
+        .filter(|v| !v.starts_with(OAUTH_STATE_PREFIX))
         .map(str::to_string)
 }
 
@@ -59,7 +78,8 @@ pub(crate) async fn mint_session(pool: &PgPool, actor_id: &str) -> AppResult<Str
     .execute(pool)
     .await?;
     Ok(format!(
-        "{SESSION_COOKIE}={token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000{SECURE}"
+        "{}={token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000{SECURE}",
+        session_cookie_name()
     ))
 }
 
@@ -217,6 +237,26 @@ async fn logout(State(st): State<AppState>, caller: Caller) -> AppResult<Respons
         .bind(&caller.actor_id)
         .execute(&st.pool)
         .await?;
-    let cleared = format!("{SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0{SECURE}");
+    let cleared = format!(
+        "{}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0{SECURE}",
+        session_cookie_name()
+    );
     Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cleared)]).into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cookie_token_should_skip_inflight_oauth_state() {
+        let name = session_cookie_name();
+        assert_eq!(
+            cookie_token(&format!("{name}=abc123; other=x")).as_deref(),
+            Some("abc123")
+        );
+        // an st.-prefixed value is an OAuth state in flight, not a session
+        assert!(cookie_token(&format!("{name}=st.payload.sig")).is_none());
+        assert!(cookie_token("unrelated=1").is_none());
+    }
 }

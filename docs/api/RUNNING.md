@@ -33,7 +33,9 @@ Migrations run automatically on boot (idempotent — safe to restart). `GET /hea
 | `NUMU_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | browser origins allowed to call the API with credentials (comma-separated) |
 | `NUMU_DEBUG` | off | enables `POST /api/_debug/echo` |
 | `NUMU_TRUST_PROXY` | off | trust `X-Forwarded-For` for the `/auth` rate limit (set only behind a real proxy) |
-| `NUMU_AUTH_RATE_LIMIT` / `_WINDOW_SECS` | `30` / `60` | per-client limit on the session-minting `/auth` routes (dev-login · claim-admin · logout); the `/auth/:provider/*` OAuth routes are **not** yet behind it |
+| `NUMU_AUTH_RATE_LIMIT` / `_WINDOW_SECS` | `30` / `60` | per-client limit on ALL `/auth` routes — dev-login · claim-admin · logout **and** the `/auth/:provider/*` OAuth start/callback (CASE 0021) |
+| `NUMU_SESSION_COOKIE` | `numu_session` | the session cookie NAME. Behind Firebase Hosting rewrites set `__session` — Hosting forwards exactly one cookie with that literal name; the OAuth state multiplexes onto the same cookie as an `st.`-prefixed signed value (CASE 0021; see [`AUTH.md`](AUTH.md)) |
+| `NUMU_AUTH_ALLOWED_DOMAINS` / `_EMAILS` | empty (open) | login allowlist (comma lists). When either is set, OAuth login requires a provider-**verified** email matching an allowed address or domain; everything else is a leak-free 401. The server-side layer behind an Internal (Workspace-only) OAuth client |
 | `NUMU_SECRET` | dev literal (insecure) | **required in prod** — signs the OAuth state cookie (HMAC). A **release build refuses to boot** when it is unset or equals the dev literal (`config::validate_secret`, CASE 0013); dev keeps the fallback with a stderr warning. Never log it. See [`AUTH.md`](AUTH.md) §4 |
 | `GOOGLE_/APPLE_/FACEBOOK_/TIKTOK_*` | — | OAuth provider credentials: `*_CLIENT_ID` / `*_CLIENT_SECRET` / `*_REDIRECT_URI` per provider (TikTok uses `TIKTOK_CLIENT_KEY`). See [`AUTH.md`](AUTH.md) §3 |
 | `RUST_LOG` | `info,numu_api=debug` | log filter (also hot-swappable via `PATCH /api/_debug/log-level`) |

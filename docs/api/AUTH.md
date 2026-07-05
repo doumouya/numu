@@ -7,9 +7,12 @@
 
 ## 1. Sessions + the Caller extractor
 
-- **Store** (`migrations/0005` `sessions`): an opaque 256-bit token lives in the `numu_session` cookie;
-  only its **sha256 is stored** (a DB leak never exposes a live session). Cookie attrs: `HttpOnly`,
-  `SameSite=Lax` (survives the OAuth callback's top-level cross-site GET), `Secure` in release (cfg-flip).
+- **Store** (`migrations/0005` `sessions`): an opaque 256-bit token lives in the session cookie
+  (name = `NUMU_SESSION_COOKIE`, default `numu_session`; production behind Firebase Hosting
+  rewrites MUST use `__session` — Hosting forwards exactly one cookie with that literal name,
+  CASE 0021); only its **sha256 is stored** (a DB leak never exposes a live session). Cookie
+  attrs: `HttpOnly`, `SameSite=Lax` (survives the OAuth callback's top-level cross-site GET),
+  `Secure` in release (cfg-flip).
 - **Extractor** (`auth.rs`, `FromRequestParts for Caller`): cookie → hash → `sessions ⋈ actor` → `Caller{
   actor_id, is_platform_admin}` (admin = the actor's `platform_role == 'admin'`). No/expired session →
   **401** (never a dev fallback). Every object/member handler takes `caller: Caller`.
@@ -31,15 +34,22 @@ by the real TCP peer (unforgeable; `X-Forwarded-For` is honored ONLY under `NUMU
 behind a real proxy), default **30 hits / 60 s** (`NUMU_AUTH_RATE_LIMIT`/`_WINDOW_SECS`), counters
 memory-capped so a spoofed-key flood can't exhaust the map. Over the limit → **429** problem+json
 carrying the request-id (no `Retry-After` header — [`HTTP.md`](HTTP.md) §6). The `/auth/:provider/*`
-OAuth routes (§3) are **not** yet behind it.
+OAuth routes (§3) sit behind the **same limiter** (CASE 0021).
 
 ## 3. Social OAuth (authorization-code)
 
 `GET /auth/:provider/start` → `GET /auth/:provider/callback` (`oauth.rs`):
 
-- **State = an HMAC-signed cookie**, not a table — it carries the CSRF nonce + the OIDC nonce + an expiry;
-  the callback verifies the HMAC (constant-time), freshness, and `state == nonce`. (No `oauth_state` table:
-  no write per auth-start; scale-neutral.)
+- **State = an HMAC-signed cookie value**, not a table — it carries the CSRF nonce + the OIDC nonce + an
+  expiry; the callback verifies the HMAC (constant-time), freshness, and `state == nonce`. (No
+  `oauth_state` table: no write per auth-start; scale-neutral.) Since CASE 0021 the state
+  **multiplexes onto the session cookie name** as an `st.`-prefixed value (one cookie survives the
+  Firebase rewrite — §1); the callback's session `Set-Cookie` overwrites it in place, and the
+  `Caller` extractor treats `st.`-prefixed values as no-session (401).
+- **Login allowlist** (`NUMU_AUTH_ALLOWED_DOMAINS`/`_EMAILS`, CASE 0021): when configured, only a
+  provider-**verified** email on an allowed address/domain may mint a session; anything else is a
+  leak-free 401. Empty lists keep today's open behavior. This is the server-side layer BEHIND an
+  Internal (Workspace-only) OAuth consent screen — defense in depth, not the only lock.
 - **The flow** exchanges code→token→identity through the **SSRF-gated `Fetcher`** (§5), then **upserts by
   `(provider, sub)`** (`migrations/0006` `auth_identities`) — NEVER by email — minting an `actor` on first
   login, and a session. `complete_login` takes a `&dyn Fetcher`, so the whole flow is tested with a mock.

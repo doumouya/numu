@@ -23,13 +23,24 @@ use crate::ids;
 use crate::state::AppState;
 
 type HmacSha256 = Hmac<Sha256>;
-const STATE_COOKIE: &str = "numu_oauth";
 const STATE_TTL_SECS: u64 = 600;
 const SECURE: &str = if cfg!(debug_assertions) {
     ""
 } else {
     "; Secure"
 };
+
+/// The state cookie is the SESSION cookie name carrying an `st.`-prefixed signed value: Firebase
+/// Hosting forwards only one cookie (`__session`) to Cloud Run, so state and session must share
+/// it (auth.rs::session_cookie_name, CASE 0021). The callback's session Set-Cookie overwrites
+/// the state in place — no separate clear needed.
+fn state_cookie(signed: &str) -> String {
+    format!(
+        "{}={}{signed}; HttpOnly; SameSite=Lax; Path=/; Max-Age={STATE_TTL_SECS}{SECURE}",
+        crate::auth::session_cookie_name(),
+        crate::auth::OAUTH_STATE_PREFIX,
+    )
+}
 
 /// How a provider yields the identity after the token exchange.
 pub enum ProviderKind {
@@ -179,7 +190,7 @@ fn verify_state(signed: &str) -> Option<String> {
 // ── the testable flow core ────────────────────────────────────────────────────
 /// Provider-specific extraction of the canonical OUTPUT from the userinfo JSON. (Google/FB/TikTok are
 /// userinfo-shaped; Apple, E2, supplies the same shape from a verified id_token.)
-fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, String)> {
+fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, Option<bool>, String)> {
     // TikTok nests the user under data.user; Google/Facebook are flat. The subject is `sub` (OIDC),
     // `id` (Facebook), or `open_id` (TikTok); the name is `name` or `display_name`. Email may be absent
     // (app-review-gated) — identity always resolves by (provider, sub), never by email.
@@ -198,13 +209,73 @@ fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, Stri
         .get("email")
         .and_then(|v| v.as_str())
         .map(str::to_string);
+    let email_verified = bool_ish(root.get("email_verified"));
     let name = root
         .get("name")
         .or_else(|| root.get("display_name"))
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    Ok((sub, email, name))
+    Ok((sub, email, email_verified, name))
+}
+
+/// Providers ship `email_verified` as a bool (Google userinfo) or a string ("true" — Apple id_token).
+fn bool_ish(v: Option<&Value>) -> Option<bool> {
+    match v {
+        Some(Value::Bool(b)) => Some(*b),
+        Some(Value::String(s)) => Some(s == "true"),
+        _ => None,
+    }
+}
+
+// ── the login allowlist (prod hardening, CASE 0021) ─────────────────────────
+/// Pure allowlist check. Empty lists = open (today's dev behavior). When ANY list is configured,
+/// login requires a provider-VERIFIED email that matches an allowed address or domain — the
+/// server-side layer behind the Internal (Workspace-only) OAuth consent screen.
+fn identity_allowed(
+    email: Option<&str>,
+    email_verified: Option<bool>,
+    domains: &[String],
+    emails: &[String],
+) -> bool {
+    if domains.is_empty() && emails.is_empty() {
+        return true;
+    }
+    let Some(email) = email else { return false };
+    if email_verified != Some(true) {
+        return false;
+    }
+    let email = email.to_ascii_lowercase();
+    if emails.iter().any(|e| e == &email) {
+        return true;
+    }
+    match email.rsplit_once('@') {
+        Some((_, dom)) => domains.iter().any(|d| d == dom),
+        None => false,
+    }
+}
+
+fn env_list(key: &str) -> Vec<String> {
+    std::env::var(key)
+        .map(|v| {
+            v.split(',')
+                .map(|s| s.trim().to_ascii_lowercase())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// `NUMU_AUTH_ALLOWED_DOMAINS` / `NUMU_AUTH_ALLOWED_EMAILS` (comma lists; read once).
+fn allowlist() -> &'static (Vec<String>, Vec<String>) {
+    use std::sync::OnceLock;
+    static LISTS: OnceLock<(Vec<String>, Vec<String>)> = OnceLock::new();
+    LISTS.get_or_init(|| {
+        (
+            env_list("NUMU_AUTH_ALLOWED_DOMAINS"),
+            env_list("NUMU_AUTH_ALLOWED_EMAILS"),
+        )
+    })
 }
 
 /// Find the actor linked to (provider, sub), or mint one (actor entity + identity) in a txn.
@@ -263,6 +334,9 @@ struct IdClaims {
     sub: String,
     #[serde(default)]
     email: Option<String>,
+    /// Apple ships this as a bool OR the string "true" — coerced via `bool_ish`.
+    #[serde(default)]
+    email_verified: Option<Value>,
     #[serde(default)]
     nonce: Option<String>,
 }
@@ -277,7 +351,7 @@ pub async fn verify_id_token(
     jwks_url: &str,
     fetcher: &dyn Fetcher,
     expected_nonce: &str,
-) -> AppResult<(String, Option<String>)> {
+) -> AppResult<(String, Option<String>, Option<bool>)> {
     use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
     let header = decode_header(id_token).map_err(|_| AppError::unauthorized())?;
     let kid = header.kid.ok_or_else(AppError::unauthorized)?;
@@ -305,7 +379,8 @@ pub async fn verify_id_token(
     if data.claims.nonce.as_deref() != Some(expected_nonce) {
         return Err(AppError::unauthorized());
     }
-    Ok((data.claims.sub, data.claims.email))
+    let verified = bool_ish(data.claims.email_verified.as_ref());
+    Ok((data.claims.sub, data.claims.email, verified))
 }
 
 /// Exchange code→token, derive the identity (userinfo OR a verified id_token), upsert by (provider, sub),
@@ -329,7 +404,7 @@ pub async fn complete_login(
             ],
         )
         .await?;
-    let (sub, email, name) = match &p.kind {
+    let (sub, email, email_verified, name) = match &p.kind {
         ProviderKind::Userinfo => {
             let access = token
                 .get("access_token")
@@ -343,11 +418,18 @@ pub async fn complete_login(
                 .get("id_token")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| AppError::bad_request("token endpoint returned no id_token"))?;
-            let (sub, email) =
+            let (sub, email, email_verified) =
                 verify_id_token(id_token, &p.client_id, issuer, jwks_url, fetcher, nonce).await?;
-            (sub, email, String::new())
+            (sub, email, email_verified, String::new())
         }
     };
+    // The login allowlist (CASE 0021): when configured, only provider-VERIFIED emails on the
+    // allowed domains/addresses may mint a session — the server-side layer behind the Internal
+    // (Workspace-only) OAuth consent screen. Deny is a plain 401: leak-free, no detail.
+    let (domains, emails) = allowlist();
+    if !identity_allowed(email.as_deref(), email_verified, domains, emails) {
+        return Err(AppError::unauthorized());
+    }
     let actor_id = upsert_identity(pool, &p.name, &sub, email.as_deref(), &name).await?;
     crate::auth::mint_session(pool, &actor_id).await
 }
@@ -376,14 +458,11 @@ async fn start(Path(name): Path<String>) -> AppResult<Response> {
         ],
     )
     .map_err(|_| AppError::internal("bad authorize url"))?;
-    let cookie = format!(
-        "{STATE_COOKIE}={signed}; HttpOnly; SameSite=Lax; Path=/; Max-Age={STATE_TTL_SECS}{SECURE}"
-    );
     Ok((
         StatusCode::FOUND,
         [
             (header::LOCATION, url.to_string()),
-            (header::SET_COOKIE, cookie),
+            (header::SET_COOKIE, state_cookie(&signed)),
         ],
     )
         .into_response())
@@ -412,20 +491,27 @@ async fn callback(
     headers: axum::http::HeaderMap,
 ) -> AppResult<Response> {
     let p = provider(&name).ok_or_else(AppError::not_found)?;
-    // CSRF + freshness: the signed cookie must verify, not be expired, and its nonce must equal `state`.
-    let signed = cookie_value(&headers, STATE_COOKIE).ok_or_else(AppError::unauthorized)?;
+    // CSRF + freshness: the state rides the SESSION cookie as an `st.`-prefixed signed value
+    // (one-cookie multiplexing — see state_cookie()); it must verify, not be expired, and its
+    // nonce must equal `state`.
+    let signed = cookie_value(&headers, crate::auth::session_cookie_name())
+        .and_then(|v| {
+            v.strip_prefix(crate::auth::OAUTH_STATE_PREFIX)
+                .map(str::to_string)
+        })
+        .ok_or_else(AppError::unauthorized)?;
     let payload = verify_state(&signed).ok_or_else(AppError::unauthorized)?;
     let (nonce, exp) = payload.split_once(':').ok_or_else(AppError::unauthorized)?;
     let exp: u64 = exp.parse().unwrap_or(0);
     if nonce != q.state || now_unix() > exp {
         return Err(AppError::unauthorized());
     }
+    // the session Set-Cookie overwrites the in-flight state on the SAME cookie name — no
+    // separate clear (there is only one cookie through the Firebase rewrite).
     let session = complete_login(&st.pool, &p, &SsrfFetcher, &q.code, nonce).await?;
-    // clear the state cookie, set the session cookie, land the user
-    let cleared = format!("{STATE_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0{SECURE}");
     Ok((
         StatusCode::OK,
-        [(header::SET_COOKIE, session), (header::SET_COOKIE, cleared)],
+        [(header::SET_COOKIE, session)],
         axum::Json(json!({ "ok": true })),
     )
         .into_response())
@@ -447,5 +533,83 @@ mod tests {
         assert!(verify_state(&tampered).is_none());
         // malformed input never verifies
         assert!(verify_state("no-signature").is_none());
+    }
+
+    #[test]
+    fn state_cookie_should_ride_the_session_cookie_name_with_prefix() {
+        let c = state_cookie("payload.sig");
+        assert!(c.starts_with(&format!(
+            "{}={}payload.sig;",
+            crate::auth::session_cookie_name(),
+            crate::auth::OAUTH_STATE_PREFIX
+        )));
+    }
+
+    fn v(items: &[&str]) -> Vec<String> {
+        items.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn identity_allowed_empty_lists_should_stay_open() {
+        assert!(identity_allowed(None, None, &[], &[]));
+        assert!(identity_allowed(Some("x@y.z"), Some(false), &[], &[]));
+    }
+
+    #[test]
+    fn identity_allowed_should_admit_allowed_domain_verified_only() {
+        let domains = v(&["numu.im"]);
+        assert!(identity_allowed(
+            Some("em@numu.im"),
+            Some(true),
+            &domains,
+            &[]
+        ));
+        // case-insensitive on the email side
+        assert!(identity_allowed(
+            Some("EM@NUMU.IM"),
+            Some(true),
+            &domains,
+            &[]
+        ));
+        // unverified / missing verification / no email / wrong domain all deny
+        assert!(!identity_allowed(
+            Some("em@numu.im"),
+            Some(false),
+            &domains,
+            &[]
+        ));
+        assert!(!identity_allowed(Some("em@numu.im"), None, &domains, &[]));
+        assert!(!identity_allowed(None, Some(true), &domains, &[]));
+        assert!(!identity_allowed(
+            Some("em@evil.example"),
+            Some(true),
+            &domains,
+            &[]
+        ));
+    }
+
+    #[test]
+    fn identity_allowed_should_admit_exact_email() {
+        let emails = v(&["em@numu.im"]);
+        assert!(identity_allowed(
+            Some("em@numu.im"),
+            Some(true),
+            &[],
+            &emails
+        ));
+        assert!(!identity_allowed(
+            Some("other@numu.im"),
+            Some(true),
+            &[],
+            &emails
+        ));
+    }
+
+    #[test]
+    fn bool_ish_should_coerce_provider_shapes() {
+        assert_eq!(bool_ish(Some(&Value::Bool(true))), Some(true));
+        assert_eq!(bool_ish(Some(&Value::String("true".into()))), Some(true));
+        assert_eq!(bool_ish(Some(&Value::String("false".into()))), Some(false));
+        assert_eq!(bool_ish(None), None);
     }
 }
