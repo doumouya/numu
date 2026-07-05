@@ -1024,6 +1024,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "numu-app-portfolio"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "numu-api",
+ "serde_json",
+]
+
+[[package]]
+name = "numu-server"
+version = "0.1.0"
+dependencies = [
+ "numu-api",
+ "numu-app-portfolio",
+ "tokio",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

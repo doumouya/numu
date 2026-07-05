@@ -39,10 +39,29 @@ use crate::config::Config;
 use crate::ratelimit::RateLimiter;
 use crate::state::AppState;
 
+/// One mountable APP (the apps tier — docs/apps/PORTFOLIO.md §doctrine): a product-specific
+/// surface composed onto the generic core by a composition binary (`crates/server`). Mounted
+/// under `/api/apps/<name>` iff `env_flag` is `"1"` at boot — apps are opt-in per deployment,
+/// and the core stays generic (it never links an app crate; the dependency points the other way).
+pub struct AppMount {
+    /// Route namespace: the app serves under `/api/apps/<name>`.
+    pub name: &'static str,
+    /// Boot flag (e.g. `NUMU_APP_PORTFOLIO`); unset/≠"1" leaves the app unmounted (404).
+    pub env_flag: &'static str,
+    /// Builds the app's router; receives the shared state (pool, registry, workflows).
+    pub mount: fn(AppState) -> axum::Router<AppState>,
+}
+
 /// Bootstraps tracing (with a hot-swappable filter), the pool + migrations, and the registry, then serves
 /// the full surface behind the request-id + trace middleware — with a per-client `/auth` rate limit and
-/// graceful shutdown.
+/// graceful shutdown. The dev binary: core only, no apps.
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    run_with(Vec::new()).await
+}
+
+/// `run()` plus the apps tier: each admitted [`AppMount`] nests under `/api/apps/<name>`.
+/// `crates/server` (the production binary) is the composition point.
+pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Error>> {
     let cfg = Config::from_env()?;
 
     // a reloadable EnvFilter so `PATCH /api/_debug/log-level` can hot-swap the verbosity at runtime.
@@ -107,7 +126,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .expose_headers([header::ETAG, header::LOCATION]);
 
-    let app = Router::new()
+    let mut app = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))
         .merge(types::router())
         .merge(relations::router())
@@ -118,7 +137,24 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .merge(oauth::router())
         .merge(debug::router())
         .route("/healthz", get(health::healthz))
-        .route("/readyz", get(health::readyz))
+        .route("/readyz", get(health::readyz));
+
+    // the apps tier: opt-in per deployment — an app absent or un-flagged simply isn't there (404).
+    for m in &apps {
+        let enabled = std::env::var(m.env_flag).map(|v| v == "1").unwrap_or(false);
+        if enabled {
+            app = app.nest(&format!("/api/apps/{}", m.name), (m.mount)(state.clone()));
+            tracing::info!(app = m.name, "app mounted at /api/apps/{}", m.name);
+        } else {
+            tracing::info!(
+                app = m.name,
+                flag = m.env_flag,
+                "app linked but not enabled"
+            );
+        }
+    }
+
+    let app = app
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(middleware::from_fn(request_id::request_id_layer))

@@ -1,9 +1,12 @@
 # numu — workspace.
-# crates/api is the HTTP edge. The `data` crate (pure compute → wasm) and `shared` (DTOs) are added
-# when the first compute / cross-crate type lands — the workspace grows; we don't ship empty crates.
+# crates/api is the HTTP edge (core). crates/apps/* is the APPS TIER — product-specific surfaces
+# composed onto the core by crates/server (the production binary) behind per-app env flags; core
+# never links an app crate (docs/apps/PORTFOLIO.md §doctrine). The `data` crate (pure compute →
+# wasm) and `shared` (DTOs) are added when the first compute / cross-crate type lands — the
+# workspace grows; we don't ship empty crates.
 [workspace]
 resolver = "2"
-members = ["crates/api"]
+members = ["crates/api", "crates/apps/portfolio", "crates/server"]
 
 [workspace.package]
 edition = "2021"
