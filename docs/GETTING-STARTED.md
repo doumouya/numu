@@ -23,8 +23,10 @@ sibling **amenan-ui** framework. There is no per-type backend code and no fronte
 | the **amenan-ui** sibling checkout | — | the console's framework, aliased at build (there is **no npm package**) |
 
 **The sibling checkout is not optional.** The console build resolves the bare `amenan-ui` import to
-a sibling source tree, expected at `../amenan-ui` relative to the numu repo
-(`AMU=../../amenan-ui` from `tools/`). Confirm it before anything else:
+a sibling source tree. `tools/web-build.sh` defaults it to `AMU=../../amenan-ui` resolved from the
+repo root (the script `cd`s up to root first) — i.e. two levels above the repo, alongside
+`rust-project/`. Override with `AMU=/path/to/amenan-ui` if yours lives elsewhere. Confirm it before
+anything else:
 
 ```bash
 cd /home/mansa/rust-project/numu
@@ -133,7 +135,7 @@ runs only when `DATABASE_URL` is set (so a bare clone stays green); set it — p
 | symptom | fix |
 |---|---|
 | `AddrInUse` on boot | another process owns `NUMU_BIND` — set it to a free port (e.g. `127.0.0.1:8099`) |
-| `missing sibling amenan-ui at …` on `npm run build` | clone/checkout amenan-ui at `../amenan-ui`, or set `AMU=/path/to/amenan-ui` |
+| `missing sibling amenan-ui at …` on `npm run build` | checkout amenan-ui at `../../amenan-ui` (from the repo root), or set `AMU=/path/to/amenan-ui` |
 | console loads but `/api` calls fail | boot the backend first and pass `NUMU_URL` to `npm run dev` so the proxy has a target |
 | `POST /api/objects/foo` → `404` | `foo` isn't a registered type — `GET /api/types` lists the catalog ([type-registry skill](../.claude/skills/type-registry/SKILL.md) to add one) |
 | a write returns `428`/`412` | writes need `If-Match: W/"<version>"`; `428` = you omitted it, `412` = your version is stale ([`api/HTTP.md`](api/HTTP.md) §3) |

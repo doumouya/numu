@@ -11,9 +11,10 @@ migrations you hand-write.
 > sim (`web/`, branch work). Phase B binds the console to this backend — the contract is
 > [`docs/frontend/SEAM.md`](docs/frontend/SEAM.md).**
 >
-> **Lost?** [`docs/DOCMAP.md`](docs/DOCMAP.md) is the map — every doc, what it governs, the code area
-> it's the contract for, and the order to read them in. The baked working rules live in
-> [`CLAUDE.md`](CLAUDE.md).
+> **New here?** [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) takes you zero → a running
+> console + api (every step executed before it was written). **Lost?**
+> [`docs/DOCMAP.md`](docs/DOCMAP.md) is the map — every doc, what it governs, the code area it's the
+> contract for, and the order to read them in. The baked working rules live in [`CLAUDE.md`](CLAUDE.md).
 
 ## The layers (read order = build order)
 

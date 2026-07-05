@@ -126,11 +126,14 @@ to the segments directly:
 In JS, `isFolded()` tells you the same thing (segments === 2) when *behaviour*, not
 just layout, has to change.
 
-## The invisible scrollbar (`.nu-scroll`)
+## The invisible scrollbar (the `.nu-scroll` pattern)
 
-The house default: scrollable regions scroll their content but **hide the
-scrollbar** — the chrome doesn't move, the content does. One utility, one home. In
-the app it's a `.nu-*` class in `app.css`:
+The house default the skill prescribes: scrollable regions scroll their content but
+**hide the scrollbar** — the chrome doesn't move, the content does. One utility, one
+home. **Not yet shipped** — today `app.css` has per-region `overflow-y: auto`
+classes (`.nu-orail-scroll`, `.nu-feed-scroll`) but no scrollbar-hiding rule; the
+canonical utility to add (or upstream as an amenan atom if other consumers want it)
+is a single `.nu-scroll`:
 
 ```css
 .nu-scroll {
@@ -141,8 +144,8 @@ the app it's a `.nu-*` class in `app.css`:
 .nu-scroll::-webkit-scrollbar { display: none; } /* Chrome / Safari / Opera */
 ```
 
-Don't restate those five lines inline every time — reuse the utility (or upstream it
-as an amenan atom if another consumer wants it). And mind the caveats:
+Once it lands, don't restate those five lines inline every time — reuse the one
+utility. And mind the caveats:
 
 - Keep a **visible hint** that there's more — a fade edge, a partial next row.
 - **Don't** hide it on huge desktop documents where the bar *is* the position

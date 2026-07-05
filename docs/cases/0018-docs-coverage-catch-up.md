@@ -51,3 +51,20 @@ contract living OUT-OF-REPO (`../object-model/numu_id.md`) · `tools/README.md` 
 - **W0 (2026-07-05):** gate + generator live (17 gates); REFERENCE.md generated (58 verbs:
   36 generic + 22 object); GOVERNANCE.md DOCMAP row added; tools/README registry reconciled to
   the real gate set.
+- **W1:** HTTP/CONTRACT OPTIONS examples reconciled to the 0016/0017 field shape; AUTH rate-limit
+  + logout truth from code; OBJECTS gained the missing G2 SYSTEM tables + the full migrations
+  ledger; `api/IDS.md` ported in-repo from object-model/ (stub left behind).
+- **W2:** the api reference layer — ROUTES/ORCHESTRATOR/WORKFLOW/CONNECTORS, examples CAPTURED
+  from a live dev api on the :5433 throwaway. Caught a real drift: the CORS layer answers every
+  OPTIONS as a preflight, so the OPTIONS self-description handlers are unreachable over the wire
+  (documented as a wire caveat).
+- **W3:** the human layer — GETTING-STARTED + BUILDING-ON-NUMU both EXECUTED live (the latter
+  captured Planes A∩B∩C composing: a no_sensitive-capped agent read a ticket and got only
+  {project_id, severity}); nacl TUTORIAL, USING-THE-CONSOLE, RESPONSIVE, LAYOUT.
+- **W4:** four runbooks (symptom→root-cause→fix→verify) from this branch's history; README
+  read-order pointer; a closing 3-lane docs↔code verification fan-out. It caught three real
+  issues — a **gate-blind DOCMAP corruption** (a truncated `](…` row the link-regex couldn't
+  see, from a W2 duplicate-row slip), a stale `.nu-scroll` present-tense claim, a wrong sibling
+  path — all fixed, and the gate HARDENED with **R6** (malformed-link backstop, red-tested) so a
+  truncated row can never hide again. Final: doc-coverage green at 0 findings; full ci green.
+  **The regression is closed.**

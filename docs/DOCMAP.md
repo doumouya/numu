@@ -30,8 +30,10 @@
 7. **LAYER 3 · nacl** — [`nacl/README.md`](nacl/README.md) (doctrine home; canon =
    `web/data/nacl-commands.js`).
 8. **foundation/** — the forward-looking planning set (object model · data plane · CSV datatypes ·
-   operator access/RBAC parts 2–4 · legal/privacy).
-9. **cases/** — the on-disk Case ledger (`0001` …).
+   operator access/RBAC parts 2–4 · legal/privacy) + [`foundation/BUILDING-ON-NUMU.md`](foundation/BUILDING-ON-NUMU.md)
+   (the developer tutorial).
+9. **runbooks/** — incident & regression records (symptom → root cause → fix → verify).
+10. **cases/** — the on-disk Case ledger (`0001` …).
 
 ## The map — doc ⇄ code-area
 
@@ -71,9 +73,6 @@
 | [`api/AUTH.md`](api/AUTH.md) | sessions + the Caller extractor; social OAuth ×4, the HMAC state cookie (**`NUMU_SECRET` required in prod**), the SSRF gate | `crates/api/src/{auth,oauth,http_client}.rs` | **LIVE** (CASE 0005) |
 | [`api/OBSERVABILITY.md`](api/OBSERVABILITY.md) | debuggability: request-id spine, problem+json, health, the debuggability gate, §9 database-level observability | `crates/api` middleware · `tools/debuggability-audit` | **LIVE · locked** |
 | [`api/RUNNING.md`](api/RUNNING.md) | boot the binary + connect a frontend (CORS/proxy, env vars) | `crates/api/src/{main,config}.rs` | **LIVE** |
-| [`api/ROUTES.md`](api/ROUTES.md) | the route reference: every non-generic endpoint with REAL captured request/response examples, auth requirements, error tables (+ the OPTIONS-vs-CORS wire caveat) | `crates/api/src/{auth,types,members,relations,search,orchestrator,connectors,debug,health}.rs` | **LIVE** (captured 2026-07-05) |
-| [`api/ORCHESTRATOR.md`](api/ORCHESTRATOR.md) | feature-runs as DB state: the 5-role chain, handoff grammar + outcome vocabulary, the circuit breaker (3/gate · 8/run), the run state machine | `crates/api/src/orchestrator.rs` · `migrations/0001` (feature_runs · role_handoffs) | **LIVE** |
-| [`api/WORKFLOW.md`](api/WORKFLO
 
 ### Layer 2 · frontend (the console on amenan-ui)
 
@@ -122,12 +121,21 @@
 SPA/PWA · gate authoring); packaged export kept at
 [`skills/amenan-typescript.skill`](skills/amenan-typescript.skill).
 
+### runbooks/ — incident & regression records
+
+[`runbooks/`](runbooks/README.md) `0001` NUMU_DEBUG env leak in tests · `0002` css-drift hex
+fallbacks in charts · `0003` REL_ prefix collision (day-one rule) · `0004` docs-currency
+same-commit. Template: symptom → root cause → fix → verify → related; each closes a hole a standing
+test/gate keeps closed.
+
 ### cases/ — the ledger
 
 [`cases/`](cases/) `0001` object catalog · `0002` http surface · `0003` backend foundation · `0004`
 ci gate · `0005` rbac · `0006` cases engine · `0007` type registration · `0008` backend completion ·
 `0009` CORS ops · `0010` orchestrator · `0011` backend finish · **`0012` console web phase A**
-(renumbered from a colliding 0002) · **`0013` staging truth + secret guard**.
+(renumbered from a colliding 0002) · **`0013` staging truth + secret guard** · `0014` data-class
+governance · `0015` semantic-type backbone · `0016` plane-C capability · `0017` access-audit
+read-hook · **`0018` docs-coverage catch-up**.
 
 ## The enforcement spine
 

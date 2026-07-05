@@ -53,6 +53,18 @@ while IFS= read -r f; do
   done < <(grep -oE '\]\(([^)]+\.md[^)]*)\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | sort -u)
 done < <(find docs -name '*.md' | sort)
 
+# ── R6 · no malformed/truncated DOCMAP link (the gate's own blind-spot backstop) ─
+# R2/R3 only see links WITH a closing paren, so a truncated `](path` row (a bad copy-paste,
+# a cut-off table row) is invisible to them. Flag any `](`  in DOCMAP that isn't immediately a
+# well-formed `](target)` — catches the exact corruption the closing audit found (2026-07-05).
+while IFS= read -r ln; do
+  line_no="${ln%%:*}"
+  # every `](` on the line must be followed by a non-empty target and a closing paren before EOL
+  if grep -oE '\]\([^)]*$' <<<"${ln#*:}" | grep -q .; then
+    flag "malformed-link" "DOCMAP.md:$line_no has an opening link-paren with no close — a truncated/broken row"
+  fi
+done < <(grep -nF '](' "$DOCMAP")
+
 # ── R5 · the generated nacl reference matches the canon ─────────────────────────
 if command -v node >/dev/null 2>&1; then
   if [ -f docs/nacl/REFERENCE.md ]; then
