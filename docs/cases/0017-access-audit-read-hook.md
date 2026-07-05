@@ -31,6 +31,10 @@ access row carries the same acting-surface tag + declared purpose Plane C consum
 - Purpose is recorded as declared (binds, doesn't prove) — the same posture as Plane C's
   `purpose_limited`.
 
+**Landed 2026-07-05:** 0019 applies after 0001–0018; `access_audit_row_shape` proves the full row
+round-trip; the access-audit gate red-tested (fires on an unhooked read fn) and green on HEAD;
+full ci green — 16 gates.
+
 ## Follow-on (recorded)
 
 Retention windows on `data_class` (GOVERNANCE #4) sweep this table too; the RoPA/register

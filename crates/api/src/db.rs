@@ -33,6 +33,50 @@ pub async fn record_event(
     }
 }
 
+/// What a classified read disclosed — the `access_audit` row's read descriptor (field NAMES only,
+/// never values).
+pub struct AccessRead<'a> {
+    pub type_id: &'a str,
+    /// The item read; `None` for a collection read.
+    pub entity_id: Option<&'a str>,
+    /// `view` (item) | `list` (collection).
+    pub action: &'a str,
+    pub field_names: &'a [String],
+    pub row_count: i32,
+}
+
+/// GOVERNANCE #2 — read accountability (0019): one INSERT-ONLY `access_audit` row per read request
+/// that returned any `personal|sensitive` field. Field NAMES only, never values (OBSERVABILITY §6
+/// rule 6). Same failure posture as `record_event`: warn, never fail the read.
+pub async fn record_access(
+    pool: &PgPool,
+    ctx: &RequestCtx,
+    caller: &crate::caller::Caller,
+    read: AccessRead<'_>,
+) {
+    let res = sqlx::query(
+        "insert into access_audit \
+         (actor_id, surface_kind, surface_id, type_id, entity_id, action, field_names, row_count, purpose, request_id) \
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+    )
+    .bind(&caller.actor_id)
+    .bind(caller.surface.kind.as_str())
+    .bind(&caller.surface.id)
+    .bind(read.type_id)
+    .bind(read.entity_id)
+    .bind(read.action)
+    .bind(read.field_names)
+    .bind(read.row_count)
+    .bind(caller.purpose.as_deref())
+    .bind(&ctx.request_id)
+    .execute(pool)
+    .await;
+
+    if let Err(e) = res {
+        tracing::warn!(error = %e, request_id = %ctx.request_id, "access_audit insert failed");
+    }
+}
+
 /// "No object without an owner" — stamp the creator as `owner` in the SAME txn as create. UPSERT on the
 /// `(object_id, member_id)` key (narrowed in migration 0003) so a re-grant replaces rather than stacking a
 /// second role row. Called by `coll_create` in the same txn as the entity insert.

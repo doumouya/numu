@@ -388,16 +388,47 @@ async fn coll_get(
     };
 
     let mut items = Vec::with_capacity(rows.len());
+    let mut classified: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     for r in &rows {
         let eid: String = r.try_get("entity_id")?;
         let data: Value = r.try_get("data")?;
         let version: i32 = r.try_get("version")?;
         // Plane B: omit fields the caller can't read (no-op for the platform-admin path above).
         let data = field_perms::filter_readable(&st.pool, &caller, td, &eid, data).await?;
+        collect_classified(td, &data, &mut classified);
         items.push(entity_json(&eid, &type_id, data, version));
+    }
+    // GOVERNANCE #2: a list that returned any personal|sensitive field leaves read evidence —
+    // one row per request, the union of classified field NAMES (never values).
+    if !classified.is_empty() {
+        let names: Vec<String> = classified.into_iter().collect();
+        db::record_access(
+            &st.pool,
+            &ctx,
+            &caller,
+            db::AccessRead {
+                type_id: &type_id,
+                entity_id: None,
+                action: "list",
+                field_names: &names,
+                row_count: items.len() as i32,
+            },
+        )
+        .await;
     }
 
     Ok(Json(json!({ "items": items, "limit": limit, "offset": offset })).into_response())
+}
+
+/// The classified fields PRESENT in a filtered response payload — the access-audit input.
+fn collect_classified(td: &TypeDef, data: &Value, out: &mut std::collections::BTreeSet<String>) {
+    if let Value::Object(map) = data {
+        for f in &td.fields {
+            if field_perms::is_classified(&f.data_class) && map.contains_key(&f.field) {
+                out.insert(f.field.clone());
+            }
+        }
+    }
 }
 
 async fn coll_head(
@@ -561,6 +592,25 @@ async fn item_get(
     let data: Value = row.try_get("data")?;
     let version: i32 = row.try_get("version")?;
     let data = field_perms::filter_readable(&st.pool, &caller, td, &id, data).await?;
+    // GOVERNANCE #2: an item read returning any personal|sensitive field leaves read evidence.
+    let mut classified = std::collections::BTreeSet::new();
+    collect_classified(td, &data, &mut classified);
+    if !classified.is_empty() {
+        let names: Vec<String> = classified.into_iter().collect();
+        db::record_access(
+            &st.pool,
+            &ctx,
+            &caller,
+            db::AccessRead {
+                type_id: &type_id,
+                entity_id: Some(&id),
+                action: "view",
+                field_names: &names,
+                row_count: 1,
+            },
+        )
+        .await;
+    }
 
     if if_none_match_hit(&headers, version) {
         return Ok((StatusCode::NOT_MODIFIED, [(header::ETAG, etag(version))]).into_response());
