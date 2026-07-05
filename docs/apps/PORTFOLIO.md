@@ -32,7 +32,7 @@ its routes 404 like everything else numu doesn't admit.
 | `GET /about` | none | mount-seam liveness stub (CASE 0019) |
 | `POST /ingest` | none (public) | **live (CASE 0022)** — telemetry batches + feedback from anonymous visitors; written AS the Plane-C-confined `SVC_collector` (create-only on `pt_event`/`feedback` — migration 0020) |
 | `GET /insights` | platform admin (404 otherwise) | **live (CASE 0023)** — aggregates: visits/page (7d/30d), referrer origins, CV downloads, link clicks by target, settings distribution, viewport bands, dwell buckets, install funnel, writing filters, feedback list + average stars |
-| `POST /publish` | platform admin (404 otherwise) | renders `content/site.json` + the genpdf CV PDF from published `article`/`site_copy`/`cv` entities and commits both to `doumouya/doumouya-portfolio` via the GitHub Contents API → the portfolio's CI deploys |
+| `POST /publish` | platform admin (404 otherwise) | **live (CASE 0024)** — renders `content/site.json` + the genpdf CV PDF from published `article`/`site_copy`/`cv` entities (migration 0021) and commits both to the portfolio repo via the GitHub Contents API → the portfolio's CI deploys |
 
 Portfolio types (`pt_event`, `feedback`, `article`, `site_copy`, `cv`) are **registry rows**
 seeded by migration — a type is a row, and the app's data model needs no engine change.
@@ -77,8 +77,34 @@ Lists are `{key, count}` pairs, count-descending, capped at 25; feedback latest 
 A console Insights PANEL over this endpoint is a recorded follow-on; v1 reads it raw (or via
 the generic console object lists for feedback).
 
+## The publish pipeline (CASE 0024)
+
+`POST /api/apps/portfolio/publish` (admin; leak-free 404 otherwise):
+
+1. **Assemble** from the content entities (migration 0021 — Em edits them in the console, so
+   every edit already carries numu's RBAC/audit/events): `article` rows where `published`
+   (ordered by `ordinal` asc), the three `site_copy` keys (`overview.lead/.body/.muted`), and
+   the newest `cv` row's `doc` (the cv-data JSON contract). Missing pieces → a loud 422 — a
+   publish never ships a half-empty site.
+2. **Version = content hash** (sha256 prefix of the assembled content). If the repo's
+   `site.json` already carries it, the publish is a NO-OP (`skipped`) — idempotent by
+   construction.
+3. **Render**: `portfolio/content/site.json` (version + generated_at stamped) and the CV PDF via
+   **genpdf** (`pdf.rs`: embedded Montserrat, OFL.txt shipped; DARK/BLUE/MUTED house style; the
+   mini-markdown tokenizer mirrors the web `inline()` — links render as blue labels, PDF
+   annotations aren't exposed by genpdf).
+4. **Commit** both via the GitHub Contents API (`github.rs`: pinned `api.github.com`,
+   https-only, no redirects, 10s timeout, capped reads — the SsrfFetcher recipe; token =
+   `GITHUB_TOKEN`, a fine-grained PAT with contents:rw on the ONE repo, never logged). The
+   portfolio's WIF CI deploys the commit (~60–90s).
+
+Env: `GITHUB_TOKEN` (required) · `NUMU_PUBLISH_REPO` (default `doumouya/doumouya-portfolio`) ·
+`NUMU_PUBLISH_BRANCH` (default `main`).
+
 ## Status
 
 CASE 0019 shipped the seam + skeleton (`AppMount`, `crates/server`, `/about`). CASE 0022 shipped
 the public ingest (migration 0020, `SVC_collector`, the hardened route, db-tests). CASE 0023
-shipped the admin insights endpoint. Publish: planned, its own Case.
+shipped the admin insights endpoint. CASE 0024 shipped the publish pipeline (migration 0021,
+genpdf CV writer, GitHub Contents client, mock-hosted db-tests). The app surface is complete;
+what remains is deployment (the ops Case) and the console serving flag.

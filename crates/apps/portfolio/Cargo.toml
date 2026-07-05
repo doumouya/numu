@@ -11,6 +11,12 @@ axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
+# publish-only deps (CASE 0024) — confined to the app crate; core gains nothing.
+genpdf = "0.2"
+base64 = "0.22"
+reqwest.workspace = true
+time.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
