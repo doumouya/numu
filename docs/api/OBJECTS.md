@@ -156,6 +156,7 @@ One row = one registered object type. Adding a row is how a new object comes int
 | `display_name_plural` | text | for list views |
 | `scope_parents` | json | **ordered** parent fields the reach resolver climbs (e.g. `["project_id"]`) |
 | `icon` | text | optional UI hint |
+| `accent` | text | presentation accent — a css **token name** (`--chart-6`), never a raw color (0017; exposed by `GET /api/types`) |
 | `is_builtin` | bool | numu-shipped vs project-added (so a reset re-seeds only builtins) |
 | `ordinal` | int | display order in any type picker |
 | `method_policy` | json | per-type HTTP verb override: `{"mask":[verbs removed],"delete_min_role":"owner"}`; default `'{}'` = the full GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS surface (see [`HTTP.md`](HTTP.md)) |
@@ -185,6 +186,23 @@ The rows you enrich. Mirrors the field-shape table above.
 | `perm_class` | text | `system\|readonly\|standard\|owner_grade` |
 | `options` | json | enum vocab / `ref` target / default / validate rule |
 | `searchable` | bool | feed this field into **omnisearch**'s index? (default false) — see G3 |
+| `data_class` | text | privacy classification `public\|internal\|personal\|sensitive` — `NOT NULL DEFAULT 'internal'` + CHECK (0016, GOVERNANCE #1); independent of `perm_class` (privacy treatment, not read/write rank) |
+| `semantic_type` | text | meaning ABOVE the storage `kind` (0017): `money`/`email`/`geo`/… — null = plain primitive; autocomplete + validation read it (OPTIONS exposes it per field) |
+| `domain_ref` | text | optional **soft** ref → `field_domain(id)` — the value vocabulary; OPTIONS resolves it inline as `domain` |
+
+### `field_domain` — reusable value vocabularies (0017)
+The autocomplete's field-domain source; complements the per-field inline `options` for one-offs.
+Loaded into the registry snapshot, so a field's `domain_ref` resolves with zero per-request queries.
+
+| column | kind | notes |
+|---|---|---|
+| `id` | text PK | `currency_iso4217` · `case_status` · `fr_regions` … |
+| `kind` | text | `enum` (inline values) \| `lookup` (distinct-from-a-table) \| `ref` (entity ids of a type) |
+| `label` | text | human label |
+| `params` | jsonb | per-kind payload: `{"values":[…]}` / `{"source":…,"col":…}` / `{"type":"user"}` |
+
+Seeded: `currency_iso4217` (XOF · EUR · USD · GBP · NGN) and `case_status` — the domains the console
+sim already implies.
 
 ### `entity_data` — the all-JSONB store
 Generic storage for every type. (The sole typed-table opt-in is `cases`, see G4 — it earns one
