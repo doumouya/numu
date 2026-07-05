@@ -10,7 +10,8 @@
 ## Read order (the layer walk)
 
 1. [`../README.md`](../README.md) — what numu is; the layer table. *Orientation.*
-2. **DOCMAP.md** (this) — where everything lives.
+2. [`GETTING-STARTED.md`](GETTING-STARTED.md) — **zero → a running console + api** (the on-ramp).
+3. **DOCMAP.md** (this) — where everything lives.
 3. **LAYER 0 · kernel** — [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) (the UI framework boundary) ·
    [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) (the engine lineage). *What numu stands on.*
 4. **LAYER 0.5 · substrate** — [`ops/DATABASE.md`](ops/DATABASE.md): the Postgres under everything
@@ -33,6 +34,12 @@
 9. **cases/** — the on-disk Case ledger (`0001` …).
 
 ## The map — doc ⇄ code-area
+
+### The on-ramp
+
+| Doc | Governs | Code area | Status |
+|---|---|---|---|
+| [`GETTING-STARTED.md`](GETTING-STARTED.md) | zero → running: prerequisites, the sibling amenan-ui checkout, a database, boot the api, first requests, boot the console, first nacl, ci — every step executed before it was written | the whole boot path (`cargo run` · `npm run dev`) | **LIVE** |
 
 ### Layer 0 · kernel
 
@@ -76,6 +83,9 @@
 | [`frontend/SEAM.md`](frontend/SEAM.md) | **the NumuClient contract** — methods ⇄ routes, wire shapes, the verified error contract, faithful-vs-simulated, the phase-B route map | `web/src/client.ts` · `web/sim/` · phase B: `crates/api` | **LIVE** (contract) |
 | [`frontend/IMPERSONATION.md`](frontend/IMPERSONATION.md) | the Impersonation Rail: canon, flow, and the audit-performance + RBAC-respect assessment (enforced ✔ / display-only ⚠ / phase-B ✗) | `web/src/console/impersonation-rail.ts` · `web/src/app.ts` | **LIVE** (assessed) |
 | [`frontend/THEME.md`](frontend/THEME.md) | numu ⇄ amenan-ui theming: tier ownership, the overlay, chart color synthesis, the css-drift queries | `web/styles/` · `tools/css-drift-audit/` | **LIVE** |
+| [`frontend/USING-THE-CONSOLE.md`](frontend/USING-THE-CONSOLE.md) | **the user guide**: the two rails, upload/profile/clean, charts, object read/edit, appearance + skins, impersonation, the Store — feature-by-feature, ending in a new-team-member walk (the human twin of CONSOLE.md) | `web/src/` (as a reader, not a contract) | **LIVE** |
+| [`frontend/RESPONSIVE.md`](frontend/RESPONSIVE.md) | **the human guide** to mobile-first: the breakpoint ladder (JS ⇄ `--bp-*`), `dvh`/`svh`, 44px touch, Fold6, the invisible-scrollbar utility, the JS signals — ports the amenan-typescript skill for people | `web/` · the [`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) skill | **LIVE** |
+| [`frontend/LAYOUT.md`](frontend/LAYOUT.md) | **the human guide** to the 30×18 layout grid: the canvas model, layout-as-data, `.amu-grid` ownership, container-first, stages — forward (the grid component lands in amenan-ui when the freeze lifts; the apps proposals already spec their layouts) | future `web/src/apps/` · the [`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) skill | **proposal/forward** |
 | [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | the design-project round-trip: verbatim set, the manifest, the no-fork gate, upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` | **LIVE** |
 | [`apps/`](apps/README.md) | the consolidated app catalog — one generic app per purpose-type, brands become sources ([README doctrine](apps/README.md) + 9 proposals: wallet · player · video · mail · files · calendar · sheets · insights · releases) | future `web/src/apps/` · the Store regroup in the Design project | **proposal** (docs-authoritative until code lands) |
 | [`apps/DATA-MODEL.md`](apps/DATA-MODEL.md) | the apps on the universal catalog: tier model (system → catalog → app-registered → entity data), per-app type adjudication, app-registered prefixes, the pin & icon-suggestion contract | `../object-model/{CATALOG,numu_id}.md` · the type registry | **proposal** |
@@ -87,11 +97,13 @@
 |---|---|---|---|
 | [`nacl/README.md`](nacl/README.md) | orientation: grammar, verbs, pipeline words, "it" — canon = the synced doctrine file | `web/data/nacl-commands.js` · phase B: `crates/api/src/nacl.rs` | **LIVE** (doctrine) |
 | [`nacl/REFERENCE.md`](nacl/REFERENCE.md) | **GENERATED** per-verb reference (58 verbs: 36 generic + 22 object · vocabularies · built-status) — regenerate via `tools/nacl-ref-gen`, never hand-edit | `web/data/nacl-commands.js` (canon) · `tools/nacl-ref-gen/` | **LIVE** (generated; gate R5) |
+| [`nacl/TUTORIAL.md`](nacl/TUTORIAL.md) | **nacl by example**: a worked session — load/profile a CSV, the cleaning pipeline on the dossier narrative, group/chart to a real CHT_, objects + "it", effects, the three autocomplete planes | `web/data/nacl-commands.js` (as a reader) | **LIVE** |
 
 ### foundation/ (forward-looking planning)
 
 | Doc | Governs | Status |
 |---|---|---|
+| [`foundation/BUILDING-ON-NUMU.md`](foundation/BUILDING-ON-NUMU.md) | **the developer tutorial** (executed live): build a support-ticket system — register a `ticket` type, confine a support-bot agent surface (Plane C ceiling), read the `access_audit` evidence; the human twin of the type-registry/rbac/enforcement-gates skills | the whole api (as a reader) | **LIVE** |
 | [`foundation/numu-objects-schema.md`](foundation/numu-objects-schema.md) | the reconciled numu+redpash object catalog + naming matrix | planning |
 | [`foundation/numu-gluesql-postgres.md`](foundation/numu-gluesql-postgres.md) | the data plane: GlueSQL (browser) vs Postgres, immutable blob + step-replay | planning (phase B ports it) |
 | [`foundation/numu-csv-flow-and-datatypes.md`](foundation/numu-csv-flow-and-datatypes.md) | CSV ingest + the storage/semantic datatype catalog | planning (phase B) |
