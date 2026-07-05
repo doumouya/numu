@@ -86,6 +86,7 @@ reviewing the project afterwards:
 | `gs://numu-pg-backups-doumouya-portfolio` (+30d lifecycle) | `vm-postgres.sh` | dump target |
 | SA `numu-pg-vm@…` | `vm-postgres.sh` | objectCreator on that bucket ONLY |
 | firewalls `allow-iap-ssh` (35.235.240.0/20 → :22) · `allow-vpc-postgres` (10.128.0.0/20 → :5432, tag `numu-pg`) | `vm-postgres.sh` | the VM has no external IP at all |
+| Private Google Access on the default subnet + Cloud Router `numu-nat-router` + NAT `numu-nat` | `vm-postgres.sh` | the no-external-IP VM's ONLY egress: PGA (free) for GCS backups + Ops Agent, NAT (~$1/mo + $0.045/GB) for apt/pgdg + security updates |
 | VM `numu-pg` (e2-micro, debian-12) + Postgres 16 + Ops Agent + dump/prune timers | `vm-postgres.sh` | prints the `DATABASE_URL` **once** |
 | secrets `numu-database-url` · `numu-secret` · `google-client-secret` · `github-token` | `secrets.sh` | run-SA gets accessor per-secret |
 | Cloud Run service `numu-api` (min 0 / max 5, direct VPC egress) | `run-deploy.sh` | Cloud Build builds the Dockerfile remotely |

@@ -55,7 +55,7 @@ advisory lock).
 
 | script | does |
 |---|---|
-| `vm-postgres.sh` | backup bucket (+30d lifecycle) · least-privilege VM SA (objectCreator on that bucket only) · IAP-SSH + in-VPC pg firewall · the e2-micro (no external IP) · ON-VM: Postgres 16 (pgdg, `listen '*'`, scram for the subnet, `max_connections=50`), the **Ops Agent** ([`MONITORING.md`](MONITORING.md) layer 2), the nightly `pg_dump→GCS` timer, the 90-day telemetry-prune timer. Prints the `DATABASE_URL` once. |
+| `vm-postgres.sh` | backup bucket (+30d lifecycle) · least-privilege VM SA (objectCreator on that bucket only) · IAP-SSH + in-VPC pg firewall · **egress for the no-external-IP VM**: Private Google Access on the subnet (free — GCS backups + Ops Agent) + Cloud NAT `numu-nat` (~$1/mo — apt/pgdg and lifelong security updates; a `--no-address` VM otherwise has ZERO outbound) · the e2-micro (no external IP) · ON-VM: Postgres 16 (pgdg, `listen '*'`, scram for the subnet, `max_connections=50`), the **Ops Agent** ([`MONITORING.md`](MONITORING.md) layer 2), the nightly `pg_dump→GCS` timer, the 90-day telemetry-prune timer. Prints the `DATABASE_URL` once. |
 | `secrets.sh` | Secret Manager: `numu-database-url` · `numu-secret` · `google-client-secret` · `github-token` (values prompted, never in history; re-run = rotate) + accessor grants for the Cloud Run runtime SA. |
 | `run-deploy.sh` | `gcloud run deploy --source .` (Cloud Build builds the Dockerfile — no local Docker), direct VPC egress (`private-ranges-only`, no connector fee), min 0 / max 5, the full env matrix above. Needs `GOOGLE_CLIENT_ID` exported. |
 | `firebase-rewrites.json` | the `/api` + `/auth` + `/console` run-rewrites the PORTFOLIO repo adopts before its SPA catch-all. |

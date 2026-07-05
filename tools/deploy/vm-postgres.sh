@@ -45,6 +45,20 @@ gcloud compute firewall-rules describe allow-vpc-postgres --project "$PROJECT" >
        --direction=INGRESS --action=ALLOW --rules=tcp:5432 --source-ranges="$SUBNET_RANGE" \
        --target-tags=numu-pg
 
+say "egress for the no-external-IP VM (PGA + Cloud NAT)"
+# A --no-address VM has ZERO outbound internet — apt (debian mirrors) and the pgdg key fetch
+# hang without a NAT, and the GCS backup pipe + Ops Agent need a Google-APIs path. Private
+# Google Access (free) carries the googleapis traffic; Cloud NAT (~$1/mo for one VM +
+# $0.045/GB processed) carries everything else AND keeps security updates working for the
+# VM's whole life.
+gcloud compute networks subnets update default --project "$PROJECT" --region "$REGION" \
+  --enable-private-ip-google-access
+gcloud compute routers describe numu-nat-router --project "$PROJECT" --region "$REGION" >/dev/null 2>&1 \
+  || gcloud compute routers create numu-nat-router --project "$PROJECT" --network default --region "$REGION"
+gcloud compute routers nats describe numu-nat --router numu-nat-router --project "$PROJECT" --region "$REGION" >/dev/null 2>&1 \
+  || gcloud compute routers nats create numu-nat --router numu-nat-router --project "$PROJECT" --region "$REGION" \
+       --auto-allocate-nat-external-ips --nat-all-subnet-ip-ranges
+
 say "the VM (e2-micro, no external IP)"
 gcloud compute instances describe "$VM" --zone "$ZONE" --project "$PROJECT" >/dev/null 2>&1 \
   || gcloud compute instances create "$VM" --project "$PROJECT" --zone "$ZONE" \
