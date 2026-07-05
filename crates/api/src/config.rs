@@ -46,7 +46,7 @@ impl Config {
         let secret = std::env::var("NUMU_SECRET").ok();
         validate_secret(secret.as_deref(), !cfg!(debug_assertions))?;
         Ok(Self {
-            bind: std::env::var("NUMU_BIND").unwrap_or_else(|_| "127.0.0.1:8080".to_string()),
+            bind: resolve_bind(std::env::var("NUMU_BIND").ok(), std::env::var("PORT").ok()),
             database_url,
             debug: env_flag("NUMU_DEBUG"),
             auth_rate_limit: env_parse("NUMU_AUTH_RATE_LIMIT", 30),
@@ -68,6 +68,21 @@ impl Config {
                 }),
         })
     }
+}
+
+/// Bind resolution: `NUMU_BIND` wins; otherwise a bare `PORT` (the Cloud Run/knative contract —
+/// the platform injects PORT and expects 0.0.0.0) binds all interfaces; otherwise the loopback
+/// dev default. NUMU_BIND stays the explicit override for any exotic setup.
+fn resolve_bind(numu_bind: Option<String>, port: Option<String>) -> String {
+    if let Some(b) = numu_bind {
+        return b;
+    }
+    if let Some(p) = port {
+        if p.parse::<u16>().is_ok() {
+            return format!("0.0.0.0:{p}");
+        }
+    }
+    "127.0.0.1:8080".to_string()
 }
 
 /// `true` for `1`/`true` (case-insensitive); any other value (or unset) is `false`.
@@ -105,5 +120,31 @@ mod tests {
     fn validate_secret_dev_should_allow_fallback() {
         assert!(validate_secret(None, false).is_ok());
         assert!(validate_secret(Some(DEV_SECRET), false).is_ok());
+    }
+
+    #[test]
+    fn resolve_bind_numu_bind_should_win_over_port() {
+        assert_eq!(
+            resolve_bind(Some("127.0.0.1:9999".into()), Some("8080".into())),
+            "127.0.0.1:9999"
+        );
+    }
+
+    #[test]
+    fn resolve_bind_port_should_bind_all_interfaces() {
+        assert_eq!(resolve_bind(None, Some("8080".into())), "0.0.0.0:8080");
+    }
+
+    #[test]
+    fn resolve_bind_should_ignore_garbage_port() {
+        assert_eq!(
+            resolve_bind(None, Some("not-a-port".into())),
+            "127.0.0.1:8080"
+        );
+    }
+
+    #[test]
+    fn resolve_bind_default_should_stay_loopback() {
+        assert_eq!(resolve_bind(None, None), "127.0.0.1:8080");
     }
 }

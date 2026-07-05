@@ -1,7 +1,11 @@
 # Running numu — operational guide (for the API + a frontend)
 
-The backend is a single binary (`numu-api`) that connects to Postgres, applies all migrations on boot, and
+The backend is a single binary that connects to Postgres, applies all migrations on boot, and
 serves the HTTP surface. Verified end-to-end (boot → dev-login → CRUD → search → CORS preflight).
+Two binaries exist since CASE 0019: **`numu-api`** (dev — the generic core only) and
+**`numu-server`** (production — core + the apps tier, each app behind its env flag; see
+[`../apps/PORTFOLIO.md`](../apps/PORTFOLIO.md)). Everything below applies to both; production
+specifics (container, Cloud Run, secrets) live in [`../ops/DEPLOY.md`](../ops/DEPLOY.md).
 
 ## Boot
 
@@ -23,7 +27,9 @@ Migrations run automatically on boot (idempotent — safe to restart). `GET /hea
 | var | default | purpose |
 |---|---|---|
 | `DATABASE_URL` | — (required) | Postgres DSN |
-| `NUMU_BIND` | `127.0.0.1:8080` | listen address |
+| `NUMU_BIND` | `127.0.0.1:8080` | listen address (explicit override — always wins) |
+| `PORT` | — | the Cloud Run/knative contract: when `NUMU_BIND` is unset and `PORT` is a valid port, numu binds `0.0.0.0:$PORT` (`config::resolve_bind`, CASE 0020) |
+| `NUMU_APP_PORTFOLIO` | off | `numu-server` only: mounts the portfolio app at `/api/apps/portfolio` ([`../apps/PORTFOLIO.md`](../apps/PORTFOLIO.md)) |
 | `NUMU_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | browser origins allowed to call the API with credentials (comma-separated) |
 | `NUMU_DEBUG` | off | enables `POST /api/_debug/echo` |
 | `NUMU_TRUST_PROXY` | off | trust `X-Forwarded-For` for the `/auth` rate limit (set only behind a real proxy) |

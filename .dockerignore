@@ -1,0 +1,6 @@
+target/
+node_modules/
+web/node_modules/
+.git/
+dist/
+*.log

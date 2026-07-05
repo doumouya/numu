@@ -3,8 +3,8 @@
 > The portfolio (em.numu.im) is numu's first real deployment AND its first app. This doc is the
 > contract for `crates/apps/portfolio` and for the **apps tier** itself. Related:
 > [`../api/RUNNING.md`](../api/RUNNING.md) (boot/env) ·
-> [`../api/RBAC.md`](../api/RBAC.md) (the planes the app rides). The production runbook
-> (`docs/ops/DEPLOY.md`) lands with the container Case and links back here.
+> [`../api/RBAC.md`](../api/RBAC.md) (the planes the app rides) ·
+> [`../ops/DEPLOY.md`](../ops/DEPLOY.md) (the production runbook).
 
 ## The apps-tier doctrine
 

@@ -56,6 +56,7 @@
 | Doc | Governs | Code area | Status |
 |---|---|---|---|
 | [`ops/DATABASE.md`](ops/DATABASE.md) | the DB substrate: HA topology (Patroni/etcd/HAProxy), backups/PITR (pgBackRest), DB-level observability (the `monitoring` schema + a `db-health` collector feeding the audit substrate) | `migrations/` (schema) · deploy/ops (forward) | design contract (forward-looking; current = single-node localhost) |
+| [`ops/DEPLOY.md`](ops/DEPLOY.md) | the production runbook: numu-server container on Cloud Run behind Firebase rewrites, self-managed Postgres 16 on a private GCE VM, env matrix (`PORT` bind contract, `__session` cookie, secrets), topology + sizing; deploy-kit scripts land in their own Case | `Dockerfile` · [`api/RUNNING.md`](api/RUNNING.md) · [`apps/PORTFOLIO.md`](apps/PORTFOLIO.md) | **live** (skeleton, CASE 0020); deploy kit pending |
 
 ### Layer 1 · api (numu's backend on the engine architecture)
 
