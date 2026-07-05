@@ -46,6 +46,8 @@ absent `DATABASE_URL`, no sibling checkout) into a failure so a hole can't pass 
 | **css-drift** | numu ⇄ amenan-ui token/structure drift (the four queries) |
 | **sim-verbatim** | design-sync'd `sim/`·`data/` files stay verbatim (no fork) |
 | **stale-staging** | no placeholder / "until X" scaffolding prose or `Caller::dev()` call site in shipped code |
+| **data-class / capability / access** | the governance planes stay wired: classification raised (GOVERNANCE #1) · Plane C before the admin bypass, surfaces confined (RBAC §2b) · classified reads leave insert-only evidence (GOVERNANCE #2) |
+| **doc-coverage** | DOCMAP stays mechanically total: every doc has a row, every link resolves, the GENERATED nacl reference matches the canon |
 
 Follow-on gates land with their substrate: **capability-ledger** (anti-amnesia) · **agent-refs**
 (orchestrator references resolve). Each is a `tools/<name>-audit/audit.sh`; `ci.sh` picks it up.

@@ -40,6 +40,7 @@
 |---|---|---|---|
 | [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) | the framework boundary: what numu consumes (imports, build alias, css cat), token/structure ownership, upstream-vs-overlay rules | `web/` ↔ the sibling `amenan-ui` repo (its docs are the reference) | **LIVE** |
 | [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) | the engine lineage: shared architecture vs divergence, cross-repo maintenance rules | `crates/api` ↔ the sibling `birama-engine` repo | **LIVE** |
+| [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) | privacy/governance as engine properties: the 7-control set (classification ✅ 0016 · read-audit ✅ 0019 · operator access · retention · DSR · encryption · egress), each = registry property + chokepoint + gate | `migrations/0016,0019` · `crates/api/src/{types,db,objects}.rs` · `tools/{data-class,access}-audit` | **LIVE** (#1+#2) |
 
 ### Layer 0.5 · substrate
 
@@ -77,6 +78,7 @@
 | Doc | Governs | Code area | Status |
 |---|---|---|---|
 | [`nacl/README.md`](nacl/README.md) | orientation: grammar, verbs, pipeline words, "it" — canon = the synced doctrine file | `web/data/nacl-commands.js` · phase B: `crates/api/src/nacl.rs` | **LIVE** (doctrine) |
+| [`nacl/REFERENCE.md`](nacl/REFERENCE.md) | **GENERATED** per-verb reference (58 verbs: 36 generic + 22 object · vocabularies · built-status) — regenerate via `tools/nacl-ref-gen`, never hand-edit | `web/data/nacl-commands.js` (canon) · `tools/nacl-ref-gen/` | **LIVE** (generated; gate R5) |
 
 ### foundation/ (forward-looking planning)
 
@@ -109,8 +111,9 @@ ci gate · `0005` rbac · `0006` cases engine · `0007` type registration · `00
 
 ## The enforcement spine
 
-The gates ARE the disciplines — 13 live when nothing skips (fmt · clippy · test · db ·
-web-build · web-test · case-first · css-drift · debuggability · docs-currency · rbac ·
+The gates ARE the disciplines — 17 live when nothing skips (fmt · clippy · test · db ·
+web-build · web-test · access · capability · case-first · css-drift · data-class ·
+**doc-coverage** (this map stays mechanically total) · debuggability · docs-currency · rbac ·
 sim-verbatim · stale-staging), 2 follow-on
 (capability-ledger · agent-refs). The authoritative table: [`../tools/README.md`](../tools/README.md);
 the working rules: [`../CLAUDE.md`](../CLAUDE.md).

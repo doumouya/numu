@@ -8,7 +8,7 @@
 toolchain, absent `DATABASE_URL`, no node / sibling amenan-ui checkout) into a failure — set it in real
 CI so a hole can't pass as green.
 
-## The live gates (13 when nothing skips)
+## The live gates (17 when nothing skips)
 
 | Gate | Kind | What it checks |
 |---|---|---|
@@ -16,7 +16,11 @@ CI so a hole can't pass as green.
 | **db** | cargo (conditional) | the DB-backed smoke (`cargo test --features db-tests`) — only when `DATABASE_URL` is set, keeping a fresh clone green |
 | **web-build** | web (conditional) | `tools/web-build.sh`: strict `tsc --noEmit` + the esbuild bundle + the `tokens.css` closure; needs node + the sibling amenan-ui |
 | **web-test** | web (conditional) | `node --test web/tests/*.test.*` — the pure frontend modules (nacl autocomplete staging) |
+| **access-audit** | audit | GOVERNANCE #2 read accountability: the `access_audit` substrate exists + stays insert-only in code, both generic read paths flow through `db::record_access`, the row carries field NAMES + request-id ([`../docs/kernel/GOVERNANCE.md`](../docs/kernel/GOVERNANCE.md)) |
+| **capability-audit** | audit | Plane C stays wired: the 0018 substrate exists, `plane_c_admit` precedes the admin bypass, the extractor resolves surfaces (never `app` from a cookie), the data-class ceiling rides all three field paths, members + search stay confined ([`../docs/api/RBAC.md`](../docs/api/RBAC.md) §2b) |
 | **case-first** | audit | the HEAD commit, if it touches `crates/`/`migrations/`, references a Case (`CASE NNNN`/`CAS_` or a `docs/cases/` file) |
+| **data-class-audit** | audit | GOVERNANCE #1 classification: the `data_class` DB guard exists, the registration validator classifies, PII-named fields are RAISED above the floor ([`../docs/kernel/GOVERNANCE.md`](../docs/kernel/GOVERNANCE.md)) |
+| **doc-coverage** | audit | DOCMAP is mechanical: every doc has a DOCMAP row · every DOCMAP link resolves · no orphan `.md` link anywhere in `docs/` · the **GENERATED** `docs/nacl/REFERENCE.md` matches the canon via `tools/nacl-ref-gen` — DOCMAP stays updated along the way, by force ([`../docs/cases/0018-docs-coverage-catch-up.md`](../docs/cases/0018-docs-coverage-catch-up.md)) |
 | **css-drift** | audit | frontend CSS discipline (the four queries): tokens-only colors in `web/src`+`app.css` · app CSS owns only `.nu-*` (`.is-*` states ride a `.nu-*` owner) · every `var(--x)` resolves in the built token closure · every composed `.amu-*` class has its sheet in the build ([`../docs/frontend/THEME.md`](../docs/frontend/THEME.md)) |
 | **debuggability** | audit | the P-DEBUG rules of [`../docs/api/OBSERVABILITY.md`](../docs/api/OBSERVABILITY.md) §6 — no bare 500 / unwrap on handler paths, one problem+json responder, request-id wired, every mutation emits an event, OPTIONS/HEAD/healthz/readyz wired, no secrets in logs |
 | **docs-currency** | audit | a HEAD commit changing a documented surface — `crates/`, `migrations/`, **or the frontend's authored code** (`web/src`, `web/styles`, `web/index.html`, the web tools) — also touches `docs/`, or declares `Docs: n/a` (design-synced `web/sim`+`web/data` artifacts are exempt) |
@@ -39,6 +43,8 @@ CI so a hole can't pass as green.
   Rust api).
 - `design-sync.sh` — pulls the verbatim sim/doctrine/data/logos from the numu Design System dump and
   pins sha256 hashes into `web/.sync-manifest` (what sim-verbatim enforces).
+- `nacl-ref-gen/gen.mjs` — emits the GENERATED `docs/nacl/REFERENCE.md` from the design-synced canon
+  (refuses to evaluate bytes the sync-manifest didn't pin); doc-coverage R5 keeps it in sync.
 
 ## Ratchet (follow-on)
 
