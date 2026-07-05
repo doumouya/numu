@@ -68,7 +68,11 @@ advisory lock).
 2. **GitHub PAT**: fine-grained, `doumouya/doumouya-portfolio` only, contents:read/write.
 3. `bash tools/deploy/vm-postgres.sh` → record the printed `DATABASE_URL`.
 4. `bash tools/deploy/secrets.sh` (paste the four values).
-5. `GOOGLE_CLIENT_ID=… bash tools/deploy/run-deploy.sh` → smoke `curl $URL/healthz` + `/readyz`.
+5. `GOOGLE_CLIENT_ID=… bash tools/deploy/run-deploy.sh` → smoke `curl $URL/readyz` (a 200 proves
+   secrets + the VPC path to the VM; `/healthz` on the bare `run.app` domain hits a GFE quirk —
+   Google's own 404 page — so `/readyz` is the canonical smoke). If anonymous calls get a GFE
+   403, the org's Domain Restricted Sharing stripped the `allUsers` invoker binding — see the
+   project-scoped override in [`GCP-SETUP.md`](GCP-SETUP.md) §1 (found live on first deploy).
 6. Portfolio repo: adopt `firebase-rewrites.json` into `firebase.json` → deploy → smoke
    `curl -i https://em.numu.im/api/healthz` (a Cloud Run answer, not index.html).
 7. **First boot**: Em opens `https://em.numu.im/console/` → Google login (Internal client +

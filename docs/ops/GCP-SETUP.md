@@ -25,6 +25,15 @@ the portfolio's project, recorded here on purpose.
       always-free tier, ~110 ms console latency from EU. **europe-west1**: snappier console
       editing, ~€7/mo for the VM. Scripts take `REGION=`/`ZONE=` overrides; pick once, the
       Postgres VM does not move cheaply afterwards.
+- [ ] **Org gotcha found live (2026-07-06)**: the numu.im org enforces **Domain Restricted
+      Sharing**, which silently strips `--allow-unauthenticated` — the deploy succeeds but the
+      invoker policy comes back EMPTY and every anonymous call gets a GFE 403. Firebase Hosting
+      rewrites send no identity token, so public invocation is mandatory (numu's own
+      auth/RBAC/limiters are the real gate). Project-scoped fix (org-wide policy untouched):
+      `gcloud services enable orgpolicy.googleapis.com`, then `gcloud org-policies set-policy`
+      with `{name: projects/<p>/policies/iam.allowedPolicyMemberDomains, spec.rules: [allowAll:
+      true]}`, then `gcloud run services add-iam-policy-binding numu-api --member=allUsers
+      --role=roles/run.invoker`.
 
 ## 2 · Enable the APIs (2 min, one command)
 
