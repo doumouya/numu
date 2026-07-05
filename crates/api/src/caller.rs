@@ -80,6 +80,48 @@ impl Caller {
             data_class_ceiling: None,
         }
     }
+
+    /// A CONFINED service caller for a seeded service actor (e.g. the portfolio app's
+    /// `SVC_collector`, CASE 0022): agent surface (Plane C default-deny — only its capability
+    /// grants admit it), never platform-admin, ceiling resolved from its grant conditions exactly
+    /// like the session extractor does. The apps tier writes through the SAME gated path as any
+    /// caller — this constructor is how, not a bypass.
+    pub async fn for_service(pool: &PgPool, actor_id: &str) -> AppResult<Self> {
+        let surface = Surface {
+            kind: SurfaceKind::Agent,
+            id: actor_id.to_string(),
+        };
+        let data_class_ceiling = surface_ceiling(pool, &surface).await?;
+        Ok(Self {
+            actor_id: actor_id.to_string(),
+            is_platform_admin: false,
+            surface,
+            purpose: None,
+            data_class_ceiling,
+        })
+    }
+}
+
+/// The strictest `max_data_class` ceiling across a surface's grant conditions (0018 ∘ 0016) —
+/// severity order, not alphabetical. Shared by the session extractor (auth.rs) and
+/// `Caller::for_service`. Console is unconstrained by construction.
+pub async fn surface_ceiling(pool: &PgPool, surface: &Surface) -> AppResult<Option<String>> {
+    if surface.kind == SurfaceKind::Console {
+        return Ok(None);
+    }
+    Ok(sqlx::query_scalar::<_, String>(
+        "select c.params->>'ceiling' from capability_grant g \
+         join condition c on c.id = g.condition_id and c.kind = 'max_data_class' \
+         where g.surface_kind = $1 and g.surface_id = $2 \
+           and c.params->>'ceiling' is not null \
+         order by array_position(array['public','internal','personal','sensitive'], \
+                                 c.params->>'ceiling') nulls last \
+         limit 1",
+    )
+    .bind(surface.kind.as_str())
+    .bind(surface.id.as_str())
+    .fetch_optional(pool)
+    .await?)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

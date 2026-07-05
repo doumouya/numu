@@ -8,4 +8,14 @@ rust-version.workspace = true
 [dependencies]
 numu-api = { path = "../../api" }
 axum.workspace = true
+serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+sqlx.workspace = true
+
+[features]
+# forwards the workspace-wide `cargo test --features db-tests` (ci.sh db gate) into this crate's
+# DB-backed suite AND numu-api's.
+db-tests = ["numu-api/db-tests"]

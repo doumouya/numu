@@ -76,8 +76,11 @@ async fn google_login_upserts_by_sub(pool: PgPool) -> Result<(), Box<dyn std::er
         identities, 1,
         "upsert by (provider, sub) — no duplicate identity"
     );
+    // exclude the SEEDED principals (USR_dev from 0003, SVC_* service actors from app seeds
+    // like 0020's SVC_collector) — this asserts on MINTED actors only.
     let new_actors: i64 = sqlx::query_scalar(
-        "select count(*) from entities where type = 'actor' and id <> 'USR_dev'",
+        "select count(*) from entities where type = 'actor' \
+           and id <> 'USR_dev' and id not like 'SVC\\_%'",
     )
     .fetch_one(&pool)
     .await?;

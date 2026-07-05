@@ -13,3 +13,7 @@ path = "src/main.rs"
 numu-api = { path = "../api" }
 numu-app-portfolio = { path = "../apps/portfolio" }
 tokio.workspace = true
+
+[features]
+# keeps the workspace-wide `cargo test --features db-tests` (ci.sh db gate) resolvable here.
+db-tests = ["numu-api/db-tests", "numu-app-portfolio/db-tests"]

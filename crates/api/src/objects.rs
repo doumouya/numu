@@ -445,19 +445,19 @@ async fn coll_head(
     Ok(StatusCode::OK.into_response())
 }
 
-async fn coll_create(
-    State(st): State<AppState>,
-    Extension(ctx): Extension<RequestCtx>,
-    caller: Caller,
-    Path(type_id): Path<String>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> AppResult<Response> {
-    let reg = st.registry.load_full();
-    let td = resolve(&reg, &type_id, &ctx)?;
-    let payload = read_json(&headers, &body, false)?;
-    check_input(td, &payload, true)?;
-    let data = build_create_data(td, &payload);
+/// The gated CREATE core, shared by the HTTP handler and the apps tier (docs/apps/PORTFOLIO.md —
+/// apps consume the core through its public seams, never around a plane): validate → workflow
+/// initial-state check → Plane C/A gate (leak-free 404) → mint + insert + owner edge in one txn →
+/// event. Returns `(id, stored data)`.
+pub async fn create_object(
+    st: &AppState,
+    ctx: &RequestCtx,
+    caller: &Caller,
+    td: &crate::registry::TypeDef,
+    payload: &Value,
+) -> AppResult<(String, Value)> {
+    check_input(td, payload, true)?;
+    let data = build_create_data(td, payload);
     validate_final(td, &data)?;
     // G4 — a case's initial status must be the workflow's `initial` state.
     if td.type_id == "case" {
@@ -489,15 +489,15 @@ async fn coll_create(
             .with_request_id(ctx.request_id.clone()));
         }
     };
-    if !caller::require_action(&st.pool, &caller, td, parent, Action::Create).await? {
-        return Err(deny_404(&ctx));
+    if !caller::require_action(&st.pool, caller, td, parent, Action::Create).await? {
+        return Err(deny_404(ctx));
     }
 
     let id = ids::mint(&td.id_prefix);
     let mut tx = st.pool.begin().await?;
     sqlx::query("insert into entities (id, type, created_by) values ($1, $2, $3)")
         .bind(id.as_str())
-        .bind(type_id.as_str())
+        .bind(td.type_id.as_str())
         .bind(caller.actor_id.as_str())
         .execute(&mut *tx)
         .await?;
@@ -505,7 +505,7 @@ async fn coll_create(
         "insert into entity_data (entity_id, type_id, data, scope_parent_id) values ($1, $2, $3, $4)",
     )
     .bind(id.as_str())
-    .bind(type_id.as_str())
+    .bind(td.type_id.as_str())
     .bind(data.clone())
     .bind(sp.as_deref())
     .execute(&mut *tx)
@@ -520,13 +520,28 @@ async fn coll_create(
 
     db::record_event(
         &st.pool,
-        &ctx,
+        ctx,
         &caller.actor_id,
         Some(&id),
-        &format!("{type_id}.created"),
+        &format!("{}.created", td.type_id),
         data.clone(),
     )
     .await;
+    Ok((id, data))
+}
+
+async fn coll_create(
+    State(st): State<AppState>,
+    Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
+    Path(type_id): Path<String>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AppResult<Response> {
+    let reg = st.registry.load_full();
+    let td = resolve(&reg, &type_id, &ctx)?;
+    let payload = read_json(&headers, &body, false)?;
+    let (id, data) = create_object(&st, &ctx, &caller, td, &payload).await?;
 
     let loc = format!("/api/objects/{type_id}/{id}");
     let resp = (

@@ -136,26 +136,9 @@ impl FromRequestParts<AppState> for Caller {
             })
             .map(str::to_string);
 
-        // The strictest max_data_class ceiling across this surface's grant conditions (0018 ∘ 0016).
-        // Strictness follows the SEVERITY order (public < internal < personal < sensitive), not the
-        // alphabet — array_position picks the lowest-severity ceiling declared on any grant.
-        let data_class_ceiling = if surface.kind == SurfaceKind::Console {
-            None
-        } else {
-            sqlx::query_scalar::<_, String>(
-                "select c.params->>'ceiling' from capability_grant g \
-                 join condition c on c.id = g.condition_id and c.kind = 'max_data_class' \
-                 where g.surface_kind = $1 and g.surface_id = $2 \
-                   and c.params->>'ceiling' is not null \
-                 order by array_position(array['public','internal','personal','sensitive'], \
-                                         c.params->>'ceiling') nulls last \
-                 limit 1",
-            )
-            .bind(surface.kind.as_str())
-            .bind(surface.id.as_str())
-            .fetch_optional(&state.pool)
-            .await?
-        };
+        // The strictest max_data_class ceiling across this surface's grant conditions (0018 ∘ 0016)
+        // — severity-ordered; shared with Caller::for_service (caller::surface_ceiling).
+        let data_class_ceiling = crate::caller::surface_ceiling(&state.pool, &surface).await?;
 
         Ok(Caller {
             actor_id,
