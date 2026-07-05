@@ -35,6 +35,10 @@ layer that the nacl autocomplete, client validation, and the renderer all read f
   tables gain the 0016+0017 columns and `field_domain` is documented; Em-level decision = the
   approved plan for this pass.
 
+**Landed 2026-07-05:** 0017 applied clean on the throwaway (`numu_slice_verify`, after 0001–0016);
+`field_domain` returns the 2 seeds; full db-tests suite green (18 binaries); `bash tools/ci.sh`
+green (14 gates).
+
 ## Follow-on (recorded)
 
 The first consumer: a `money` semantic type (`{minor_units:int, currency:iso4217}` filled from

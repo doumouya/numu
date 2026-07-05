@@ -22,6 +22,15 @@ pub struct FieldDef {
     pub perm_class: String,
     pub options: serde_json::Value,
     pub searchable: bool,
+    /// Privacy classification (0016) — independent of `perm_class`; drives access-audit/retention.
+    pub data_class: String,
+    /// Meaning above the storage `kind` (0017) — `money`/`email`/`geo`/…; `None` = plain primitive.
+    pub semantic_type: Option<String>,
+    /// Soft ref → `field_domain(id)` — the value vocabulary behind autocomplete/validation.
+    pub domain_ref: Option<String>,
+    /// The `domain_ref` row resolved at cache load (`{id, kind, label, params}`) so OPTIONS
+    /// serializes it without a per-request query; `None` when unset or dangling (soft ref).
+    pub domain: Option<serde_json::Value>,
 }
 
 impl FieldDef {
@@ -45,6 +54,8 @@ pub struct TypeDef {
     pub scope_parents: Vec<String>,
     pub is_builtin: bool,
     pub method_policy: serde_json::Value,
+    /// Presentation accent — a token NAME (`--chart-6`), never a raw color (0017).
+    pub accent: Option<String>,
     pub fields: Vec<FieldDef>,
 }
 
@@ -94,7 +105,7 @@ impl TypeDefCache {
         let mut by_id: HashMap<String, TypeDef> = HashMap::new();
 
         let type_rows = sqlx::query(
-            "select type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, method_policy \
+            "select type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, method_policy, accent \
              from type_definitions order by ordinal",
         )
         .fetch_all(pool)
@@ -118,13 +129,34 @@ impl TypeDefCache {
                     .unwrap_or_default(),
                 is_builtin: r.try_get("is_builtin")?,
                 method_policy: r.try_get("method_policy")?,
+                accent: r.try_get("accent")?,
                 fields: Vec::new(),
             };
             by_id.insert(type_id, td);
         }
 
+        // The field-domain vocabularies (0017) — loaded once per snapshot so a field's `domain_ref`
+        // resolves here, never per request. A dangling ref (soft by design) resolves to None.
+        let domain_rows = sqlx::query("select id, kind, label, params from field_domain")
+            .fetch_all(pool)
+            .await?;
+        let mut domains: HashMap<String, serde_json::Value> = HashMap::new();
+        for r in &domain_rows {
+            let id: String = r.try_get("id")?;
+            let label: Option<String> = r.try_get("label")?;
+            domains.insert(
+                id.clone(),
+                serde_json::json!({
+                    "id": id,
+                    "kind": r.try_get::<String, _>("kind")?,
+                    "label": label,
+                    "params": r.try_get::<serde_json::Value, _>("params")?,
+                }),
+            );
+        }
+
         let field_rows = sqlx::query(
-            "select type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable \
+            "select type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable, data_class, semantic_type, domain_ref \
              from type_fields order by type_id, ordinal",
         )
         .fetch_all(pool)
@@ -133,6 +165,8 @@ impl TypeDefCache {
         for r in &field_rows {
             let type_id: String = r.try_get("type_id")?;
             if let Some(td) = by_id.get_mut(&type_id) {
+                let domain_ref: Option<String> = r.try_get("domain_ref")?;
+                let domain = domain_ref.as_ref().and_then(|id| domains.get(id).cloned());
                 td.fields.push(FieldDef {
                     field: r.try_get("field")?,
                     label: r.try_get("label")?,
@@ -143,6 +177,10 @@ impl TypeDefCache {
                     perm_class: r.try_get("perm_class")?,
                     options: r.try_get("options")?,
                     searchable: r.try_get("searchable")?,
+                    data_class: r.try_get("data_class")?,
+                    semantic_type: r.try_get("semantic_type")?,
+                    domain_ref,
+                    domain,
                 });
             }
         }

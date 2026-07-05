@@ -42,6 +42,9 @@ struct TypeSpec {
     display_name_plural: String,
     #[serde(default)]
     scope_parents: Vec<String>,
+    /// Presentation accent — a token NAME (`--chart-6`), never a raw color (css-drift rule; 0017).
+    #[serde(default)]
+    accent: Option<String>,
     fields: Vec<FieldSpec>,
 }
 
@@ -63,6 +66,12 @@ struct FieldSpec {
     searchable: bool,
     #[serde(default = "default_internal")]
     data_class: String,
+    /// Meaning above the storage `kind` (0017) — e.g. `money`/`email`/`geo`; absent = plain primitive.
+    #[serde(default)]
+    semantic_type: Option<String>,
+    /// Soft ref → `field_domain(id)` — the value vocabulary for autocomplete/validation.
+    #[serde(default)]
+    domain_ref: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -155,6 +164,20 @@ fn validate_spec(spec: &TypeSpec, current: &TypeDefCache) -> AppResult<()> {
     if spec.display_name.trim().is_empty() {
         return Err(bad("display_name is required".to_string()));
     }
+    // accent is a TOKEN NAME (`--chart-6`), never a raw color — the css-drift rule at the API edge.
+    if let Some(a) = &spec.accent {
+        let ok = a.len() <= 64
+            && a.starts_with("--")
+            && a[2..]
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+            && !a[2..].is_empty();
+        if !ok {
+            return Err(bad(format!(
+                "accent '{a}' must be a css token name (--kebab-case), never a raw color"
+            )));
+        }
+    }
     if spec.fields.is_empty() {
         return Err(bad("a type needs at least one field".to_string()));
     }
@@ -187,6 +210,24 @@ fn validate_spec(spec: &TypeSpec, current: &TypeDefCache) -> AppResult<()> {
                 "field '{}': unknown data_class '{}'",
                 f.field, f.data_class
             )));
+        }
+        // semantic_type / domain_ref (0017): open vocabularies by design (the semantic layer grows
+        // with the domain; domain_ref is a soft ref to field_domain) — only the shape is pinned.
+        if let Some(s) = &f.semantic_type {
+            if !ident_ok(s, 64) {
+                return Err(bad(format!(
+                    "field '{}': semantic_type must be a short identifier",
+                    f.field
+                )));
+            }
+        }
+        if let Some(d) = &f.domain_ref {
+            if !ident_ok(d, 64) {
+                return Err(bad(format!(
+                    "field '{}': domain_ref must be a short identifier",
+                    f.field
+                )));
+            }
         }
         if f.kind == "enum" {
             match f.options.get("enum").and_then(|v| v.as_array()) {
@@ -265,6 +306,7 @@ async fn list_types(State(st): State<AppState>, _caller: Caller) -> AppResult<Re
                 "display_name_plural": t.display_name_plural,
                 "scope_parents": t.scope_parents,
                 "is_builtin": t.is_builtin,
+                "accent": t.accent,
                 "field_count": t.fields.len(),
             })
         })
@@ -320,14 +362,15 @@ async fn create_type(
     let mut tx = st.pool.begin().await?;
     sqlx::query(
         "insert into type_definitions \
-         (type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, ordinal, method_policy) \
-         values ($1, $2, $3, $4, $5, false, 1000, '{}'::jsonb)",
+         (type_id, id_prefix, display_name, display_name_plural, scope_parents, is_builtin, ordinal, method_policy, accent) \
+         values ($1, $2, $3, $4, $5, false, 1000, '{}'::jsonb, $6)",
     )
     .bind(spec.type_id.as_str())
     .bind(spec.id_prefix.as_str())
     .bind(spec.display_name.as_str())
     .bind(plural.as_str())
     .bind(scope_parents)
+    .bind(spec.accent.as_deref())
     .execute(&mut *tx)
     .await?;
     for (i, f) in spec.fields.iter().enumerate() {
@@ -338,8 +381,8 @@ async fn create_type(
         };
         sqlx::query(
             "insert into type_fields \
-             (type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable, data_class) \
-             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+             (type_id, field, label, kind, required, editable, ordinal, perm_class, options, searchable, data_class, semantic_type, domain_ref) \
+             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
         )
         .bind(spec.type_id.as_str())
         .bind(f.field.as_str())
@@ -352,6 +395,8 @@ async fn create_type(
         .bind(options)
         .bind(f.searchable)
         .bind(f.data_class.as_str())
+        .bind(f.semantic_type.as_deref())
+        .bind(f.domain_ref.as_deref())
         .execute(&mut *tx)
         .await?;
     }

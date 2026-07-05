@@ -299,6 +299,9 @@ async fn options_body(
             json!({
                 "field": f.field, "label": f.label, "kind": f.kind, "required": f.required,
                 "editable": f.editable, "perm_class": f.perm_class, "options": f.options,
+                "data_class": f.data_class,
+                "semantic_type": f.semantic_type,
+                "domain": f.domain,
                 "can_read": readable.contains(&f.field),
                 "can_write": f.writable(),
             })
