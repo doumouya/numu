@@ -1,0 +1,10 @@
+# What `gcloud run deploy --source .` uploads as the build context. Without this file gcloud
+# GENERATES one from .gitignore — which excludes the console's two build artifacts
+# (web/app.js, web/tokens.css) that the committed web/index.html references and the image
+# COPYs. That shipped a blank-white /console (runbook 0005, wall 6). Inherit git's ignores,
+# then re-include exactly those two (negations must come after the include to win).
+.git
+.gitignore
+#!include:.gitignore
+!web/app.js
+!web/tokens.css

@@ -1,14 +1,15 @@
-# 0005 — first prod deploy: five least-privilege walls, one night
+# 0005 — first prod deploy: six walls, one night
 
 numu's first production deploy (the portfolio backend, [`../ops/DEPLOY.md`](../ops/DEPLOY.md))
-failed five times before going live — and **not one failure was a misconfiguration**. Every
-wall was a least-privilege default doing its job until the intended door was cut. This records
-the operator-side sequence so the next deploy (or project) walks through in minutes.
+failed six times before going fully live — and **not one failure was a misconfiguration**.
+Five walls were least-privilege defaults doing their jobs until the intended door was cut; the
+sixth was an ignore-file inheriting where it shouldn't. This records the operator-side
+sequence so the next deploy (or project) walks through in minutes.
 
 Origin: CASE 0026 live ops session, 2026-07-05/06, project `doumouya-portfolio`
 (org `443445851692`, numu.im). Operator commands ran as `em@numu.im`.
 
-## The five walls (symptom → root cause → fix)
+## The six walls (symptom → root cause → fix)
 
 | # | symptom | root cause | fix |
 |---|---|---|---|
@@ -17,6 +18,7 @@ Origin: CASE 0026 live ops session, 2026-07-05/06, project `doumouya-portfolio`
 | 3 | Cloud Build: ``feature `edition2024` is required`` | builder pinned `rust:1.83` < the lockfile's Cargo ≥1.85 floor (`time v0.3.51`); local nightly masked it | pin `rust:1.96-slim-bookworm` (fix `450761f`; symptom string comment lives in the Dockerfile) |
 | 4 | `--allow-unauthenticated` silently no-ops; anonymous calls → GFE 403; deploy step printed `FAILED_PRECONDITION: One or more users named in the policy do not belong to a permitted customer` | org-wide **Domain Restricted Sharing** rejects `allUsers` | self-grant `roles/orgpolicy.policyAdmin` at org level (needs Organization Admin), project-scoped `allowAll: true` override on `iam.allowedPolicyMemberDomains`, then bind `allUsers` → `roles/run.invoker`; **allow 2–3 min propagation** between override and binding |
 | 5 | hosting CI deploy: `403 Permission 'run.services.get' denied` at version-finalize | run-rewrites in `firebase.json` make the deploy VALIDATE the target service; the WIF deployer SA was minted with hosting-only roles | grant `github-deployer@…` → `roles/run.viewer` (read-only) |
+| 6 | `/console/` blank white; browser: `Uncaught SyntaxError: Unexpected token '<' (at app.js?v=…)` — app.js and tokens.css served as `text/html` | with no `.gcloudignore`, `gcloud --source` GENERATES one from `.gitignore`, which excludes the console's two local build artifacts (`web/app.js`, `web/tokens.css`) that the committed `web/index.html` references — ServeDir's SPA fallback answered HTML for them | committed `.gcloudignore` (`#!include:.gitignore` + `!web/app.js` `!web/tokens.css`), and `run-deploy.sh` now runs `tools/web-build.sh` first so the image ships the console the operator just verified |
 
 Exact commands for walls 1/4/5: [`../ops/GCP-SETUP.md`](../ops/GCP-SETUP.md) (the prep
 checklist absorbed them); wall 2 is self-healing in the script; wall 3 is a pinned image.

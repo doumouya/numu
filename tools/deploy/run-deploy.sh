@@ -11,6 +11,10 @@ PROJECT="${PROJECT:-doumouya-portfolio}"
 REGION="${REGION:-us-central1}"
 SERVICE="${SERVICE:-numu-api}"
 
+# The console's app.js/tokens.css are LOCAL build artifacts (gitignored; re-included by
+# .gcloudignore). Build them fresh so the image ships the console the operator just verified.
+bash tools/web-build.sh
+
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" --region "$REGION" \
   --source . \
