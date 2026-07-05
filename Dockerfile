@@ -4,7 +4,9 @@
 # Debian with a non-root user. The committed web/ console rides along for the /console
 # ServeDir (flag-gated; lands with its own Case — harmless before then).
 
-FROM rust:1.83-slim-bookworm AS builder
+# ≥1.85 required: locked deps (time 0.3.51+) use edition2024. Bump the pin when the lockfile
+# outgrows it — the symptom is "feature `edition2024` is required" in Cloud Build.
+FROM rust:1.96-slim-bookworm AS builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates

@@ -10,7 +10,7 @@
 
 ## The image (CASE 0020)
 
-- `Dockerfile` (repo root): multi-stage — pinned `rust:1.83-slim-bookworm` builds
+- `Dockerfile` (repo root): multi-stage — pinned `rust:1.96-slim-bookworm` (≥1.85: the locked deps use edition2024) builds
   `numu-server --release --locked`; runtime `debian:bookworm-slim`, non-root user, plus the
   committed `web/` console for the flag-gated `/console` ServeDir (its own Case).
 - Migrations are **embedded at compile time** (`sqlx::migrate!`) and applied on every boot under
