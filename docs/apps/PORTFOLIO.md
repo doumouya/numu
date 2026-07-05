@@ -31,7 +31,7 @@ its routes 404 like everything else numu doesn't admit.
 |---|---|---|
 | `GET /about` | none | mount-seam liveness stub (CASE 0019) |
 | `POST /ingest` | none (public) | **live (CASE 0022)** — telemetry batches + feedback from anonymous visitors; written AS the Plane-C-confined `SVC_collector` (create-only on `pt_event`/`feedback` — migration 0020) |
-| `GET /insights` | platform admin (404 otherwise) | aggregates: visits/page, referrers, CV downloads, link clicks, settings distribution, dwell buckets, feedback list |
+| `GET /insights` | platform admin (404 otherwise) | **live (CASE 0023)** — aggregates: visits/page (7d/30d), referrer origins, CV downloads, link clicks by target, settings distribution, viewport bands, dwell buckets, install funnel, writing filters, feedback list + average stars |
 | `POST /publish` | platform admin (404 otherwise) | renders `content/site.json` + the genpdf CV PDF from published `article`/`site_copy`/`cv` entities and commits both to `doumouya/doumouya-portfolio` via the GitHub Contents API → the portfolio's CI deploys |
 
 Portfolio types (`pt_event`, `feedback`, `article`, `site_copy`, `cv`) are **registry rows**
@@ -60,8 +60,25 @@ seeded by migration — a type is a row, and the app's data model needs no engin
   retention follow-on (GOVERNANCE #4).
 - Success → `202 { accepted: n }`; violations → 422 problem+json; over-limit → 429.
 
+## The insights response (CASE 0023)
+
+`GET /api/apps/portfolio/insights` (admin) returns one JSON object — every aggregate keyed on
+the SERVER-side insert time, never the client `ts`:
+
+```json
+{ "visits": { "last_7d": [ {"key": "<page>", "count": n} ], "last_30d": [...] },
+  "referrers": [...], "cv_downloads": n, "link_clicks": [...], "settings": [...],
+  "viewport_bands": [...], "dwell_buckets": [...], "installs": [...],
+  "writing_filters": [...],
+  "feedback": { "average_stars": x, "latest": [ {"stars", "text", "page", "at"} ] } }
+```
+
+Lists are `{key, count}` pairs, count-descending, capped at 25; feedback latest is capped at 50.
+A console Insights PANEL over this endpoint is a recorded follow-on; v1 reads it raw (or via
+the generic console object lists for feedback).
+
 ## Status
 
 CASE 0019 shipped the seam + skeleton (`AppMount`, `crates/server`, `/about`). CASE 0022 shipped
-the public ingest (migration 0020, `SVC_collector`, the hardened route, db-tests). Insights and
-publish: planned, each its own Case.
+the public ingest (migration 0020, `SVC_collector`, the hardened route, db-tests). CASE 0023
+shipped the admin insights endpoint. Publish: planned, its own Case.

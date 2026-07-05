@@ -10,10 +10,10 @@ numu-api = { path = "../../api" }
 axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sqlx.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
-sqlx.workspace = true
 
 [features]
 # forwards the workspace-wide `cargo test --features db-tests` (ci.sh db gate) into this crate's

@@ -5,9 +5,11 @@
 //! deploys). Mounted by `crates/server` under `/api/apps/portfolio` iff
 //! `NUMU_APP_PORTFOLIO=1`; the dev `numu-api` binary never links it.
 //!
-//! CASE 0019 (skeleton) · CASE 0022 (ingest) — insights/publish land as their own Cases.
+//! CASE 0019 (skeleton) · CASE 0022 (ingest) · CASE 0023 (insights) — publish lands as its
+//! own Case.
 
 pub mod ingest;
+pub mod insights;
 
 use std::time::Duration;
 
@@ -51,6 +53,7 @@ fn router(_state: AppState) -> Router<AppState> {
 
     Router::new()
         .route("/about", get(about))
+        .route("/insights", get(insights::insights))
         .merge(ingest_routes)
 }
 
