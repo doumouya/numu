@@ -15,3 +15,4 @@ root cause is worth more than its diff.
 | [0002](0002-css-drift-hex-fallbacks-in-charts.md) | hex fallbacks in `chart-theme.ts` tripped css-drift C1 — the token-resolved-at-render fix |
 | [0003](0003-rel-prefix-collision-day-one-rule.md) | a proposal minted `REL_` for release — the live relation-edge prefix (day-one rule) |
 | [0004](0004-docs-currency-same-commit.md) | docs-currency needs the doc touch in the SAME commit as the code |
+| [0005](0005-gcp-deploy-lessons.md) | first prod deploy: five least-privilege walls (Cloud Build SA, VM egress, rust pin, DRS, deployer run.viewer) |

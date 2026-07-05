@@ -20,6 +20,10 @@ the portfolio's project, recorded here on purpose.
       (`gcloud projects describe doumouya-portfolio` should answer).
 - [ ] Billing is linked (Console → Billing). The stack targets the always-free tier but GCE
       and Cloud Build refuse to run without a billing account attached.
+- [ ] Cloud Build runs as the default compute SA — a fresh project may need it granted
+      `roles/storage.objectViewer` + `roles/logging.logWriter` + `roles/artifactregistry.writer`
+      or source-deploys fail with `403 storage.objects.get`
+      ([runbook 0005](../runbooks/0005-gcp-deploy-lessons.md) wall 1).
 - [ ] Your `gcloud` is current + authed: `gcloud auth login` · `gcloud auth list`.
 - [ ] Region decision — **us-central1** (default): the e2-micro + 30 GB standard PD ride the
       always-free tier, ~110 ms console latency from EU. **europe-west1**: snappier console
