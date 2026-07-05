@@ -34,6 +34,13 @@ the portfolio's project, recorded here on purpose.
       with `{name: projects/<p>/policies/iam.allowedPolicyMemberDomains, spec.rules: [allowAll:
       true]}`, then `gcloud run services add-iam-policy-binding numu-api --member=allUsers
       --role=roles/run.invoker`.
+- [ ] **Deployer-SA gotcha found live (2026-07-06)**: once `firebase.json` carries run-rewrites,
+      the hosting deploy VALIDATES the target service (`run.services.get`) at version-finalize —
+      the portfolio's WIF deployer SA (`github-deployer@…`, minted with only
+      `firebasehosting.admin` + `serviceUsageConsumer`) 403s and CI fails. Grant it read-only
+      Cloud Run visibility once: `gcloud projects add-iam-policy-binding <p>
+      --member=serviceAccount:github-deployer@<p>.iam.gserviceaccount.com
+      --role=roles/run.viewer`.
 
 ## 2 · Enable the APIs (2 min, one command)
 
