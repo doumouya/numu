@@ -1,5 +1,10 @@
 # numu — the database substrate (Postgres HA, backups, DB-level observability)
 
+> **Current prod posture (CASE 0026):** a single-node Postgres 16 on a private GCE
+> e2-micro with nightly `pg_dump → GCS` + the Ops Agent ([`DEPLOY.md`](DEPLOY.md) ·
+> [`MONITORING.md`](MONITORING.md)). The HA topology below (1+2, Patroni, pgBackRest/PITR)
+> remains the designed forward posture — not yet deployed.
+
 > **Status: design contract (forward-looking) · current: single-node Postgres on `localhost` (dev).**
 > Layer: **OPS** — the substrate the [`api/`](../api/HTTP.md) layer runs on. Pairs with
 > [`OBSERVABILITY.md`](../api/OBSERVABILITY.md) (application-level P-DEBUG), [`OBJECTS.md`](../api/OBJECTS.md)

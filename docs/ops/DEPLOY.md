@@ -51,15 +51,45 @@ Sizing: Cloud Run `--max-instances 5` × pool 5 = ≤25 connections against the 
 `max_connections=50`. Scale-to-zero is on; cold start ≈ sub-second (migrate no-ops under the
 advisory lock).
 
-## To be completed by the deploy-kit Case
+## The deploy kit (CASE 0026 — `tools/deploy/`)
 
-- `tools/deploy/vm-postgres.sh` — VM + Postgres bootstrap + backup timer.
-- `tools/deploy/secrets.sh` — Secret Manager entries + accessor grants.
-- `tools/deploy/run-deploy.sh` — build/push/deploy with the full env.
-- `tools/deploy/firebase-rewrites.json` — the snippet the portfolio repo adopts.
-- First-boot checklist (Google login → `POST /auth/claim-admin`), rollback
-  (`gcloud run services update-traffic`), and the restore drill (pg_restore from a GCS dump —
-  a backup unverified is a hypothesis).
+| script | does |
+|---|---|
+| `vm-postgres.sh` | backup bucket (+30d lifecycle) · least-privilege VM SA (objectCreator on that bucket only) · IAP-SSH + in-VPC pg firewall · the e2-micro (no external IP) · ON-VM: Postgres 16 (pgdg, `listen '*'`, scram for the subnet, `max_connections=50`), the **Ops Agent** ([`MONITORING.md`](MONITORING.md) layer 2), the nightly `pg_dump→GCS` timer, the 90-day telemetry-prune timer. Prints the `DATABASE_URL` once. |
+| `secrets.sh` | Secret Manager: `numu-database-url` · `numu-secret` · `google-client-secret` · `github-token` (values prompted, never in history; re-run = rotate) + accessor grants for the Cloud Run runtime SA. |
+| `run-deploy.sh` | `gcloud run deploy --source .` (Cloud Build builds the Dockerfile — no local Docker), direct VPC egress (`private-ranges-only`, no connector fee), min 0 / max 5, the full env matrix above. Needs `GOOGLE_CLIENT_ID` exported. |
+| `firebase-rewrites.json` | the `/api` + `/auth` + `/console` run-rewrites the PORTFOLIO repo adopts before its SPA catch-all. |
+
+## Order of operations (first deploy, WITH Em)
+
+1. **Google OAuth client** (GCP console → Credentials): type Web, audience **Internal**
+   (numu.im Workspace — consent-level lock), redirect
+   `https://em.numu.im/auth/google/callback`. Note client id + secret.
+2. **GitHub PAT**: fine-grained, `doumouya/doumouya-portfolio` only, contents:read/write.
+3. `bash tools/deploy/vm-postgres.sh` → record the printed `DATABASE_URL`.
+4. `bash tools/deploy/secrets.sh` (paste the four values).
+5. `GOOGLE_CLIENT_ID=… bash tools/deploy/run-deploy.sh` → smoke `curl $URL/healthz` + `/readyz`.
+6. Portfolio repo: adopt `firebase-rewrites.json` into `firebase.json` → deploy → smoke
+   `curl -i https://em.numu.im/api/healthz` (a Cloud Run answer, not index.html).
+7. **First boot**: Em opens `https://em.numu.im/console/` → Google login (Internal client +
+   `NUMU_AUTH_ALLOWED_DOMAINS=numu.im` both gate it) → `POST /auth/claim-admin` (one atomic
+   claim; a second → 409).
+8. **Monitoring** ([`MONITORING.md`](MONITORING.md)): Cloud Monitoring alert policies (CPU
+   credits, RAM, disk days-to-full, dump freshness) + a Billing budget ($5–10, 50/90/100% →
+   Pub/Sub).
+9. Author content in the console (`article` · `site_copy` · `cv` rows) →
+   `POST /api/apps/portfolio/publish` → watch the portfolio CI deploy the commit (~60–90s).
+
+## Rollback · restore · drills
+
+- **Rollback**: `gcloud run services update-traffic numu-api --region us-central1
+  --to-revisions <prev>=100` — migrations are additive; an old revision runs on a newer schema.
+- **Restore drill** (run ONCE after first deploy, then quarterly — an unverified backup is a
+  hypothesis): fresh throwaway VM/db → `gsutil cp` the newest dump → `pg_restore -d numu` →
+  point a local `numu-server` at it → `/readyz` + a console read.
+- **Disk-fill runbook**: prune WAL + telemetry (`numu-pt-prune.service` manually), off-peak
+  `VACUUM (FULL)` on the big relations, or snapshot-and-resize the PD (resize is online:
+  `gcloud compute disks resize` + `resize2fs`).
 
 > **CI note:** numu's repo cannot deploy through the existing WIF provider (its attribute
 > condition admits only `doumouya/doumouya-portfolio`). Deploys are operator-run `gcloud` for

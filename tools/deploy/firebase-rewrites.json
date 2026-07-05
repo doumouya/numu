@@ -1,0 +1,8 @@
+{
+  "_comment": "The rewrites the PORTFOLIO repo adopts into firebase.json (BEFORE its SPA catch-all; first-match-wins, and static files always win over rewrites). Same-origin /api + /auth + /console on em.numu.im — no CORS, and the __session cookie flows (the ONLY cookie Hosting forwards to Cloud Run).",
+  "rewrites": [
+    { "source": "/api/**", "run": { "serviceId": "numu-api", "region": "us-central1" } },
+    { "source": "/auth/**", "run": { "serviceId": "numu-api", "region": "us-central1" } },
+    { "source": "/console/**", "run": { "serviceId": "numu-api", "region": "us-central1" } }
+  ]
+}
