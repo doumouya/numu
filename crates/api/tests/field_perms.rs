@@ -16,10 +16,7 @@ use sqlx::PgPool;
 type R = Result<(), Box<dyn std::error::Error>>;
 
 fn caller_of(id: &str) -> Caller {
-    Caller {
-        actor_id: id.to_string(),
-        is_platform_admin: false,
-    }
+    Caller::console(id, false)
 }
 
 fn ctx() -> RequestCtx {

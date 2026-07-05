@@ -16,7 +16,7 @@ use axum::{Extension, Json, Router};
 use serde_json::{json, Value};
 use sqlx::{PgPool, Row};
 
-use crate::caller::Caller;
+use crate::caller::{self, Action, Caller};
 use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::objects;
@@ -98,8 +98,11 @@ async fn ensure_object(pool: &PgPool, id: &str, type_id: &str, ctx: &RequestCtx)
     Ok(())
 }
 
-/// Reach gate returning the caller's effective rank: platform-admin bypasses; no reach → 404 (leak-free);
-/// reach below `min_rank` → 403 (existence already admitted). The single authority check for the roster.
+/// Reach gate returning the caller's effective rank: Plane C first (the membership surface is
+/// confined as `Edit` on the object's type for app/agent surfaces — BEFORE the admin bypass, a
+/// confined deputy stays confined); then platform-admin bypasses; no reach → 404 (leak-free);
+/// reach below `min_rank` → 403 (existence already admitted). The single authority check for the
+/// roster.
 async fn require_rank(
     pool: &PgPool,
     caller: &Caller,
@@ -107,6 +110,17 @@ async fn require_rank(
     min_rank: i32,
     ctx: &RequestCtx,
 ) -> AppResult<i32> {
+    if let Some(type_id) =
+        sqlx::query_scalar::<_, Option<String>>("select type from entities where id = $1")
+            .bind(object_id)
+            .fetch_optional(pool)
+            .await?
+            .flatten()
+    {
+        if !caller::plane_c_admit_type(pool, caller, &type_id, Action::Edit).await? {
+            return Err(deny_404(ctx));
+        }
+    }
     if caller.is_platform_admin {
         return Ok(i32::MAX);
     }

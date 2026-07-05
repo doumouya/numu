@@ -44,6 +44,10 @@ A ∩ B ∩ C.
 - `docs/api/RBAC.md` (locked) gains §2b in this Case — Em-level decision = the approved slice
   roadmap ("go", 2026-07-05).
 
+**Landed 2026-07-05:** 0018 applies on the throwaway after 0001–0017; the 6-test plane_c suite
+green (default-deny, grant scope, wildcard, admin-confined, ttl/purpose, ceiling, view-types);
+full `bash tools/ci.sh` green — 16 gates with `capability-audit` armed.
+
 ## Follow-on (recorded)
 
 `operator_access` (GOVERNANCE #3) rides the same `condition` kinds (purpose + TTL) at the reach

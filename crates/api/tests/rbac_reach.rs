@@ -14,10 +14,7 @@ use sqlx::PgPool;
 type R = Result<(), Box<dyn std::error::Error>>;
 
 fn caller_of(id: &str) -> Caller {
-    Caller {
-        actor_id: id.to_string(),
-        is_platform_admin: false,
-    }
+    Caller::console(id, false)
 }
 
 /// Insert a bare entity + its entity_data row (data is irrelevant to the resolver; only type + the
@@ -159,10 +156,7 @@ async fn reachable_list_is_scoped(pool: PgPool) -> R {
 async fn platform_admin_bypasses(pool: PgPool) -> R {
     let cache = TypeDefCache::load(&pool).await?;
     let note_td = cache.get("note").expect("note type seeded");
-    let admin = Caller {
-        actor_id: "USR_root".to_string(),
-        is_platform_admin: true,
-    };
+    let admin = Caller::console("USR_root", true);
     // no memberships, object need not even exist — the admin bypass short-circuits before the resolver
     assert!(
         caller::require_action(&pool, &admin, note_td, Some("NOT_ghost"), Action::Delete).await?

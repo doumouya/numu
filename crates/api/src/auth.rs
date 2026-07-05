@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::caller::Caller;
+use crate::caller::{Caller, Surface, SurfaceKind};
 use crate::error::{AppError, AppResult};
 use crate::ids;
 use crate::state::AppState;
@@ -79,7 +79,7 @@ impl FromRequestParts<AppState> for Caller {
             .ok_or_else(AppError::unauthorized)?;
         let hash = sha256_hex(&token);
         let row = sqlx::query(
-            "select s.actor_id, d.data->>'platform_role' as prole \
+            "select s.actor_id, d.data->>'platform_role' as prole, d.data->>'kind' as akind \
              from sessions s join entity_data d on d.entity_id = s.actor_id and d.type_id = 'actor' \
              where s.token_hash = $1 and s.expires_at > now()",
         )
@@ -89,9 +89,60 @@ impl FromRequestParts<AppState> for Caller {
         .ok_or_else(AppError::unauthorized)?;
         let actor_id: String = row.try_get("actor_id")?;
         let prole: Option<String> = row.try_get("prole")?;
+        let akind: Option<String> = row.try_get("akind")?;
+
+        // The acting surface (Plane C): a human session is the console; an agent/service principal
+        // IS its own confined surface (default-deny — only capability grants admit it). App faces
+        // tag their surface via the app token when the faces land; a session never claims `app`.
+        let surface = match akind.as_deref() {
+            Some("agent") | Some("service") => Surface {
+                kind: SurfaceKind::Agent,
+                id: actor_id.clone(),
+            },
+            _ => Surface::console(),
+        };
+
+        // Declared purpose (X-Numu-Purpose) — binds purpose_limited grants and is recorded by the
+        // access audit. Self-declared: it binds, it doesn't prove. Shape-checked only.
+        let purpose = parts
+            .headers
+            .get("x-numu-purpose")
+            .and_then(|v| v.to_str().ok())
+            .filter(|s| {
+                !s.is_empty()
+                    && s.len() <= 64
+                    && s.chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            })
+            .map(str::to_string);
+
+        // The strictest max_data_class ceiling across this surface's grant conditions (0018 ∘ 0016).
+        // Strictness follows the SEVERITY order (public < internal < personal < sensitive), not the
+        // alphabet — array_position picks the lowest-severity ceiling declared on any grant.
+        let data_class_ceiling = if surface.kind == SurfaceKind::Console {
+            None
+        } else {
+            sqlx::query_scalar::<_, String>(
+                "select c.params->>'ceiling' from capability_grant g \
+                 join condition c on c.id = g.condition_id and c.kind = 'max_data_class' \
+                 where g.surface_kind = $1 and g.surface_id = $2 \
+                   and c.params->>'ceiling' is not null \
+                 order by array_position(array['public','internal','personal','sensitive'], \
+                                         c.params->>'ceiling') nulls last \
+                 limit 1",
+            )
+            .bind(surface.kind.as_str())
+            .bind(surface.id.as_str())
+            .fetch_optional(&state.pool)
+            .await?
+        };
+
         Ok(Caller {
             actor_id,
             is_platform_admin: prole.as_deref() == Some("admin"),
+            surface,
+            purpose,
+            data_class_ceiling,
         })
     }
 }

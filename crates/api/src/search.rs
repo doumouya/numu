@@ -12,7 +12,7 @@ use serde::Deserialize;
 use serde_json::json;
 use sqlx::Row;
 
-use crate::caller::Caller;
+use crate::caller::{self, Caller};
 use crate::error::{AppError, AppResult};
 use crate::rbac;
 use crate::request_id::RequestCtx;
@@ -35,7 +35,8 @@ struct SearchQ {
 const SELECT: &str = "select d.entity_id, d.type_id, ts_rank(d.search_vector, query) as rank, \
      coalesce(d.data->>'title', d.data->>'name', d.data->>'display_name', d.entity_id) as title \
      from entity_data d, websearch_to_tsquery('english', $1) query \
-     where d.search_vector @@ query and ($2::text is null or d.type_id = $2)";
+     where d.search_vector @@ query and ($2::text is null or d.type_id = $2) \
+       and (cardinality($3::text[]) = 0 or d.type_id = any($3))";
 
 async fn search(
     State(st): State<AppState>,
@@ -51,22 +52,45 @@ async fn search(
     let limit = qp.limit.unwrap_or(20).clamp(1, 100);
     let type_filter = qp.type_id.as_deref();
 
+    // Plane C: search spans every type, so a confined surface is restricted to the types its view
+    // grants admit (BEFORE the admin bypass — a confined deputy stays confined). No admitted view
+    // grant ⇒ an empty result set (default-deny; nothing to leak, nothing to 404).
+    let granted_types = caller::plane_c_view_types(&st.pool, &caller).await?;
+    if let Some(types) = &granted_types {
+        let allowed = |t: &str| types.iter().any(|g| g == t);
+        match type_filter {
+            Some(t) if !allowed(t) => {
+                return Ok(Json(json!({ "query": q, "results": [] })).into_response())
+            }
+            None if types.is_empty() => {
+                return Ok(Json(json!({ "query": q, "results": [] })).into_response())
+            }
+            _ => {}
+        }
+    }
+
+    // The SQL-level Plane-C restriction (empty = unrestricted): binds on BOTH branches — an admin
+    // acting through a confined surface is type-restricted too.
+    let restrict: Vec<String> = granted_types.unwrap_or_default();
+
     // Reach-filtered like every other read: a platform-admin sees all; everyone else is constrained to the
     // entities they can reach (any type), so search can never surface something they couldn't already see.
     let rows = if caller.is_platform_admin {
-        sqlx::query(&format!("{SELECT} order by rank desc limit $3"))
+        sqlx::query(&format!("{SELECT} order by rank desc limit $4"))
             .bind(&q)
             .bind(type_filter)
+            .bind(&restrict)
             .bind(limit)
             .fetch_all(&st.pool)
             .await?
     } else {
         let reach = rbac::reachable_entity_ids_any(&st.pool, &caller.actor_id).await?;
         sqlx::query(&format!(
-            "{SELECT} and d.entity_id = any($3) order by rank desc limit $4"
+            "{SELECT} and d.entity_id = any($4) order by rank desc limit $5"
         ))
         .bind(&q)
         .bind(type_filter)
+        .bind(&restrict)
         .bind(&reach)
         .bind(limit)
         .fetch_all(&st.pool)

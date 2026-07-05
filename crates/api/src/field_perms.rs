@@ -15,6 +15,35 @@ use crate::rbac;
 use crate::registry::TypeDef;
 use crate::request_id::RequestCtx;
 
+/// Severity index of a `data_class` (public < internal < personal < sensitive). Unknown ⇒ most
+/// severe — schema drift fails closed.
+fn class_severity(c: &str) -> u8 {
+    match c {
+        "public" => 0,
+        "internal" => 1,
+        "personal" => 2,
+        "sensitive" => 3,
+        _ => 4,
+    }
+}
+
+/// Plane-C field ceiling (0018 ∘ 0016): does the caller's surface ceiling admit a field of this
+/// `data_class`? No ceiling (console, or an unconditioned surface) admits everything. Checked
+/// BEFORE any rank shortcut — the ceiling confines the SURFACE, not the principal, so even a
+/// platform admin driving a ceilinged agent stays under it.
+pub fn ceiling_admits(caller: &Caller, data_class: &str) -> bool {
+    match &caller.data_class_ceiling {
+        None => true,
+        Some(c) => class_severity(data_class) <= class_severity(c),
+    }
+}
+
+/// Is this `data_class` in the read-audit scope? (GOVERNANCE #2: a read returning any
+/// personal|sensitive field appends an `access_audit` row.)
+pub fn is_classified(data_class: &str) -> bool {
+    matches!(data_class, "personal" | "sensitive")
+}
+
 /// Default `(read_min_rank, write_min_rank)` for a `perm_class`. `system`/`readonly` are never
 /// user-writable (already schema-blocked at create/update); the `MAX` sentinel keeps the gate total.
 pub fn class_ranks(perm_class: &str) -> (i32, i32) {
@@ -65,6 +94,16 @@ pub async fn require_write(
     written: &[String],
     ctx: &RequestCtx,
 ) -> AppResult<()> {
+    // The Plane-C ceiling first — it binds regardless of rank (even MAX).
+    for field in written {
+        if let Some(f) = td.field(field) {
+            if !ceiling_admits(caller, &f.data_class) {
+                return Err(
+                    AppError::forbidden_field(field).with_request_id(ctx.request_id.clone())
+                );
+            }
+        }
+    }
     let rank = rank_on(pool, caller, object_id).await?;
     if rank == i32::MAX {
         return Ok(());
@@ -88,12 +127,18 @@ pub async fn filter_readable(
     data: Value,
 ) -> AppResult<Value> {
     let rank = rank_on(pool, caller, object_id).await?;
-    if rank == i32::MAX {
-        return Ok(data);
-    }
     let Value::Object(mut map) = data else {
         return Ok(data);
     };
+    // The Plane-C ceiling binds regardless of rank (even MAX) — the surface is what's confined.
+    for f in &td.fields {
+        if !ceiling_admits(caller, &f.data_class) {
+            map.remove(&f.field);
+        }
+    }
+    if rank == i32::MAX {
+        return Ok(Value::Object(map));
+    }
     for f in &td.fields {
         let (read_min, _w) = field_floors(pool, &td.type_id, &f.field, &f.perm_class).await?;
         if rank < read_min {
@@ -120,6 +165,9 @@ pub async fn readable_set(
     };
     let mut out = HashSet::new();
     for f in &td.fields {
+        if !ceiling_admits(caller, &f.data_class) {
+            continue; // the Plane-C ceiling binds regardless of rank
+        }
         let (read_min, _w) = field_floors(pool, &td.type_id, &f.field, &f.perm_class).await?;
         if rank >= read_min {
             out.insert(f.field.clone());
