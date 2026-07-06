@@ -18,7 +18,7 @@ import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
 import { mountContextPanel, type ContextPanelCfg } from "./console/context-panel.ts";
 import { mountStore, type StoreOpen } from "./console/store.ts";
-import { registerApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
+import { registerApp, appList, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
 import { auth, identityRecord, doLogout } from "./shell/auth.ts";
@@ -696,10 +696,35 @@ function contextCfg(): ContextPanelCfg {
 }
 const context = mountContextPanel(contextHost, contextCfg());
 
+/* the Store's truth depends on the plane: sim shows Jean's full demo catalog;
+   HTTP shows the REAL registry as installed and the catalog as an honest
+   roadmap ("coming soon", no install actions, no fake connections) — the
+   apps doctrine (docs/apps/README.md): one app per purpose, brands become
+   sources inside it, never their own surface. */
+function storeInventory(): { groups: StoreCfgGroups; apps: ConsoleStoreApp[]; agents: ConsoleStoreApp[] } {
+  if (ncl.kind !== "http") return { groups: CCD.connectors, apps: CCD.apps, agents: CCD.agents };
+  const real: ConsoleStoreApp[] = appList()
+    .filter((a) => a.id !== "store")
+    .map((a) => ({
+      id: a.id,
+      name: a.label,
+      cat: "numu",
+      icon: a.icon,
+      accent: "var(--accent)",
+      installed: true,
+      tagline: a.desc,
+      about: ["A live numu app — it runs on this node, reached from the Apps Rail."],
+    }));
+  const soonApp = (x: ConsoleStoreApp): ConsoleStoreApp => ({ ...x, installed: false, enabled: false, soon: true });
+  return {
+    groups: CCD.connectors.map((g) => ({ ...g, items: g.items.map((c) => ({ ...c, connected: false, soon: true })) })),
+    apps: real.concat(CCD.apps.map(soonApp)),
+    agents: CCD.agents.map(soonApp),
+  };
+}
+type StoreCfgGroups = Array<{ group: string; items: ConsoleConnector[] }>;
 const store = mountStore(storePage, {
-  groups: CCD.connectors,
-  apps: CCD.apps,
-  agents: CCD.agents,
+  ...storeInventory(),
   activeId: null,
   onOpen: (o: StoreOpen) => {
     openPanelObject(o);

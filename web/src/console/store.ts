@@ -108,15 +108,18 @@ export function mountStore(host: Element, cfg: StoreCfg): StoreHandle {
     const doneLabel = kind === "agent" ? "Enabled" : "Installed";
     const getLabel = kind === "agent" ? "Enable" : "Get";
     const openLabel = kind === "agent" ? "Configure" : "Open";
-    const actBtn = button({
-      label: isOn ? openLabel : getLabel,
-      size: "sm",
-      variant: isOn ? "ghost" : undefined,
-      onClick: (e) => {
-        e.stopPropagation();
-        isOn ? openItem(it, kind) : act(it, kind);
-      },
-    });
+    /* an honest catalog item: no live surface → no action, just the badge */
+    const actBtn = it.soon
+      ? el("span", { hidden: "hidden" })
+      : button({
+          label: isOn ? openLabel : getLabel,
+          size: "sm",
+          variant: isOn ? "ghost" : undefined,
+          onClick: (e) => {
+            e.stopPropagation();
+            isOn ? openItem(it, kind) : act(it, kind);
+          },
+        });
     return el(
       "div",
       { class: `nu-store-card${it.id === activeId ? " is-active" : ""}`, onclick: () => openItem(it, kind) },
@@ -133,7 +136,7 @@ export function mountStore(host: Element, cfg: StoreCfg): StoreHandle {
             it.name,
             it.claude ? el("img", { src: "assets/claude-mark.png", alt: "Claude", title: "Claude-powered", class: "nu-claude-mark" }) : null,
           ),
-          el("div", { class: "nu-store-cardtags" }, badge({ label: it.cat }), it.badge ? badge({ label: it.badge, tone: "accent" }) : null),
+          el("div", { class: "nu-store-cardtags" }, badge({ label: it.cat }), it.badge ? badge({ label: it.badge, tone: "accent" }) : null, it.soon ? badge({ label: "coming soon", tone: "warn" }) : null),
         ),
       ),
       el("p", { class: "nu-store-tagline" }, it.tagline),
@@ -180,16 +183,18 @@ export function mountStore(host: Element, cfg: StoreCfg): StoreHandle {
               el("span", { class: "nu-connectors-name" }, it.name),
               el("span", { class: "nu-connectors-tags" }, badge({ label: it.kind }), it.local ? badge({ label: "on-device", tone: "accent" }) : null),
             ),
-            it.connected
-              ? el("span", { class: "nu-connectors-ok" }, icon("check-circle-fill"))
-              : button({
-                  label: "Connect",
-                  size: "sm",
-                  onClick: (e) => {
-                    e.stopPropagation();
-                    cfg.onOpen({ ...it, type: "connector" });
-                  },
-                }),
+            it.soon
+              ? badge({ label: "coming soon", tone: "warn" })
+              : it.connected
+                ? el("span", { class: "nu-connectors-ok" }, icon("check-circle-fill"))
+                : button({
+                    label: "Connect",
+                    size: "sm",
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      cfg.onOpen({ ...it, type: "connector" });
+                    },
+                  }),
           ),
         );
       });

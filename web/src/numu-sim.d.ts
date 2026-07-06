@@ -295,6 +295,8 @@ interface ConsoleConnector {
   color: string;
   kind: string;
   connected?: boolean;
+  /** console v2 (HTTP mode): no live integration yet — "coming soon", no Connect action. */
+  soon?: boolean;
   local?: boolean;
   host?: string;
   port?: string;
@@ -322,6 +324,9 @@ interface ConsoleStoreApp {
   src?: string;
   tagline: string;
   about?: string[];
+  /** console v2 (HTTP mode): a catalog item with no live surface yet — the
+      Store renders "coming soon" and offers no install action. */
+  soon?: boolean;
 }
 
 interface ConsoleUserRecordData {
