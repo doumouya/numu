@@ -25,6 +25,10 @@ export interface SettingsCfg {
       (console v2, CAS_e6695638) — POSTs ride the generic gated pipeline. */
   onCreateWorkspace?(name: string, slug: string): Promise<boolean>;
   onCreateUser?(displayName: string, handle: string, email: string): Promise<boolean>;
+  /** Directory management (HTTP): list the real rows + patch one field (If-Match, rename/status;
+      no delete — the backend has no cascade so deleting a workspace would orphan its projects). */
+  onListDirectory?(): Promise<{ workspaces: DirRow[]; users: DirRow[] }>;
+  onPatchObject?(type: string, id: string, etag: string, patch: Record<string, unknown>): Promise<boolean>;
   /** false (HTTP mode) hides every demo-data section — a clean org shows only
       what is REAL: Account · Directory · Appearance · Support (CAS_e6695638). */
   demo?: boolean;
@@ -32,6 +36,15 @@ export interface SettingsCfg {
 }
 
 const MEMBER_TONE: Record<string, BadgeTone | undefined> = { active: "ok", invited: "warn", disabled: "danger" };
+
+/** a directory row: the id/etag needed for If-Match patches + the displayable fields. */
+export interface DirRow {
+  id: string;
+  etag: string;
+  name: string;
+  sub: string;
+  status: string;
+}
 
 function toggle(on: boolean, label: string, onChange: (v: boolean) => void): HTMLElement {
   const btn = el("button", { class: `nu-switch${on ? " is-on" : ""}`, role: "switch", "aria-checked": String(on), "aria-label": label }, el("span", { class: "nu-switch-knob" }));
@@ -161,6 +174,56 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
         ),
       ),
     );
+
+    /* the real rows: rename (inline) + status toggle, no delete (no cascade). */
+    if (cfg.onListDirectory && cfg.onPatchObject) {
+      const onList = cfg.onListDirectory;
+      const onPatch = cfg.onPatchObject;
+      const manageCard = el("div", { class: "nu-set-card" }, el("div", { class: "nu-set-row is-first" }, el("span", { class: "nu-set-rowdesc" }, "loading…")));
+      const secWrap = el("div", {}, el("div", { class: "nu-set-title nu-set-subtitle" }, icon("list-ul", { size: "0.9rem", color: "var(--text-mute)" }), "Manage"), manageCard);
+      wrap.appendChild(el("div", { class: "nu-set-section" }, secWrap));
+
+      const dirRow = (type: string, r: DirRow, statuses: string[]): HTMLElement => {
+        const nameEl = el("span", { class: "nu-set-acctname" }, r.name);
+        const rename = (): void => {
+          const inp = input({ value: r.name });
+          nameEl.replaceWith(inp);
+          const nameField = type === "actor" ? "display_name" : "name";
+          const commit = (): void => {
+            const v = inp.value.trim();
+            if (v && v !== r.name) void onPatch(type, r.id, r.etag, { [nameField]: v }).then((ok) => ok && refresh());
+            else refresh();
+          };
+          inp.addEventListener("keydown", (e) => { if ((e as KeyboardEvent).key === "Enter") commit(); if ((e as KeyboardEvent).key === "Escape") refresh(); });
+          inp.addEventListener("blur", commit);
+          inp.focus();
+        };
+        const statusSel = el("div", { class: "nu-set-select" });
+        mountSelect(statusSel, {
+          options: statuses.map((s) => ({ value: s, label: s })),
+          value: statuses.includes(r.status) ? r.status : (statuses[0] ?? ""),
+          onChange: (v: string) => { if (v !== r.status) void onPatch(type, r.id, r.etag, { status: v }).then((ok) => ok && refresh()); },
+        });
+        return el(
+          "div",
+          { class: "nu-set-row" },
+          el("span", { class: "nu-set-rowmeta" }, nameEl, el("span", { class: "nu-set-rowdesc nu-mono" }, r.sub || r.id)),
+          button({ label: "Rename", icon: "bi-pencil", size: "sm", onClick: rename }),
+          statusSel,
+        );
+      };
+      const refresh = (): void => {
+        void onList().then(({ workspaces, users }) => {
+          manageCard.textContent = "";
+          manageCard.appendChild(el("div", { class: "nu-set-row is-first nu-set-grouphead" }, `Workspaces · ${workspaces.length}`));
+          if (!workspaces.length) manageCard.appendChild(el("div", { class: "nu-set-row" }, el("span", { class: "nu-set-rowdesc" }, "none yet — create one above")));
+          workspaces.forEach((w) => manageCard.appendChild(dirRow("workspace", w, ["active", "suspended"])));
+          manageCard.appendChild(el("div", { class: "nu-set-row nu-set-grouphead" }, `Users · ${users.length}`));
+          users.forEach((u) => manageCard.appendChild(dirRow("actor", u, ["active", "invited", "disabled"])));
+        });
+      };
+      refresh();
+    }
   }
 
   /* ── appearance: the skin cards + dark toggle ── */

@@ -18,6 +18,7 @@ import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
 import { mountContextPanel, type ContextPanelCfg } from "./console/context-panel.ts";
 import { mountStore, type StoreOpen } from "./console/store.ts";
+import type { DirRow } from "./console/settings.ts";
 import { registerApp, appList, getApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
 import { mountPortfolio } from "./apps/portfolio.ts";
 import { initRouter, navigate } from "./shell/router.ts";
@@ -770,6 +771,24 @@ const composer = mountComposer(composerHost, {
   onAction: (title, detail, tone) => notify(title, detail, tone),
 });
 
+/** http: the Directory's real rows — workspaces + users, with the etag each rename/status
+    patch needs (If-Match). Actor rows skip nobody; the caller's admin reach gates the list. */
+async function listDirectory(): Promise<{ workspaces: DirRow[]; users: DirRow[] }> {
+  const fetchType = async (type: string): Promise<DirRow[]> => {
+    const res = await ncl.request("GET", `/api/objects/${type}?limit=200`);
+    const items = res.status === 200 ? (((res.body as { items?: Array<{ id: string; etag?: string; version?: number; data: Record<string, unknown> }> } | null)?.items) ?? []) : [];
+    return items.map((e) => ({
+      id: e.id,
+      etag: e.etag ?? `W/"${e.version ?? 1}"`,
+      name: String(e.data["name"] ?? e.data["display_name"] ?? e.id),
+      sub: e.data["slug"] ? String(e.data["slug"]) : e.data["handle"] ? "@" + String(e.data["handle"]) : "",
+      status: String(e.data["status"] ?? "active"),
+    }));
+  };
+  const [workspaces, users] = await Promise.all([fetchType("workspace"), fetchType("actor")]);
+  return { workspaces, users };
+}
+
 function settingsCfg() {
   return {
     meId: meId(),
@@ -814,6 +833,21 @@ function settingsCfg() {
             return ok;
           }
         : undefined,
+    onListDirectory: HTTP ? listDirectory : undefined,
+    onPatchObject: HTTP
+      ? async (type: string, id: string, etag: string, patch: Record<string, unknown>): Promise<boolean> => {
+          const res = await ncl.request("PATCH", `/api/objects/${type}/${id}`, { body: patch, headers: etag ? { "If-Match": etag } : {} });
+          const ok = res.status === 200;
+          if (ok) {
+            notify("Directory", "updated", "ok");
+            if (type === "workspace") {
+              await loadWorkspaces(ncl);
+              renderChrome();
+            }
+          } else notify("Directory", res.status === 412 ? "changed elsewhere — reopen" : `failed (${res.status})`, "danger");
+          return ok;
+        }
+      : undefined,
     onSkin: (sk: ConsoleSkin) => {
       applySkin(sk);
       renderContext();

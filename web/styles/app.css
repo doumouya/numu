@@ -3092,3 +3092,7 @@ body {
 .nu-set-createrow { align-items: flex-start; }
 .nu-set-createfields { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
 .nu-set-createfields input { min-width: 11rem; }
+
+/* directory manage sub-list (settings, console v2) */
+.nu-set-subtitle { margin-top: var(--sp-3); }
+.nu-set-grouphead { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-mute); }
