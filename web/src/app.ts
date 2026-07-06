@@ -502,7 +502,8 @@ function openPanelObject(o: PanelObject): void {
 function pushBlocks(bs: NumuBlock[]): void {
   if (!bs.length) return;
   state.feed = state.feed.concat(bs);
-  void ncl.appendFeed(orgOf(state.tenantId), bs);
+  /* http feeds are session-local until /api/conversations lands — don't 404 on appendFeed */
+  if (!HTTP) void ncl.appendFeed(orgOf(state.tenantId), bs);
   renderFeed();
 }
 function persistFeed(next: NumuBlock[]): void {
@@ -536,8 +537,70 @@ function applyEffects(effects: NumuEffect[]): void {
   });
 }
 
+/* http: type aliases the read plane understands (nacl uses `user` for the actor type) */
+const READ_TYPE: Record<string, string> = { user: "actor", users: "actor" };
+
+/** http send — the thread never swallows input: echo, then the REAL read plane over the
+    generic object API (read:<type>); everything else gets an honest "server nacl is next". */
+function sendHttp(text: string): void {
+  if (state.page !== "workspace") navigate("workspace");
+  pushBlocks([{ type: "sent", text, channel: state.channel }]);
+  const m = /^(?:read:|list\s+)?([a-z_]+)s?$/i.exec(text.trim());
+  const raw = m?.[1]?.toLowerCase();
+  const type = raw ? (READ_TYPE[raw] ?? READ_TYPE[`${raw}s`] ?? raw) : "";
+  if (type) {
+    void ncl.request("GET", `/api/objects/${type}?limit=100`).then((res) => {
+      if (res.status !== 200) {
+        pushBlocks([{ type: "step", nacl: text, kind: "read", impact: `⚠ no readable "${type}" — try read:article · read:workspace · read:user` }]);
+        return;
+      }
+      const items = ((res.body as { items?: Array<{ id: string; data: Record<string, unknown>; version: number }> } | null)?.items) ?? [];
+      const rows: NumuObjectTableRow[] = items.map((e) => ({
+        id: e.id,
+        title: String(e.data["display_name"] ?? e.data["name"] ?? e.data["label"] ?? e.data["title"] ?? e.id),
+        status: String(e.data["status"] ?? e.data["published"] ?? ""),
+        meta: `${e.data["handle"] ? "@" + String(e.data["handle"]) + " · " : ""}v${e.version}`,
+        objRef: e.id,
+      }));
+      pushBlocks([{ type: "objectTable", objType: type, icon: "collection", title: `${type} · ${rows.length} rows`, rows }]);
+    });
+    return;
+  }
+  pushBlocks([{ type: "step", nacl: text, kind: "chat", impact: "server-side nacl is the next backend slice — the full command grammar runs in the sim (?sim=1). Reads work now: read:article · read:workspace · read:user" }]);
+}
+
+/** http: open a registry object as a generic record in the Context panel — a real GET, since
+    the sim `recordFromRef` can't resolve real ids. Skips the actor type (personal fields). */
+async function openHttpRecord(ref: string | undefined): Promise<void> {
+  if (!ref) return;
+  const type = ref.split("_")[0]?.toLowerCase();
+  const typeMap: Record<string, string> = { usr: "actor", org: "workspace", prj: "project", art: "article", scp: "site_copy", cvd: "cv" };
+  const t = type ? (typeMap[type] ?? "") : "";
+  if (!t) return;
+  const res = await ncl.request("GET", `/api/objects/${t}/${ref}`);
+  if (res.status !== 200) return;
+  const d = (res.body as { data?: Record<string, unknown> } | null)?.data ?? {};
+  const fields: Array<[string, string]> = Object.entries(d)
+    .filter(([, v]) => v != null && typeof v !== "object")
+    .map(([k, v]) => [k, String(v)]);
+  openPanelObject({
+    id: ref,
+    code: ref,
+    name: String(d["display_name"] ?? d["name"] ?? d["label"] ?? d["title"] ?? ref),
+    status: String(d["status"] ?? d["published"] ?? "active"),
+    fields,
+    type: "record",
+    icon: "collection",
+    accent: "var(--chart-2)",
+  });
+}
+
 /** send — nacl over the seam: parse → plan → REAL execution */
 function send(text: string): void {
+  if (HTTP) {
+    sendHttp(text);
+    return;
+  }
   /* read:users — everyone the actor can reach, as a table block */
   if (/^(read:users\b|list\s+users\b|users$)/i.test(text)) {
     const us = ncl.engine ? ncl.engine.reachable(ncl.actor, "user") : [];
@@ -674,10 +737,12 @@ function feedCfg() {
     feed: state.feed,
     onOpenObject(b: NumuObjectBlock) {
       const ref = b.objRef;
+      if (HTTP) return void openHttpRecord(ref);
       const media = ref ? buildLive(state.tenantId).objects.find((o) => o.id === ref) : null;
       openPanelObject(media ?? recordFromRef(ref) ?? null);
     },
     onOpenTableRow(r: NumuObjectTableRow) {
+      if (HTTP) return void openHttpRecord(r.objRef);
       const media = r.objRef ? buildLive(state.tenantId).objects.find((o) => o.id === r.objRef) : null;
       openPanelObject(media ?? recordFromRef(r.objRef) ?? null);
     },

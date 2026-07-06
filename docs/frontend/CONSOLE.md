@@ -66,6 +66,15 @@ rail every member has.
 | `console/chart-theme.ts` | token → ECharts option synthesis + `mountNuChart` (direct init on `.nu-` slots) |
 | `numu-sim.d.ts` | ambient types over the sim globals — the typed face of the seam |
 
+**The thread in HTTP mode (CAS_6b46bea7):** the composer never swallows input —
+every send echoes a `sent` bubble, `read:<type>` (article/workspace/user/…) is
+REAL over `GET /api/objects/<type>` → an `objectTable` (row-click fetches the
+record into the Context panel), and every other line gets an honest `step`
+("server-side nacl is the next backend slice — the full grammar runs in the
+sim"). Feeds are session-local until `POST /api/nacl` + `/api/conversations`
+land (SLICE 2, SEAM.md Phase C) — stated, not faked. Sim keeps its full nacl
+engine unchanged.
+
 **The plane rule (CAS_e6695638 · CAS_3bfcc22b): demo data never crosses into
 HTTP mode.** In HTTP the tenancy is REAL (`shell/workspaces.ts` — the rail
 marks + topbar chip come from the caller's reachable `workspace` rows; none →
