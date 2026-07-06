@@ -561,6 +561,10 @@ function applyEffects(effects: NumuEffect[]): void {
       const audio = buildLive(state.tenantId).objects.find((o) => o.type === "audio" && (!q || o.name.toLowerCase().includes(q)));
       if (audio) openPanelObject({ ...audio, autoplay: true });
     } else if (ef.kind === "openObjectId" && ef.id) {
+      if (HTTP) {
+        void openHttpRecord(ef.id); // a just-created registry object — fetch the real row
+        return;
+      }
       const media = buildLive(state.tenantId).objects.find((o) => o.id === ef.id);
       openPanelObject(media ?? recordFromRef(ef.id) ?? null);
     } else if (ef.kind === "it" && ef.id) {
@@ -569,36 +573,27 @@ function applyEffects(effects: NumuEffect[]): void {
   });
 }
 
-/* http: type aliases the read plane understands (nacl uses `user` for the actor type) */
-const READ_TYPE: Record<string, string> = { user: "actor", users: "actor" };
-
-/** http send — the thread never swallows input: echo, then the REAL read plane over the
-    generic object API (read:<type>); everything else gets an honest "server nacl is next". */
+/** http send — the thread never swallows input: echo the line, then run the command through the server
+    nacl plane (POST /api/nacl, SLICE 2b): read:<type> → objectTable, new:<type> field=value → create,
+    anything else → an honest chat block. Blocks + effects render exactly as the sim's; pushBlocks
+    persists them to the workspace feed. */
 function sendHttp(text: string): void {
   if (state.page !== "workspace") navigate("workspace");
   pushBlocks([{ type: "sent", text, channel: state.channel }]);
-  const m = /^(?:read:|list\s+)?([a-z_]+)s?$/i.exec(text.trim());
-  const raw = m?.[1]?.toLowerCase();
-  const type = raw ? (READ_TYPE[raw] ?? READ_TYPE[`${raw}s`] ?? raw) : "";
-  if (type) {
-    void ncl.request("GET", `/api/objects/${type}?limit=100`).then((res) => {
-      if (res.status !== 200) {
-        pushBlocks([{ type: "step", nacl: text, kind: "read", impact: `⚠ no readable "${type}" — try read:article · read:workspace · read:user` }]);
-        return;
-      }
-      const items = ((res.body as { items?: Array<{ id: string; data: Record<string, unknown>; version: number }> } | null)?.items) ?? [];
-      const rows: NumuObjectTableRow[] = items.map((e) => ({
-        id: e.id,
-        title: String(e.data["display_name"] ?? e.data["name"] ?? e.data["label"] ?? e.data["title"] ?? e.id),
-        status: String(e.data["status"] ?? e.data["published"] ?? ""),
-        meta: `${e.data["handle"] ? "@" + String(e.data["handle"]) + " · " : ""}v${e.version}`,
-        objRef: e.id,
-      }));
-      pushBlocks([{ type: "objectTable", objType: type, icon: "collection", title: `${type} · ${rows.length} rows`, rows }]);
-    });
-    return;
-  }
-  pushBlocks([{ type: "step", nacl: text, kind: "chat", impact: "server-side nacl is the next backend slice — the full command grammar runs in the sim (?sim=1). Reads work now: read:article · read:workspace · read:user" }]);
+  const ctx: NumuNaclCtx = {
+    workspace: orgOf(state.tenantId),
+    projectId: state.activeProject ? PRJ_OF(state.activeProject) : undefined,
+    itFileId: state.itFile[state.tenantId],
+    channel: state.channel,
+  };
+  ncl
+    .nacl(text, ctx)
+    .then((r) => {
+      const res = r ?? { blocks: [], effects: [] };
+      applyEffects(res.effects ?? []);
+      pushBlocks(res.blocks ?? []);
+    })
+    .catch(() => pushBlocks([{ type: "step", nacl: text, kind: "warn", impact: "couldn't reach the server — try again" }]));
 }
 
 /** http: open a registry object as a generic record in the Context panel — a real GET, since
@@ -606,7 +601,11 @@ function sendHttp(text: string): void {
 async function openHttpRecord(ref: string | undefined): Promise<void> {
   if (!ref) return;
   const type = ref.split("_")[0]?.toLowerCase();
-  const typeMap: Record<string, string> = { usr: "actor", org: "workspace", prj: "project", art: "article", scp: "site_copy", cvd: "cv" };
+  const typeMap: Record<string, string> = {
+    usr: "actor", org: "workspace", prj: "project", art: "article", scp: "site_copy", cvd: "cv",
+    cas: "case", con: "connector", mil: "milestone", tem: "team", cmt: "comment", dec: "decision",
+    spc: "spec", not: "note", rbk: "runbook", skl: "skill", acr: "acceptance_criterion",
+  };
   const t = type ? (typeMap[type] ?? "") : "";
   if (!t) return;
   const res = await ncl.request("GET", `/api/objects/${t}/${ref}`);

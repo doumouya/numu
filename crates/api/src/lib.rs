@@ -15,6 +15,7 @@ pub mod health;
 pub mod http_client;
 pub mod ids;
 pub mod members;
+pub mod nacl;
 pub mod oauth;
 pub mod objects;
 pub mod orchestrator;
@@ -137,6 +138,7 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         .merge(relations::router())
         .merge(search::router())
         .merge(conversations::router())
+        .merge(nacl::router())
         .merge(orchestrator::router())
         .merge(connectors::router())
         .merge(auth_routes)

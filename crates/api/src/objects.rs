@@ -347,39 +347,43 @@ struct ListParams {
     offset: Option<i64>,
 }
 
-async fn coll_get(
-    State(st): State<AppState>,
-    Extension(ctx): Extension<RequestCtx>,
-    caller: Caller,
-    Path(type_id): Path<String>,
-    Query(q): Query<ListParams>,
-) -> AppResult<Response> {
+/// The gated, reach-scoped, field-filtered LIST core — shared by `coll_get` (the HTTP handler) and the
+/// nacl read plane (`nacl.rs read:<type>`), so both take the same View gate, the same reach filter, and
+/// leave the same GOVERNANCE #2 access evidence. Returns the `entity_json` items, newest first.
+pub async fn list_core(
+    st: &AppState,
+    ctx: &RequestCtx,
+    caller: &Caller,
+    type_id: &str,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> AppResult<Vec<Value>> {
     let reg = st.registry.load_full();
-    let td = resolve(&reg, &type_id, &ctx)?;
-    if !caller::require_action(&st.pool, &caller, td, None, Action::View).await? {
-        return Err(deny_404(&ctx));
+    let td = resolve(&reg, type_id, ctx)?;
+    if !caller::require_action(&st.pool, caller, td, None, Action::View).await? {
+        return Err(deny_404(ctx));
     }
-    let limit = q.limit.unwrap_or(50).clamp(1, 200);
-    let offset = q.offset.unwrap_or(0).max(0);
+    let limit = limit.unwrap_or(50).clamp(1, 200);
+    let offset = offset.unwrap_or(0).max(0);
     // Reach-scoped LIST (read-side leak guard): a non-admin caller sees only entities they reach.
     let rows = if caller.is_platform_admin {
         sqlx::query(
             "select entity_id, data, version from entity_data \
              where type_id = $1 order by updated_at desc limit $2 offset $3",
         )
-        .bind(type_id.as_str())
+        .bind(type_id)
         .bind(limit)
         .bind(offset)
         .fetch_all(&st.pool)
         .await?
     } else {
-        let ids = rbac::reachable_entity_ids(&st.pool, &caller.actor_id, &type_id).await?;
+        let ids = rbac::reachable_entity_ids(&st.pool, &caller.actor_id, type_id).await?;
         sqlx::query(
             "select entity_id, data, version from entity_data \
              where type_id = $1 and entity_id = any($2) \
              order by updated_at desc limit $3 offset $4",
         )
-        .bind(type_id.as_str())
+        .bind(type_id)
         .bind(&ids)
         .bind(limit)
         .bind(offset)
@@ -394,9 +398,9 @@ async fn coll_get(
         let data: Value = r.try_get("data")?;
         let version: i32 = r.try_get("version")?;
         // Plane B: omit fields the caller can't read (no-op for the platform-admin path above).
-        let data = field_perms::filter_readable(&st.pool, &caller, td, &eid, data).await?;
+        let data = field_perms::filter_readable(&st.pool, caller, td, &eid, data).await?;
         collect_classified(td, &data, &mut classified);
-        items.push(entity_json(&eid, &type_id, data, version));
+        items.push(entity_json(&eid, type_id, data, version));
     }
     // GOVERNANCE #2: a list that returned any personal|sensitive field leaves read evidence —
     // one row per request, the union of classified field NAMES (never values).
@@ -404,10 +408,10 @@ async fn coll_get(
         let names: Vec<String> = classified.into_iter().collect();
         db::record_access(
             &st.pool,
-            &ctx,
-            &caller,
+            ctx,
+            caller,
             db::AccessRead {
-                type_id: &type_id,
+                type_id,
                 entity_id: None,
                 action: "list",
                 field_names: &names,
@@ -416,7 +420,19 @@ async fn coll_get(
         )
         .await;
     }
+    Ok(items)
+}
 
+async fn coll_get(
+    State(st): State<AppState>,
+    Extension(ctx): Extension<RequestCtx>,
+    caller: Caller,
+    Path(type_id): Path<String>,
+    Query(q): Query<ListParams>,
+) -> AppResult<Response> {
+    let limit = q.limit.unwrap_or(50).clamp(1, 200);
+    let offset = q.offset.unwrap_or(0).max(0);
+    let items = list_core(&st, &ctx, &caller, &type_id, q.limit, q.offset).await?;
     Ok(Json(json!({ "items": items, "limit": limit, "offset": offset })).into_response())
 }
 

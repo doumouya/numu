@@ -12,7 +12,8 @@
 L319, `create_type` L334, `validate_spec` L134) · `objects.rs` (`options_body` L286, `coll_options` L541,
 `item_options` L846) · `members.rs` (router L29, `record_check` L41, `require_rank` L106) · `relations.rs`
 (L74/L140/L194) · `search.rs` (`search` L41) · `conversations.rs` (`get_feed`/`post_feed`,
-`require_workspace_reach` L31) · `orchestrator.rs` (L144/L177/L309/L330) · `connectors.rs`
+`require_workspace_reach` L31) · `nacl.rs` (`nacl`/`nacl_core`, `classify`) ·
+`orchestrator.rs` (L144/L177/L309/L330) · `connectors.rs`
 (`run_connector` L30) · `debug.rs` (`echo` L48, `set_log_level` L86) · `ratelimit.rs` (`enforce` L78).
 
 ## 0. The map (one row per routed path)
@@ -31,6 +32,7 @@ L319, `create_type` L334, `validate_spec` L134) · `objects.rs` (`options_body` 
 | `POST·GET /api/relations` · `DELETE /api/relations/:id` | `relations.rs` | session + endpoint reach |
 | `GET /api/search` | `search.rs` | session (reach-filtered) |
 | `GET·POST /api/conversations/:key/feed` | `conversations.rs` | session + workspace reach (View reads · Edit appends) |
+| `POST /api/nacl` | `nacl.rs` | session — executes over the gated object path (per-command reach) |
 | `POST·GET /api/feature-runs` · `GET /api/feature-runs/:id` · `POST …/:id/handoffs` | `orchestrator.rs` | session + Case reach |
 | `POST /api/connectors/:id/run` | `connectors.rs` | session + Edit reach |
 | `POST /api/_debug/echo` · `PATCH /api/_debug/log-level` | `debug.rs` | platform-admin (+`NUMU_DEBUG` for echo) |
@@ -264,7 +266,43 @@ POST /api/conversations/ORG_…/feed  {"blocks":[{…}],"replace":true} → 202 
 | 202 `accepted` | append/replace applied |
 | 404 `not_found` | caller can't reach the workspace at the required floor (View for GET, Edit for POST) — leak-free |
 
+## 11c. `POST /api/nacl` — the server command plane
 
+The console thread executes here (SLICE 2b, CAS_00742b86; `nacl.rs`). Body `{text, ctx}` where `ctx =
+{workspace, projectId, itFileId, channel}`; returns `{blocks, effects}` (the console block/effect
+vocabulary — [`SEAM.md`](../frontend/SEAM.md) §wire-shapes). It parses **one** command and runs it over
+the **same gated object path** as the REST surface — no new privilege road — and is a deliberate SUBSET of
+the full nacl grammar (`web/sim/numu-nacl.js` is the executable spec for the rest):
+
+- `read:<type>[.attr=value]` → `objects::list_core` (reach-scoped, field-filtered, GOVERNANCE #2 access
+  evidence) → an `objectTable` block (or a single `object` card; an optional `.attr=value` narrows
+  in-memory). Friendly aliases resolve like the console (`user(s)`→`actor`); a plural is accepted.
+- `new:<type> field=value …` → `objects::create_object` (validate → gate → mint + owner edge + event) →
+  an `object` card + an `openObjectId` effect. A scoped type's parent is seeded from `ctx`
+  (`workspace`/`projectId`) when the caller omits it.
+- anything else (or an unknown/unreadable type) → an honest `chat`/`warn` block.
+
+Leak-free: an unreadable type reads the same as an unknown one, and a per-command reach/validation failure
+is a `warn` block — **never** an error that leaks existence. The route writes nothing beyond the `new:`
+create (the feed is persisted by the front via §11b), so a bare `read:`/chat is side-effect-free.
+
+```
+POST /api/nacl  {"text":"read:article","ctx":{"workspace":"ORG_…"}}
+200 {"blocks":[{"type":"step","kind":"read","impact":"SELECT * FROM article · 8 rows · RBAC-scoped"},
+               {"type":"objectTable","objType":"article","title":"article · 8 rows","rows":[…]}],"effects":[]}
+POST /api/nacl  {"text":"new:case title=\"Ship it\"","ctx":{"projectId":"PRJ_…"}}
+200 {"blocks":[{"type":"step","kind":"new","impact":"INSERT case · CAS_… · owner edge granted · audited"},
+               {"type":"object","objType":"case","title":"Ship it","objRef":"CAS_…"}],
+     "effects":[{"kind":"openObjectId","id":"CAS_…"}]}
+```
+
+| Status | When |
+|---|---|
+| 200 | any parseable request — command success/failure rides in the blocks (a denial is a leak-free `warn`/`chat` block, not an HTTP error) |
+| 401 `unauthorized` | no session |
+| 5xx | only a genuine server fault inside `list_core`/`create_object` — the airlock ([`OBSERVABILITY.md`](OBSERVABILITY.md) §6) |
+
+## 12. `/api/feature-runs` — the orchestrator surface
 
 The 5-role pipeline as DB state (semantics + the circuit breaker: [`ORCHESTRATOR.md`](ORCHESTRATOR.md)).
 Authority = reach on the run's **Case** (Edit to start/advance, View to read); a Case-less run is

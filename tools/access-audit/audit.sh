@@ -28,11 +28,16 @@ if grep -Rqi "update access_audit\|delete from access_audit" crates; then
 fi
 
 # ── R2 · both generic read paths flow through the hook ──────────────────────────
+# The item GET records inline; the collection GET AND the nacl read plane (nacl.rs read:<type>) both
+# choke through `list_core` (SLICE 2b refactor — the shared, gated, audited list core), where the hook
+# now lives. Assert the hook is in item_get and list_core, and that coll_get can't bypass the core.
 OBJ=crates/api/src/objects.rs
-for fn_name in item_get coll_get; do
+for fn_name in item_get list_core; do
   awk "/async fn $fn_name/,/^}/" "$OBJ" | grep -q "record_access" ||
     flag "unhooked-read" "$fn_name does not flow through db::record_access ($OBJ)"
 done
+awk '/async fn coll_get/,/^}/' "$OBJ" | grep -q "list_core" ||
+  flag "unhooked-read" "coll_get does not delegate to the audited list_core ($OBJ)"
 
 # ── R3 · names + request id, never values ───────────────────────────────────────
 DB=crates/api/src/db.rs

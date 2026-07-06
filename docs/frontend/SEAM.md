@@ -15,11 +15,13 @@ itself, the http driver is the DEFAULT; `?sim=1` flips back to the sim, and
   rides every call; `NUMU_SERVE_CONSOLE=1` — docs/ops/DEPLOY.md). In dev it can
   also be `web/sim/server.node.js` (:8787) behind the dev-server proxy. The
   console needs zero code change across those — this file is the contract the
-  Rust routes satisfy. The per-workspace **feed persists** over http since
-  SLICE 2a (`GET/POST /api/conversations/:key/feed`, CAS_00742b86). `POST
-  /api/nacl` is still sim-only — in http mode the thread echoes + serves a
-  real read plane (`read:<type>`) and an honest "server nacl is next" notice
-  (app.ts `sendHttp`); nacl verbs run in full under `?sim=1`.
+  Rust routes satisfy. Since SLICE 2 (CAS_00742b86) the thread is real over
+  http: the per-workspace **feed persists** (`GET/POST
+  /api/conversations/:key/feed`, 2a) and **`POST /api/nacl` runs server-side**
+  (2b) — a deliberate SUBSET of the grammar (`read:<type>` → objectTable,
+  `new:<type> field=value` → create, anything else → an honest chat block), over
+  the same gated object path. The richer grammar (pipelines, `set/del/on`,
+  chaining, CSV projections) still runs only in the sim under `?sim=1`.
 
 ## The client interface
 
@@ -89,8 +91,14 @@ extractor), no `access_audit` plane.
 2. `POST /api/files/:id/steps` + `GET /api/files/:id/rows` over the Polars
    data plane.
 3. `GET /api/manifest` + `GET /api/values` (reach-filtered, no rows).
-4. `POST /api/nacl` — parse→plan→execute in Rust; `web/sim/numu-nacl.js` is the
-   executable spec, `web/data/nacl-commands.js` the doctrine.
+4. **`POST /api/nacl` — SUBSET LANDED (SLICE 2b, CAS_00742b86).**
+   `crates/api/src/nacl.rs`: parse→execute in Rust over the gated object path
+   (`read:<type>[.attr=value]` → objectTable/card via `objects::list_core`,
+   `new:<type> field=value` → `objects::create_object` → card + `openObjectId`,
+   else a chat block). Leak-free; the front `sendHttp` calls it. Still pending:
+   the richer grammar (`set/del/on`, pipelines, chaining, CSV projections) —
+   `web/sim/numu-nacl.js` stays the executable spec, `web/data/nacl-commands.js`
+   the doctrine.
 5. OPTIONS enrichment (per-field verdict + enum vocab + workflow block).
 6. Seal the file/message canonical fields against generic coll_create/patch
    (one write path, Rust gate + DB backstop).
