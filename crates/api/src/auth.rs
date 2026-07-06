@@ -9,8 +9,8 @@ use axum::extract::{FromRequestParts, State};
 use axum::http::request::Parts;
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::post;
-use axum::{Json, Router};
+use axum::routing::{get, post};
+use axum::{Extension, Json, Router};
 use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -152,11 +152,64 @@ impl FromRequestParts<AppState> for Caller {
 
 pub fn router() -> Router<AppState> {
     let r = Router::new()
+        .route("/auth/me", get(me))
         .route("/auth/claim-admin", post(claim_admin))
         .route("/auth/logout", post(logout));
     #[cfg(debug_assertions)]
     let r = r.route("/auth/dev-login", post(dev_login));
     r
+}
+
+/// `GET /auth/me` — the session's own identity: what the console chrome renders (name, avatar,
+/// role). A self-read of `personal`-classified fields, so it leaves the same access-audit
+/// evidence as any classified read (GOVERNANCE #2). Logged out → the extractor's plain 401.
+async fn me(
+    State(st): State<AppState>,
+    Extension(ctx): Extension<crate::request_id::RequestCtx>,
+    caller: Caller,
+) -> AppResult<Response> {
+    let body = me_core(&st.pool, &ctx, &caller).await?;
+    Ok(Json(body).into_response())
+}
+
+/// The testable core of `/auth/me` (the `*_core` convention — handlers stay thin).
+pub async fn me_core(
+    pool: &PgPool,
+    ctx: &crate::request_id::RequestCtx,
+    caller: &Caller,
+) -> AppResult<serde_json::Value> {
+    let data: Option<serde_json::Value> = sqlx::query_scalar(
+        "select data from entity_data where entity_id = $1 and type_id = 'actor'",
+    )
+    .bind(&caller.actor_id)
+    .fetch_optional(pool)
+    .await?;
+    let data = data.ok_or_else(AppError::unauthorized)?;
+    let field_names: Vec<String> = ["display_name", "handle", "email", "avatar_url"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    crate::db::record_access(
+        pool,
+        ctx,
+        caller,
+        crate::db::AccessRead {
+            type_id: "actor",
+            entity_id: Some(&caller.actor_id),
+            action: "view",
+            field_names: &field_names,
+            row_count: 1,
+        },
+    )
+    .await;
+    Ok(json!({
+        "actor_id": caller.actor_id,
+        "display_name": data.get("display_name").cloned().unwrap_or(serde_json::Value::Null),
+        "handle": data.get("handle").cloned().unwrap_or(serde_json::Value::Null),
+        "email": data.get("email").cloned().unwrap_or(serde_json::Value::Null),
+        "avatar_url": data.get("avatar_url").cloned().unwrap_or(serde_json::Value::Null),
+        "platform_role": if caller.is_platform_admin { "admin" } else { "member" },
+    }))
 }
 
 #[derive(Deserialize)]

@@ -140,3 +140,121 @@ async fn tiktok_login_by_nested_open_id(pool: PgPool) -> Result<(), Box<dyn std:
     );
     Ok(())
 }
+
+async fn avatar_of(pool: &PgPool, actor: &str) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar("select data->>'avatar_url' from entity_data where entity_id = $1")
+        .bind(actor)
+        .fetch_one(pool)
+        .await
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn avatar_should_store_refresh_and_never_clobber_a_user_edit(
+    pool: PgPool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let p = userinfo_provider("google");
+    let login = |pic: &str, name: &str| Mock {
+        token: json!({ "access_token": "at" }),
+        userinfo: json!({ "sub": "g-av", "email": "a@b.com", "name": name, "picture": pic }),
+    };
+
+    // first login stores the provider avatar
+    complete_login(
+        &pool,
+        &p,
+        &login("https://lh3.g/p1.jpg", "Alice"),
+        "c1",
+        "n1",
+    )
+    .await?;
+    let actor: String = sqlx::query_scalar(
+        "select actor_id from auth_identities where provider = 'google' and sub = 'g-av'",
+    )
+    .fetch_one(&pool)
+    .await?;
+    assert_eq!(
+        avatar_of(&pool, &actor).await?.as_deref(),
+        Some("https://lh3.g/p1.jpg")
+    );
+
+    // the provider rotates the photo → the next login refreshes it (provider-owned field)
+    complete_login(
+        &pool,
+        &p,
+        &login("https://lh3.g/p2.jpg", "Alice"),
+        "c2",
+        "n2",
+    )
+    .await?;
+    assert_eq!(
+        avatar_of(&pool, &actor).await?.as_deref(),
+        Some("https://lh3.g/p2.jpg")
+    );
+
+    // a user-edited display_name is NEVER clobbered by a login
+    sqlx::query(
+        "update entity_data set data = jsonb_set(data, '{display_name}', '\"Custom Name\"') \
+         where entity_id = $1",
+    )
+    .bind(&actor)
+    .execute(&pool)
+    .await?;
+    complete_login(
+        &pool,
+        &p,
+        &login("https://lh3.g/p2.jpg", "Google Says"),
+        "c3",
+        "n3",
+    )
+    .await?;
+    let name: String =
+        sqlx::query_scalar("select data->>'display_name' from entity_data where entity_id = $1")
+            .bind(&actor)
+            .fetch_one(&pool)
+            .await?;
+    assert_eq!(name, "Custom Name");
+    Ok(())
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn me_core_should_return_identity_and_leave_access_evidence(
+    pool: PgPool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use numu_api::auth::me_core;
+    use numu_api::caller::Caller;
+    use numu_api::request_id::RequestCtx;
+
+    let mock = Mock {
+        token: json!({ "access_token": "at" }),
+        userinfo: json!({ "sub": "g-me", "email": "me@b.com", "name": "Mia",
+                          "picture": "https://lh3.g/mia.jpg" }),
+    };
+    complete_login(&pool, &userinfo_provider("google"), &mock, "c", "n").await?;
+    let actor: String = sqlx::query_scalar(
+        "select actor_id from auth_identities where provider = 'google' and sub = 'g-me'",
+    )
+    .fetch_one(&pool)
+    .await?;
+
+    let ctx = RequestCtx {
+        request_id: "req_test".into(),
+        trace_id: "trace_test".into(),
+    };
+    let body = me_core(&pool, &ctx, &Caller::console(actor.clone(), false)).await?;
+    assert_eq!(body["actor_id"], actor.as_str());
+    assert_eq!(body["display_name"], "Mia");
+    assert_eq!(body["email"], "me@b.com");
+    assert_eq!(body["avatar_url"], "https://lh3.g/mia.jpg");
+    assert_eq!(body["platform_role"], "member");
+
+    // the self-read left classified-read evidence (GOVERNANCE #2)
+    let audited: i64 = sqlx::query_scalar(
+        "select count(*) from access_audit where actor_id = $1 and type_id = 'actor' \
+         and entity_id = $1 and action = 'view'",
+    )
+    .bind(&actor)
+    .fetch_one(&pool)
+    .await?;
+    assert!(audited >= 1, "me_core must record the classified self-read");
+    Ok(())
+}

@@ -188,12 +188,16 @@ fn verify_state(signed: &str) -> Option<String> {
 }
 
 // ── the testable flow core ────────────────────────────────────────────────────
+/// The canonical identity a provider yields: `(sub, email, email_verified, name, picture)`.
+type ProviderIdentity = (String, Option<String>, Option<bool>, String, Option<String>);
+
 /// Provider-specific extraction of the canonical OUTPUT from the userinfo JSON. (Google/FB/TikTok are
 /// userinfo-shaped; Apple, E2, supplies the same shape from a verified id_token.)
-fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, Option<bool>, String)> {
+fn extract_identity(userinfo: &Value) -> AppResult<ProviderIdentity> {
     // TikTok nests the user under data.user; Google/Facebook are flat. The subject is `sub` (OIDC),
     // `id` (Facebook), or `open_id` (TikTok); the name is `name` or `display_name`. Email may be absent
-    // (app-review-gated) — identity always resolves by (provider, sub), never by email.
+    // (app-review-gated) — identity always resolves by (provider, sub), never by email. The avatar is
+    // `picture` (OIDC/Google) or `avatar_url` (TikTok) — provider-owned, refreshed on every login.
     let root = userinfo
         .get("data")
         .and_then(|d| d.get("user"))
@@ -216,7 +220,13 @@ fn extract_identity(userinfo: &Value) -> AppResult<(String, Option<String>, Opti
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    Ok((sub, email, email_verified, name))
+    let picture = root
+        .get("picture")
+        .or_else(|| root.get("avatar_url"))
+        .and_then(|v| v.as_str())
+        .filter(|s| s.starts_with("https://"))
+        .map(str::to_string);
+    Ok((sub, email, email_verified, name, picture))
 }
 
 /// Providers ship `email_verified` as a bool (Google userinfo) or a string ("true" — Apple id_token).
@@ -278,13 +288,15 @@ fn allowlist() -> &'static (Vec<String>, Vec<String>) {
     })
 }
 
-/// Find the actor linked to (provider, sub), or mint one (actor entity + identity) in a txn.
+/// Find the actor linked to (provider, sub) — refreshing its provider-owned fields — or mint one
+/// (actor entity + identity) in a txn.
 async fn upsert_identity(
     pool: &PgPool,
     provider: &str,
     sub: &str,
     email: Option<&str>,
     name: &str,
+    picture: Option<&str>,
 ) -> AppResult<String> {
     if let Some(actor_id) = sqlx::query_scalar::<_, String>(
         "select actor_id from auth_identities where provider = $1 and sub = $2",
@@ -294,6 +306,7 @@ async fn upsert_identity(
     .fetch_optional(pool)
     .await?
     {
+        refresh_identity(pool, &actor_id, name, picture).await?;
         return Ok(actor_id);
     }
     let actor_id = ids::mint("USR");
@@ -305,6 +318,7 @@ async fn upsert_identity(
         "kind": "human",
         "platform_role": "member",
         "status": "active",
+        "avatar_url": picture,
     });
     let mut tx = pool.begin().await?;
     sqlx::query("insert into entities (id, type, created_by) values ($1, 'actor', $1)")
@@ -327,6 +341,49 @@ async fn upsert_identity(
     .await?;
     tx.commit().await?;
     Ok(actor_id)
+}
+
+/// Refresh the provider-OWNED identity fields on an existing actor at login: `avatar_url` follows
+/// the provider whenever it changes; `display_name` is only BACKFILLED while it still wears the
+/// auto-minted handle (a user's own edit is never clobbered by a login).
+async fn refresh_identity(
+    pool: &PgPool,
+    actor_id: &str,
+    name: &str,
+    picture: Option<&str>,
+) -> AppResult<()> {
+    let data: Option<Value> = sqlx::query_scalar(
+        "select data from entity_data where entity_id = $1 and type_id = 'actor'",
+    )
+    .bind(actor_id)
+    .fetch_optional(pool)
+    .await?;
+    let Some(data) = data else { return Ok(()) };
+    let mut patch = serde_json::Map::new();
+    if let Some(pic) = picture {
+        if data.get("avatar_url").and_then(|v| v.as_str()) != Some(pic) {
+            patch.insert("avatar_url".into(), json!(pic));
+        }
+    }
+    let current = data
+        .get("display_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let handle = data.get("handle").and_then(|v| v.as_str()).unwrap_or("");
+    if !name.is_empty() && (current.is_empty() || current == handle) && current != name {
+        patch.insert("display_name".into(), json!(name));
+    }
+    if !patch.is_empty() {
+        sqlx::query(
+            "update entity_data set data = data || $2, updated_at = now() \
+             where entity_id = $1 and type_id = 'actor'",
+        )
+        .bind(actor_id)
+        .bind(Value::Object(patch))
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
 }
 
 #[derive(Deserialize)]
@@ -404,7 +461,7 @@ pub async fn complete_login(
             ],
         )
         .await?;
-    let (sub, email, email_verified, name) = match &p.kind {
+    let (sub, email, email_verified, name, picture) = match &p.kind {
         ProviderKind::Userinfo => {
             let access = token
                 .get("access_token")
@@ -420,7 +477,7 @@ pub async fn complete_login(
                 .ok_or_else(|| AppError::bad_request("token endpoint returned no id_token"))?;
             let (sub, email, email_verified) =
                 verify_id_token(id_token, &p.client_id, issuer, jwks_url, fetcher, nonce).await?;
-            (sub, email, email_verified, String::new())
+            (sub, email, email_verified, String::new(), None)
         }
     };
     // The login allowlist (CASE 0021): when configured, only provider-VERIFIED emails on the
@@ -430,7 +487,15 @@ pub async fn complete_login(
     if !identity_allowed(email.as_deref(), email_verified, domains, emails) {
         return Err(AppError::unauthorized());
     }
-    let actor_id = upsert_identity(pool, &p.name, &sub, email.as_deref(), &name).await?;
+    let actor_id = upsert_identity(
+        pool,
+        &p.name,
+        &sub,
+        email.as_deref(),
+        &name,
+        picture.as_deref(),
+    )
+    .await?;
     crate::auth::mint_session(pool, &actor_id).await
 }
 
@@ -493,28 +558,55 @@ async fn callback(
     let p = provider(&name).ok_or_else(AppError::not_found)?;
     // CSRF + freshness: the state rides the SESSION cookie as an `st.`-prefixed signed value
     // (one-cookie multiplexing — see state_cookie()); it must verify, not be expired, and its
-    // nonce must equal `state`.
-    let signed = cookie_value(&headers, crate::auth::session_cookie_name())
-        .and_then(|v| {
-            v.strip_prefix(crate::auth::OAUTH_STATE_PREFIX)
-                .map(str::to_string)
-        })
-        .ok_or_else(AppError::unauthorized)?;
-    let payload = verify_state(&signed).ok_or_else(AppError::unauthorized)?;
-    let (nonce, exp) = payload.split_once(':').ok_or_else(AppError::unauthorized)?;
-    let exp: u64 = exp.parse().unwrap_or(0);
-    if nonce != q.state || now_unix() > exp {
-        return Err(AppError::unauthorized());
+    // nonce must equal `state`. Every failure from here on is browser-facing → a redirect
+    // (callback_redirect), never a bare problem+json page in the user's tab.
+    let result = async {
+        let signed = cookie_value(&headers, crate::auth::session_cookie_name())
+            .and_then(|v| {
+                v.strip_prefix(crate::auth::OAUTH_STATE_PREFIX)
+                    .map(str::to_string)
+            })
+            .ok_or_else(AppError::unauthorized)?;
+        let payload = verify_state(&signed).ok_or_else(AppError::unauthorized)?;
+        let (nonce, exp) = payload.split_once(':').ok_or_else(AppError::unauthorized)?;
+        let exp: u64 = exp.parse().unwrap_or(0);
+        if nonce != q.state || now_unix() > exp {
+            return Err(AppError::unauthorized());
+        }
+        // the session Set-Cookie overwrites the in-flight state on the SAME cookie name — no
+        // separate clear (there is only one cookie through the Firebase rewrite).
+        complete_login(&st.pool, &p, &SsrfFetcher, &q.code, nonce).await
     }
-    // the session Set-Cookie overwrites the in-flight state on the SAME cookie name — no
-    // separate clear (there is only one cookie through the Firebase rewrite).
-    let session = complete_login(&st.pool, &p, &SsrfFetcher, &q.code, nonce).await?;
-    Ok((
-        StatusCode::OK,
-        [(header::SET_COOKIE, session)],
-        axum::Json(json!({ "ok": true })),
-    )
-        .into_response())
+    .await;
+    Ok(callback_redirect(result))
+}
+
+/// The callback is a BROWSER flow: success carries the session `Set-Cookie` and lands in the
+/// console; failure lands on the console (its login page) with a coarse `?error=` slug — the
+/// kind only, never detail (the leak-free posture of the JSON errors, kept through the redirect).
+fn callback_redirect(result: AppResult<String>) -> Response {
+    match result {
+        Ok(session) => (
+            StatusCode::FOUND,
+            [
+                (header::SET_COOKIE, session),
+                (header::LOCATION, "/console/".to_string()),
+            ],
+        )
+            .into_response(),
+        Err(e) => {
+            let slug = if e.status == StatusCode::UNAUTHORIZED {
+                "denied"
+            } else {
+                "auth_failed"
+            };
+            (
+                StatusCode::FOUND,
+                [(header::LOCATION, format!("/console/?error={slug}"))],
+            )
+                .into_response()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -533,6 +625,46 @@ mod tests {
         assert!(verify_state(&tampered).is_none());
         // malformed input never verifies
         assert!(verify_state("no-signature").is_none());
+    }
+
+    #[test]
+    fn extract_identity_should_take_https_picture_and_avatar_url_alias() {
+        let (.., pic) =
+            extract_identity(&json!({ "sub": "s", "name": "A", "picture": "https://lh3.g/p.jpg" }))
+                .unwrap();
+        assert_eq!(pic.as_deref(), Some("https://lh3.g/p.jpg"));
+        // TikTok-shaped alias
+        let (.., pic) = extract_identity(
+            &json!({ "data": { "user": { "open_id": "o", "avatar_url": "https://t/av.png" } } }),
+        )
+        .unwrap();
+        assert_eq!(pic.as_deref(), Some("https://t/av.png"));
+        // a non-https avatar never lands in entity data
+        let (.., pic) =
+            extract_identity(&json!({ "sub": "s", "picture": "http://plain/p.jpg" })).unwrap();
+        assert_eq!(pic, None);
+    }
+
+    #[test]
+    fn callback_redirect_should_land_in_console_or_carry_a_coarse_error() {
+        let ok = callback_redirect(Ok("numu_session=tok; Path=/".into()));
+        assert_eq!(ok.status(), StatusCode::FOUND);
+        assert_eq!(ok.headers().get(header::LOCATION).unwrap(), "/console/");
+        assert!(ok.headers().get(header::SET_COOKIE).is_some());
+
+        let denied = callback_redirect(Err(AppError::unauthorized()));
+        assert_eq!(denied.status(), StatusCode::FOUND);
+        assert_eq!(
+            denied.headers().get(header::LOCATION).unwrap(),
+            "/console/?error=denied"
+        );
+        assert!(denied.headers().get(header::SET_COOKIE).is_none());
+
+        let failed = callback_redirect(Err(AppError::bad_request("token endpoint fell over")));
+        assert_eq!(
+            failed.headers().get(header::LOCATION).unwrap(),
+            "/console/?error=auth_failed"
+        );
     }
 
     #[test]

@@ -28,6 +28,11 @@
   real admin exists (the seeded dev bootstrap excluded); a single race-free UPDATE, second claim → 409.
 - **`POST /auth/logout`** — drops **ALL** the caller's sessions (every device, one statement) +
   clears the cookie → `204`. No per-device revoke yet — logout is total by design.
+- **`GET /auth/me`** — the session's own identity for the console chrome: `{actor_id,
+  display_name, handle, email, avatar_url, platform_role}`; logged out → the extractor's plain
+  401. A self-read of `personal`-classified fields, so it leaves the same `access_audit`
+  evidence as any classified read (GOVERNANCE #2); handler stays thin over a testable
+  `me_core` (CAS_0028c746).
 
 These session-minting routes sit behind the per-client `/auth` rate limit — a **fixed window** keyed
 by the real TCP peer (unforgeable; `X-Forwarded-For` is honored ONLY under `NUMU_TRUST_PROXY=1`
@@ -53,6 +58,12 @@ OAuth routes (§3) sit behind the **same limiter** (CASE 0021).
 - **The flow** exchanges code→token→identity through the **SSRF-gated `Fetcher`** (§5), then **upserts by
   `(provider, sub)`** (`migrations/0006` `auth_identities`) — NEVER by email — minting an `actor` on first
   login, and a session. `complete_login` takes a `&dyn Fetcher`, so the whole flow is tested with a mock.
+- **Provider-owned fields refresh at login** (CAS_0028c746): the avatar (`picture`/`avatar_url`,
+  https-only) follows the provider whenever it changes; `display_name` is only BACKFILLED while
+  it still wears the auto-minted handle — a user's own edit is never clobbered by a login.
+- **The callback is a BROWSER flow** (CAS_0028c746): success → `302 /console/` with the session
+  `Set-Cookie`; any failure (state, allowlist, provider) → `302 /console/?error=denied|auth_failed`
+  — the coarse kind only, never detail (the leak-free posture kept through the redirect).
 - **Two provider kinds:**
   - **Userinfo** (Google, Facebook, TikTok): GET userinfo with the access token. Subject is `sub`/`id`/
     `open_id`; TikTok nests under `data.user`; email may be absent (app-review-gated).
