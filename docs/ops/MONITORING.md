@@ -23,6 +23,12 @@ the reach CTE), telemetry growth (row count + partial-index size), cache-hit rat
 (`tool='db-health'`) + a finding per breach. *(PG16: `pg_stat_bgwriter` for checkpoints;
 replication views N/A single-node.)*
 
+> **Why freshness is a PAGE, not a warn (runbook 0005 wall 7):** the first deploy's dump job
+> failed silently on every run for two stacked reasons and the bucket was EMPTY when the
+> restore drill needed it. `vm-postgres.sh` now proves the pipeline once at provision, but
+> only a freshness check catches the job DYING LATER — this collector is the concrete
+> follow-on that incident bought.
+
 ## Layer 2 — Host resources (GCP Ops Agent → Cloud Monitoring) — **shipped with the VM**
 
 `tools/deploy/vm-postgres.sh` installs the **Ops Agent** (free, ~50 MB — acceptable on 1 GB).

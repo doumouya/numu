@@ -70,6 +70,20 @@ gcloud compute instances describe "$VM" --zone "$ZONE" --project "$PROJECT" >/de
 
 DB_PASS="${DB_PASS:-$(openssl rand -hex 24)}"
 
+# The dump wrapper is built LOCALLY and shipped as base64 — the escape-proof pattern after
+# runbook 0005 wall 7 (four escaping layers once turned \$\$ into the remote heredoc's PID).
+# It uploads via a streaming curl PUT to the GCS XML API, which needs ONLY objects.create:
+# the VM SA stays create-only — a backup bucket the source host can neither list nor delete
+# is ransomware-resistant by construction (gsutil's streaming cp demands bucket LIST → 403).
+BUCKET_HOST="${BUCKET#gs://}"
+DUMP_SCRIPT_B64=$(base64 -w0 <<DUMPEOF
+#!/bin/bash
+set -euo pipefail
+TOKEN=\$(curl -sf -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" | cut -d'"' -f4)
+pg_dump -Fc $DB_NAME | gzip | curl -sf -X PUT -H "Authorization: Bearer \$TOKEN" -T - "https://storage.googleapis.com/$BUCKET_HOST/numu-\$(date +%F).dump.gz"
+DUMPEOF
+)
+
 say "on-VM bootstrap (via IAP)"
 gcloud compute ssh "$VM" --zone "$ZONE" --project "$PROJECT" --tunnel-through-iap --command "
 set -euo pipefail
@@ -91,17 +105,19 @@ sudo -u postgres psql -tAc \"select 1 from pg_roles where rolname='$DB_USER'\" |
   || sudo -u postgres psql -c \"create role $DB_USER login password '$DB_PASS'\"
 sudo -u postgres psql -tAc \"select 1 from pg_database where datname='$DB_NAME'\" | grep -q 1 \
   || sudo -u postgres createdb -O $DB_USER $DB_NAME
-# Ops Agent (MONITORING.md layer 2 — CPU burst credits, RAM/swap, disk days-to-full, egress)
+# Ops Agent (MONITORING.md layer 2 — CPU burst credits, RAM/swap, disk days-to-full, egress).
+# Verified ACTIVE, not just installed — wall 2 taught what a silent skip costs (the serial
+# console had to carry the wall-7 diagnosis because no journal reached Cloud Logging).
 if ! systemctl is-active --quiet google-cloud-ops-agent 2>/dev/null; then
   curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
   sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 fi
-# nightly dump → GCS (backup freshness is a page-level signal). The command lives in a
-# WRAPPER SCRIPT, not an inline ExecStart: the four escaping layers (local shell → remote
-# heredoc → systemd → bash) once turned \$\$ into the remote shell's PID and the dump never
-# ran — the bucket was empty when the restore drill needed it (runbook 0005).
-printf '#!/bin/bash\nset -euo pipefail\npg_dump -Fc $DB_NAME | gzip | gsutil cp - $BUCKET/numu-\$(date +%%F).dump.gz\n' | sudo tee /usr/local/bin/numu-pg-dump.sh >/dev/null
+systemctl is-active --quiet google-cloud-ops-agent || { echo 'OPS-AGENT-NOT-ACTIVE'; exit 1; }
+# nightly dump → GCS (backup freshness is a page-level signal). The wrapper arrives base64'd
+# from the operator machine — escape-proof (runbook 0005 wall 7).
+echo $DUMP_SCRIPT_B64 | base64 -d | sudo tee /usr/local/bin/numu-pg-dump.sh >/dev/null
 sudo chmod +x /usr/local/bin/numu-pg-dump.sh
+head -1 /usr/local/bin/numu-pg-dump.sh | grep -q bash || { echo 'DUMP-WRAPPER-CORRUPT'; exit 1; }
 sudo tee /etc/systemd/system/numu-pg-dump.service >/dev/null <<UNIT
 [Unit]
 Description=numu nightly pg_dump to GCS
