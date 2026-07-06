@@ -18,11 +18,14 @@ import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
 import { mountContextPanel, type ContextPanelCfg } from "./console/context-panel.ts";
 import { mountStore, type StoreOpen } from "./console/store.ts";
+import { registerApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
+import { initRouter, navigate } from "./shell/router.ts";
+import { buildLayout } from "./shell/layout.ts";
 
 const CCD = window.CONSOLE_DATA;
 
 type Accent = "numu" | "numu-blue";
-type PageId = "workspace" | "store";
+type PageId = AppId;
 type PanelObject = ContextPanelCfg["object"];
 
 /* ── impersonation targets: THE SELECTED WORKSPACE'S users (≠ the operator).
@@ -229,21 +232,45 @@ const activeSkinId = (): string =>
 
 const rootHost = document.getElementById("root");
 if (!rootHost) throw new Error("no #root");
-const impRailHost = el("div", { class: "nu-imp-rail-host" });
-const banner = el("div", { class: "nu-imp-banner", hidden: "hidden" });
-const topbar = el("header", { class: "nu-topbar" });
-const objectRailHost = el("div", { class: "nu-panel-host" });
-const centerHost = el("main", { class: "nu-center" });
-const contextHost = el("div", { class: "nu-context-host" });
-const body = el("div", { class: "nu-body" }, objectRailHost, centerHost, contextHost);
-const appRoot = el("div", { class: "nu-app" }, impRailHost, el("div", { class: "nu-main" }, banner, topbar, body));
-rootHost.appendChild(appRoot);
+const layout = buildLayout(rootHost);
+const { banner, topbar, objectRailHost, centerHost, composerHost, contextHost } = layout;
+const impRailHost = layout.railHost;
+const appRoot = layout.appRoot;
 applySkinAttr();
 
-const feedPage = el("div", { class: "nu-feed-page" });
-const storePage = el("div", { class: "nu-store-page", hidden: "hidden" });
-const composerHost = el("div", { class: "nu-composer-host" });
-centerHost.appendChild(el("div", { class: "nu-center-col" }, feedPage, storePage, composerHost));
+const feedPage = layout.addSurface("nu-feed-page");
+const storePage = layout.addSurface("nu-store-page");
+
+/* the two founding apps of the registry — the workspace (chat + objects) and
+   the Store; the Apps Rail and further apps (portfolio manager) land in the
+   next shell slices. showApp() owns surface visibility; state.page mirrors
+   the current app for the render fns that key off it. */
+registerApp({
+  id: "workspace",
+  label: "Workspace",
+  icon: "chat-square-text",
+  desc: "the conversation — objects, nacl, feeds",
+  order: 10,
+  available: () => true,
+  surface: feedPage,
+  objectRail: true,
+});
+registerApp({
+  id: "store",
+  label: "Store",
+  icon: "bag",
+  desc: "apps · agents · connectors",
+  order: 90,
+  available: () => true,
+  surface: storePage,
+  objectRail: true,
+});
+onAppChange((id) => {
+  state.page = id;
+  composer.update({ page: id });
+  renderCenter();
+  renderChrome();
+});
 
 /* ── impersonation ─────────────────────────────────────────────────────── */
 
@@ -461,11 +488,7 @@ function send(text: string): void {
       objRef: e.id,
     }));
     pushBlocks([{ type: "objectTable", objType: "user", icon: "person", title: `user · ${rows.length} rows`, rows }]);
-    if (state.page !== "workspace") {
-      state.page = "workspace";
-      renderCenter();
-      renderChrome();
-    }
+    if (state.page !== "workspace") navigate("workspace");
     return;
   }
   const ctx: NumuNaclCtx = {
@@ -742,12 +765,7 @@ function renderChrome(): void {
   );
   chrome.appendChild(el("span", { class: "nu-topbar-div" }));
   chrome.appendChild(
-    chromeBtn("bag", "Store", () => {
-      state.page = state.page === "store" ? "workspace" : "store";
-      composer.update({ page: state.page });
-      renderCenter();
-      renderChrome();
-    }, state.page === "store"),
+    chromeBtn("bag", "Store", () => navigate(currentApp() === "store" ? "workspace" : "store"), state.page === "store"),
   );
   const isSettings = !!state.contextObject && "type" in state.contextObject && state.contextObject.type === "settings";
   chrome.appendChild(chromeBtn("gear", "Settings", openSettings, isSettings));
@@ -764,11 +782,11 @@ function renderChrome(): void {
 }
 
 function renderCenter(): void {
+  /* app-surface visibility belongs to showApp (shell/apps.ts) — this render
+     only owns the panel-chrome flags around the center. */
   const hideCenter = state.contextExpanded;
   objectRailHost.hidden = hideCenter || !state.objectRailOpen;
   centerHost.hidden = hideCenter;
-  feedPage.hidden = state.page !== "workspace";
-  storePage.hidden = state.page !== "store";
 }
 
 function renderContext(): void {
@@ -823,6 +841,7 @@ onThemeChange(() => {
 
 setTheme(accent);
 setMode(getMode());
+initRouter("workspace");
 renderChrome();
 renderCenter();
 state.contextObject = buildLive(state.tenantId).objects.find((o) => o.type === "artist") ?? null;

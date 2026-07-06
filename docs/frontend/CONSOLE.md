@@ -40,7 +40,10 @@ what the member sees.
 
 | module | owns |
 |---|---|
-| `app.ts` | state + layout + seam wiring (send / saveAttachment / applyEffects / feed bootstrap) · **impersonation** (view-as: actor swap + logged engine events + banner) · **buildLive** (the Objects panel bound to the reach-filtered registry, artists grouped from real audio files) · channels as LOCAL user data (add/rename/delete/reorder/collapse/hide, `numu_chan_v2`) · projects as ENGINE objects (POST/PATCH/DELETE + If-Match) · appearance (accent × mode × **skin**, each persisted) · the theme reaction |
+| `shell/apps.ts` | the **AppPage registry** (console v2, CAS_0cc48a29): `{id, label, icon, desc, order, available(), surface, objectRail}`; `showApp()` is the SINGLE visibility sink over kept-alive center surfaces; `onAppChange` feeds the chrome |
+| `shell/router.ts` | hash routes `#/<app>[/sub]` over the registry (`parseHash`/`navigate`/`initRouter`) + the OAuth **return-stash** (sessionStorage — the hash does not survive the Google 302 chain) |
+| `shell/layout.ts` | the four-region skeleton built ONCE: apps-rail host · topbar · Object-Rail host · center (kept-alive surfaces + the docked composer) · Context host; `addSurface()` mints an app's canvas |
+| `app.ts` | state + seam wiring (send / saveAttachment / applyEffects / feed bootstrap) · **impersonation** (view-as: actor swap + logged engine events + banner) · **buildLive** (the Objects panel bound to the reach-filtered registry, artists grouped from real audio files) · channels as LOCAL user data (add/rename/delete/reorder/collapse/hide, `numu_chan_v2`) · projects as ENGINE objects (POST/PATCH/DELETE + If-Match) · appearance (accent × mode × **skin**, each persisted) · the theme reaction · (dissolving into `shell/` + `apps/` across the v2 slices) |
 | `client.ts` | the typed `ncl` façade over `window.NumuClient` + `ORG_OF`/`PRJ_OF` + `prefetchValues` |
 | `console/impersonation-rail.ts` | THE IMPERSONATION RAIL — operator chrome only: workspace buttons + the view-as popover scoped to **the selected workspace's users**; hidden entirely while viewing-as |
 | `console/object-rail.ts` | THE OBJECT RAIL — the one rail every member has: channels→projects tree with full CRUD (create-with-icon+color, inline rename, drag-reorder + drag-to-channel, collapse w/ count, hide/restore, pin) + the quick-access objects list |
