@@ -12,7 +12,7 @@
 
 import { el, icon, setTheme, setMode, getTheme, getMode, onThemeChange, toast } from "amenan-ui";
 import { ncl, ORG_OF, PRJ_OF, prefetchValues } from "./client.ts";
-import { mountImpersonationRail, type ImpTarget } from "./console/impersonation-rail.ts";
+import { mountRail, type ImpTarget } from "./shell/rail.ts";
 import { mountObjectRail, initialsOf, type NewProjectOpts } from "./console/object-rail.ts";
 import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
@@ -551,12 +551,15 @@ function saveAttachment(em: NumuEmailBlock): void {
 
 /* ── region mounts ─────────────────────────────────────────────────────── */
 
-const impRail = mountImpersonationRail(impRailHost, impRailCfg());
+const impRail = mountRail(impRailHost, impRailCfg());
 function impRailCfg() {
   return {
-    tenants: CCD.tenants,
+    /* sim: the canon tenants; http: none yet (real workspaces land with the
+       orgs slice) — the rail then opens with the app list. */
+    tenants: ncl.kind === "http" ? [] : CCD.tenants,
     activeTenantId: state.tenantId,
     impTargets: impTargetsFor(state.tenantId),
+    canImpersonate: !!ncl.engine && !state.viewAs,
     onTenant: (id: string) => {
       switchTenant(id);
       const t = CCD.tenants.find((x) => x.id === id);

@@ -27,14 +27,18 @@ phase A runs the design project's in-browser sim; phase B is the Rust api.
 └──┴──────────────┴───────────────────────────┴────────────┘
 ```
 
-**The two rails — the tenancy rule.** The far-left strip is the
-**Impersonation Rail**: numu-OPERATOR chrome only. Clicking a client workspace
-(LORVCLE) opens that client's world, and "Impersonate · view as user" at its
-foot connects the operator as one of **that workspace's** users — a
-troubleshooting tool. A client member never sees this rail: when they connect
-they get only the **Object Rail** (the channels→projects/objects tree). While
-viewing-as, the Impersonation Rail disappears too — the operator sees exactly
-what the member sees.
+**The two rails — the tenancy rule (console v2, CAS_0cc48a29).** The far-left
+strip is the **APPS RAIL** (`shell/rail.ts`): workspace marks at the top (the
+tenancy section — sim canon today, real workspaces with the orgs slice; empty
+in HTTP mode until then), then the **registered apps** (Workspace · Store ·
+the portfolio manager…; flyout with name+desc on pointer-fine hover/focus,
+taps navigate `#/<app>`), and **Impersonate as an app-like entry at its
+foot** — operator + sim only ("view as user" scoped to the selected
+workspace's members; enforced expiry + per-read audit stay the phase-B server
+contract). A client member sees apps, never impersonation; while viewing-as
+the rail disappears entirely — the operator sees exactly what the member
+sees. The **Object Rail** (channels→projects/objects tree) remains the one
+rail every member has.
 
 ## Modules (`web/src/`)
 
@@ -48,7 +52,7 @@ what the member sees.
 | `shell/layout.ts` | the four-region skeleton built ONCE: apps-rail host · topbar · Object-Rail host · center (kept-alive surfaces + the docked composer) · Context host; `addSurface()` mints an app's canvas |
 | `app.ts` | state + seam wiring (send / saveAttachment / applyEffects / feed bootstrap) · **impersonation** (view-as: actor swap + logged engine events + banner) · **buildLive** (the Objects panel bound to the reach-filtered registry, artists grouped from real audio files) · channels as LOCAL user data (add/rename/delete/reorder/collapse/hide, `numu_chan_v2`) · projects as ENGINE objects (POST/PATCH/DELETE + If-Match) · appearance (accent × mode × **skin**, each persisted) · the theme reaction · (dissolving into `shell/` + `apps/` across the v2 slices) |
 | `client.ts` | the typed `ncl` façade over `window.NumuClient` + `ORG_OF`/`PRJ_OF` + `prefetchValues` |
-| `console/impersonation-rail.ts` | THE IMPERSONATION RAIL — operator chrome only: workspace buttons + the view-as popover scoped to **the selected workspace's users**; hidden entirely while viewing-as |
+| `shell/rail.ts` | THE APPS RAIL — workspace marks · the registry's apps (borderless squares, flyout, `navigate()`) · impersonate as the foot entry (operator+sim only; absorbs the former `console/impersonation-rail.ts`) |
 | `console/object-rail.ts` | THE OBJECT RAIL — the one rail every member has: channels→projects tree with full CRUD (create-with-icon+color, inline rename, drag-reorder + drag-to-channel, collapse w/ count, hide/restore, pin) + the quick-access objects list |
 | `console/icon-picker.ts` | the in-app icon picker: search over all ~2,050 Bootstrap Icons (synced name list) + a curated common grid |
 | `console/feed.ts` | the block renderers (below) |
