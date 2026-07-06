@@ -4,7 +4,7 @@
 #   2. web/tokens.css   = amenan base + numu structure overlay + numu themes
 #                         + the component sheets the console composes
 #   3. tsc --noEmit     (strict typecheck, no artifacts)
-#   4. web/app.js       = esbuild bundle of web/src/app.ts (amenan-ui aliased to
+#   4. web/app.js       = esbuild bundle of web/src/main.ts (the boot gate; app.ts lazy) (amenan-ui aliased to
 #                         the sibling checkout's source — no npm package)
 # The synced sim (web/sim/*.js) stays OUTSIDE the bundle: plain script globals,
 # exactly as the design project ships them (see tools/design-sync.sh).
@@ -45,7 +45,7 @@ echo "== 3/4 typecheck =="
 ./node_modules/.bin/tsc --noEmit
 
 echo "== 4/4 bundle -> web/app.js =="
-./node_modules/.bin/esbuild web/src/app.ts --bundle --format=iife \
+./node_modules/.bin/esbuild web/src/main.ts --bundle --format=iife \
   --alias:amenan-ui="$AMU/src/index.ts" --outfile=web/app.js
 
 V="$(date +%s)"
