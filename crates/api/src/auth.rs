@@ -185,10 +185,17 @@ pub async fn me_core(
     .fetch_optional(pool)
     .await?;
     let data = data.ok_or_else(AppError::unauthorized)?;
-    let field_names: Vec<String> = ["display_name", "handle", "email", "avatar_url"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    let field_names: Vec<String> = [
+        "display_name",
+        "handle",
+        "email",
+        "avatar_url",
+        "first_name",
+        "last_name",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
     crate::db::record_access(
         pool,
         ctx,
@@ -208,6 +215,8 @@ pub async fn me_core(
         "handle": data.get("handle").cloned().unwrap_or(serde_json::Value::Null),
         "email": data.get("email").cloned().unwrap_or(serde_json::Value::Null),
         "avatar_url": data.get("avatar_url").cloned().unwrap_or(serde_json::Value::Null),
+        "first_name": data.get("first_name").cloned().unwrap_or(serde_json::Value::Null),
+        "last_name": data.get("last_name").cloned().unwrap_or(serde_json::Value::Null),
         "platform_role": if caller.is_platform_admin { "admin" } else { "member" },
     }))
 }

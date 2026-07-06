@@ -311,6 +311,9 @@ async fn upsert_identity(
     }
     let actor_id = ids::mint("USR");
     let handle = format!("u_{}", &actor_id[4..14.min(actor_id.len())]);
+    // seed first/last from the provider's name (first token / the rest); display_name stays the
+    // whole name and a later user edit is never clobbered (refresh_identity's backfill rule).
+    let (first, last) = name.split_once(' ').unwrap_or((name, ""));
     let data = json!({
         "display_name": if name.is_empty() { handle.as_str() } else { name },
         "handle": handle,
@@ -319,6 +322,8 @@ async fn upsert_identity(
         "platform_role": "member",
         "status": "active",
         "avatar_url": picture,
+        "first_name": if first.is_empty() { Value::Null } else { json!(first) },
+        "last_name": if last.is_empty() { Value::Null } else { json!(last) },
     });
     let mut tx = pool.begin().await?;
     sqlx::query("insert into entities (id, type, created_by) values ($1, 'actor', $1)")

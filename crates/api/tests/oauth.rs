@@ -226,7 +226,7 @@ async fn me_core_should_return_identity_and_leave_access_evidence(
 
     let mock = Mock {
         token: json!({ "access_token": "at" }),
-        userinfo: json!({ "sub": "g-me", "email": "me@b.com", "name": "Mia",
+        userinfo: json!({ "sub": "g-me", "email": "me@b.com", "name": "Mia Kone",
                           "picture": "https://lh3.g/mia.jpg" }),
     };
     complete_login(&pool, &userinfo_provider("google"), &mock, "c", "n").await?;
@@ -242,9 +242,12 @@ async fn me_core_should_return_identity_and_leave_access_evidence(
     };
     let body = me_core(&pool, &ctx, &Caller::console(actor.clone(), false)).await?;
     assert_eq!(body["actor_id"], actor.as_str());
-    assert_eq!(body["display_name"], "Mia");
+    assert_eq!(body["display_name"], "Mia Kone");
     assert_eq!(body["email"], "me@b.com");
     assert_eq!(body["avatar_url"], "https://lh3.g/mia.jpg");
+    // name parts seeded from the provider name (first token / the rest)
+    assert_eq!(body["first_name"], "Mia");
+    assert_eq!(body["last_name"], "Kone");
     assert_eq!(body["platform_role"], "member");
 
     // the self-read left classified-read evidence (GOVERNANCE #2)

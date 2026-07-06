@@ -29,10 +29,11 @@
 - **`POST /auth/logout`** — drops **ALL** the caller's sessions (every device, one statement) +
   clears the cookie → `204`. No per-device revoke yet — logout is total by design.
 - **`GET /auth/me`** — the session's own identity for the console chrome: `{actor_id,
-  display_name, handle, email, avatar_url, platform_role}`; logged out → the extractor's plain
-  401. A self-read of `personal`-classified fields, so it leaves the same `access_audit`
-  evidence as any classified read (GOVERNANCE #2); handler stays thin over a testable
-  `me_core` (CAS_0028c746).
+  display_name, handle, email, avatar_url, first_name, last_name, platform_role}`; logged out →
+  the extractor's plain 401. A self-read of `personal`-classified fields, so it leaves the same
+  `access_audit` evidence as any classified read (GOVERNANCE #2); handler stays thin over a
+  testable `me_core` (CAS_0028c746). `first_name`/`last_name` are optional actor fields (0022),
+  seeded from the provider name on first login; `display_name` stays the required identity.
 
 These session-minting routes sit behind the per-client `/auth` rate limit — a **fixed window** keyed
 by the real TCP peer (unforgeable; `X-Forwarded-For` is honored ONLY under `NUMU_TRUST_PROXY=1`
