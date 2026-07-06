@@ -274,49 +274,172 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
     bodyHost.appendChild(col);
   }
 
-  /* ── CV (v1: the validated JSON document — the genpdf contract) ───────── */
+  /* ── CV — a STRUCTURED editor over the genpdf contract (crates/apps/portfolio/src/pdf.rs):
+        { name, headline, contact, links[{label,href}], summary, sections[{title, entries[
+        {head, when, sub, bullets[]}]}] }. Import pulls the live site CV so nothing is retyped;
+        Raw JSON stays an escape hatch. Save → Publish renders the PDF. ───────────────────── */
+  interface CvLink { label?: string; href?: string }
+  interface CvEntry { head?: string; when?: string; sub?: string; bullets?: string[] }
+  interface CvSection { id?: string; title?: string; entries?: CvEntry[] }
+  interface CvDoc { name?: string; headline?: string; contact?: string; summary?: string; links?: CvLink[]; sections?: CvSection[] }
+  const BLANK_CV: CvDoc = { name: "", headline: "", contact: "", summary: "", links: [], sections: [] };
+
   async function renderCv(): Promise<void> {
     const items = await list("cv");
-    bodyHost.textContent = "";
     const item = items[0] ?? null;
-    const ta = el("textarea", { class: "nu-pf-md nu-mono", rows: "24" }) as HTMLTextAreaElement;
-    ta.value = item ? JSON.stringify(item.data["doc"] ?? {}, null, 2) : "";
-    const note = el("p", { class: "nu-pf-sub" }, item ? `${item.id} — the JSON document genpdf renders (a structured editor is a recorded follow-on).` : "no cv document yet — paste the doc JSON and Create.");
-    bodyHost.appendChild(
-      el(
-        "div",
-        { class: "nu-pf-editor" },
-        el(
-          "div",
-          { class: "nu-pf-edhead" },
-          note,
-          el("span", { class: "nu-spring" }),
-          button({
-            label: item ? "Save" : "Create",
-            variant: "accent",
-            size: "sm",
-            onClick: () =>
-              void (async () => {
-                let doc: unknown;
-                try {
-                  doc = JSON.parse(ta.value);
-                } catch (e) {
-                  toast("CV", `not valid JSON — ${String(e)}`, "danger");
-                  return;
-                }
-                const res = item
-                  ? await ncl.request("PATCH", `/api/objects/cv/${item.id}`, { body: { doc }, headers: { "If-Match": item.etag } })
-                  : await ncl.request("POST", "/api/objects/cv", { body: { name: "CV", doc } });
-                if (res.status === 200 || res.status === 201) {
-                  toast("CV", "saved — Publish renders the PDF", "ok");
-                  void renderCv();
-                } else toast("CV", `save failed (${res.status})`, "danger");
-              })(),
-          }),
+    const doc: CvDoc = item ? structuredClone(item.data["doc"] as CvDoc) ?? { ...BLANK_CV } : { ...BLANK_CV };
+    doc.links ??= [];
+    doc.sections ??= [];
+    let rawMode = false;
+
+    const save = async (): Promise<void> => {
+      const res = item
+        ? await ncl.request("PATCH", `/api/objects/cv/${item.id}`, { body: { doc }, headers: { "If-Match": item.etag } })
+        : await ncl.request("POST", "/api/objects/cv", { body: { name: "CV", doc } });
+      if (res.status === 200 || res.status === 201) {
+        toast("CV", "saved — hit Publish to render the PDF", "ok");
+        void renderCv();
+      } else if (res.status === 412) {
+        toast("CV", "changed elsewhere — reopen the tab", "warn");
+      } else toast("CV", (res.body as { detail?: string } | null)?.detail ?? `save failed (${res.status})`, "danger");
+    };
+
+    const importLive = async (): Promise<void> => {
+      try {
+        const site = (await fetch("/content/site.json").then((r) => r.json())) as { cv?: CvDoc };
+        if (!site.cv) return toast("CV", "no cv in the live site.json", "warn");
+        Object.assign(doc, structuredClone(site.cv));
+        doc.links ??= [];
+        doc.sections ??= [];
+        toast("CV", "imported the live CV — review, then Save", "ok");
+        paint();
+      } catch {
+        toast("CV", "could not fetch the live site.json", "danger");
+      }
+    };
+
+    const tIn = (val: string | undefined, on: (v: string) => void, ph = ""): HTMLInputElement => {
+      const i = input({ value: val ?? "", placeholder: ph }) as HTMLInputElement;
+      i.addEventListener("input", () => on(i.value));
+      return i;
+    };
+    const tArea = (val: string | undefined, on: (v: string) => void, rows = "3"): HTMLTextAreaElement => {
+      const t = el("textarea", { class: "nu-pf-md", rows }) as HTMLTextAreaElement;
+      t.value = val ?? "";
+      t.addEventListener("input", () => on(t.value));
+      return t;
+    };
+    const field = (label: string, control: HTMLElement): HTMLElement =>
+      el("label", { class: "nu-pf-field" }, el("span", { class: "nu-pf-flabel" }, label), control);
+
+    const bodyEl = el("div", { class: "nu-pf-body nu-scroll" });
+
+    function paintStructured(): void {
+      bodyEl.textContent = "";
+      const wrap = el("div", { class: "nu-pf-cv" });
+
+      /* header */
+      wrap.appendChild(
+        el("div", { class: "nu-pf-cvcard" },
+          el("div", { class: "nu-pf-cvhead" }, "Header"),
+          field("Name", tIn(doc.name, (v) => (doc.name = v), "EMMANUEL DOUMOUYA")),
+          field("Headline", tIn(doc.headline, (v) => (doc.headline = v), "AI Software Engineer | …")),
+          field("Contact line", tIn(doc.contact, (v) => (doc.contact = v), "Dublin, Ireland · em@…")),
+          field("Summary (mini-md: **bold** *italic* [label](url))", tArea(doc.summary, (v) => (doc.summary = v))),
         ),
-        ta,
-      ),
-    );
+      );
+
+      /* links */
+      const linksCard = el("div", { class: "nu-pf-cvcard" }, el("div", { class: "nu-pf-cvhead" }, "Links"));
+      (doc.links ?? []).forEach((lk, i) => {
+        linksCard.appendChild(
+          el("div", { class: "nu-pf-cvrow" },
+            tIn(lk.label, (v) => (lk.label = v), "label"),
+            tIn(lk.href, (v) => (lk.href = v), "https://…"),
+            button({ icon: "bi-x-lg", size: "sm", variant: "ghost", onClick: () => { doc.links!.splice(i, 1); paint(); } }),
+          ),
+        );
+      });
+      linksCard.appendChild(button({ label: "Add link", icon: "bi-plus-lg", size: "sm", onClick: () => { doc.links!.push({ label: "", href: "" }); paint(); } }));
+      wrap.appendChild(linksCard);
+
+      /* sections */
+      (doc.sections ?? []).forEach((sec, si) => {
+        sec.entries ??= [];
+        const secCard = el("div", { class: "nu-pf-cvcard" });
+        secCard.appendChild(
+          el("div", { class: "nu-pf-cvhead" },
+            tIn(sec.title, (v) => (sec.title = v), "SECTION TITLE"),
+            el("span", { class: "nu-spring" }),
+            button({ icon: "bi-arrow-up", size: "sm", variant: "ghost", title: "Move up", onClick: () => { if (si > 0) { const a = doc.sections!; [a[si - 1], a[si]] = [a[si]!, a[si - 1]!]; paint(); } } }),
+            button({ icon: "bi-trash3", size: "sm", variant: "ghost", title: "Delete section", onClick: () => { doc.sections!.splice(si, 1); paint(); } }),
+          ),
+        );
+        sec.entries.forEach((en, ei) => {
+          en.bullets ??= [];
+          const enCard = el("div", { class: "nu-pf-cventry" },
+            el("div", { class: "nu-pf-cvrow" },
+              field("Head (mini-md)", tIn(en.head, (v) => (en.head = v), "**Role** — Company")),
+              field("When", tIn(en.when, (v) => (en.when = v), "2023–Present")),
+              button({ icon: "bi-trash3", size: "sm", variant: "ghost", title: "Delete entry", onClick: () => { sec.entries!.splice(ei, 1); paint(); } }),
+            ),
+            field("Sub (mini-md)", tIn(en.sub, (v) => (en.sub = v), "context line")),
+          );
+          (en.bullets ?? []).forEach((_, bi) => {
+            enCard.appendChild(
+              el("div", { class: "nu-pf-cvrow" },
+                tArea(en.bullets![bi], (v) => (en.bullets![bi] = v), "2"),
+                button({ icon: "bi-x-lg", size: "sm", variant: "ghost", onClick: () => { en.bullets!.splice(bi, 1); paint(); } }),
+              ),
+            );
+          });
+          enCard.appendChild(button({ label: "Add bullet", icon: "bi-plus-lg", size: "sm", variant: "ghost", onClick: () => { en.bullets!.push(""); paint(); } }));
+          secCard.appendChild(enCard);
+        });
+        secCard.appendChild(button({ label: "Add entry", icon: "bi-plus-lg", size: "sm", onClick: () => { sec.entries!.push({ head: "", when: "", sub: "", bullets: [] }); paint(); } }));
+        wrap.appendChild(secCard);
+      });
+      wrap.appendChild(button({ label: "Add section", icon: "bi-plus-lg", size: "sm", variant: "accent", onClick: () => { doc.sections!.push({ title: "", entries: [] }); paint(); } }));
+      bodyEl.appendChild(wrap);
+    }
+
+    function paintRaw(): void {
+      bodyEl.textContent = "";
+      const ta = el("textarea", { class: "nu-pf-md nu-mono", rows: "28" }) as HTMLTextAreaElement;
+      ta.value = JSON.stringify(doc, null, 2);
+      ta.addEventListener("input", () => {
+        try {
+          const parsed = JSON.parse(ta.value) as CvDoc;
+          Object.keys(doc).forEach((k) => delete (doc as Record<string, unknown>)[k]);
+          Object.assign(doc, parsed);
+          ta.classList.remove("nu-pf-invalid");
+        } catch {
+          ta.classList.add("nu-pf-invalid");
+        }
+      });
+      bodyEl.appendChild(el("div", { class: "nu-pf-editor" }, ta));
+    }
+
+    const paint = (): void => (rawMode ? paintRaw() : paintStructured());
+
+    bodyHost.textContent = "";
+    const headHost = el("div", {});
+    const mountHead = (): void => {
+      headHost.textContent = "";
+      headHost.appendChild(
+        el("div", { class: "nu-pf-edhead" },
+          el("p", { class: "nu-pf-sub" }, item ? `${item.id} — genpdf renders this on Publish` : "no CV yet — Import the live one or fill it in"),
+          el("span", { class: "nu-spring" }),
+          button({ label: "Import live CV", icon: "bi-cloud-download", size: "sm", variant: "ghost", onClick: () => void importLive() }),
+          button({ label: rawMode ? "Structured" : "Raw JSON", icon: "bi-braces", size: "sm", variant: "ghost", onClick: () => { rawMode = !rawMode; mountHead(); paint(); } }),
+          button({ label: item ? "Save" : "Create", icon: "bi-check-lg", size: "sm", variant: "accent", onClick: () => void save() }),
+        ),
+      );
+    };
+    mountHead();
+    bodyHost.appendChild(headHost);
+    bodyHost.appendChild(bodyEl);
+    paint();
   }
 
   /* ── Insights ─────────────────────────────────────────────────────────── */

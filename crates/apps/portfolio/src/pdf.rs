@@ -305,4 +305,179 @@ mod tests {
         assert!(bytes.starts_with(b"%PDF"), "PDF magic bytes");
         assert!(bytes.len() > 5_000, "non-trivial output: {}", bytes.len());
     }
+
+    #[test]
+    fn render_cv_should_render_the_real_portfolio_cv() {
+        // Em's actual CV (the genpdf contract, verbatim from the live site) MUST render — the
+        // deadline insurance behind the console's structured editor (CAS_357473a7).
+        let doc: Value = serde_json::from_str(REAL_CV).expect("valid cv json");
+        let bytes = render_cv(&doc).expect("the real CV renders");
+        assert!(bytes.starts_with(b"%PDF"), "PDF magic bytes");
+        assert!(
+            bytes.len() > 15_000,
+            "a full CV is a substantial PDF: {}",
+            bytes.len()
+        );
+    }
+
+    const REAL_CV: &str = r##"{
+  "contact": "Dublin, Ireland (open to relocation) · em.doumouya@gmail.com",
+  "headline": "AI Software Engineer | AI Solution Architect",
+  "links": [
+    {
+      "href": "https://em.numu.im",
+      "icon": "globe2",
+      "label": "em.numu.im"
+    },
+    {
+      "href": "https://github.com/doumouya",
+      "icon": "github",
+      "label": "github.com/doumouya"
+    },
+    {
+      "href": "https://www.linkedin.com/in/doumouya",
+      "icon": "linkedin",
+      "label": "linkedin.com/in/doumouya"
+    }
+  ],
+  "name": "EMMANUEL DOUMOUYA",
+  "pdfHref": "/cv/Emmanuel_Doumouya_CV.pdf",
+  "sections": [
+    {
+      "entries": [
+        {
+          "bullets": [
+            "A numu data workspace with two flagship demos — **Datacore**, a talk-to-your-data console (a 101k-row real-world CSV ingested and profiled live in the browser — data never leaves the page), and a live **RBAC explorer** — on a hash-routed SPA with CI deploys."
+          ],
+          "head": "**Portfolio platform** — [em.numu.im](https://em.numu.im)",
+          "sub": "the site, its framework, and its demos are all mine, end-to-end"
+        },
+        {
+          "bullets": [
+            "~40 components on one Mount contract, an **O(1) theme platform** (a theme switch is a single attribute write re-resolved by the CSS cascade), CI-enforced single-CSS-ownership discipline. The portfolio and every demo run on it."
+          ],
+          "head": "**amenan-ui** — live on every surface of [em.numu.im](https://em.numu.im)",
+          "sub": "TypeScript UI framework, zero runtime dependencies"
+        },
+        {
+          "bullets": [
+            "AI agents drive development through its **MCP tool surface**, and every feature lands as a Case in its own database — a workflow engine (workflow-as-data + close-gates), an HTTP edge, and an agent tool surface over **one validated core**; invariants enforced twice (Rust gate + DB trigger). The Case where it built its own RBAC is public in the repo."
+          ],
+          "head": "**build-engine** — [github.com/doumouya/build-engine-demo](https://github.com/doumouya/build-engine-demo)",
+          "sub": "a self-hosting build system"
+        },
+        {
+          "bullets": [
+            "Polars→wasm engine (one Web Worker per file), non-destructive step pipeline (undo = replay), and a **dual metadata plane**: the browser build persists on-device; the same build talks to a Rust objects/workflow backend when its API answers — projects/files become registered types, every edit an audit event."
+          ],
+          "head": "**cleaner + csv-workbench** — [github.com/doumouya/doumouya-portfolio](https://github.com/doumouya/doumouya-portfolio)",
+          "sub": "full-stack data-cleaning workspace (Rust→wasm)"
+        },
+        {
+          "bullets": [
+            "One pure-compute Rust crate compiling unchanged to native server and wasm32 browser targets; polymorphic authorization (one membership edge, recursive SQL, leak-free 404s); object types as registry rows, not migrations. Built **solo, alongside a full-time role, in 770+ CI-gated commits** — full architecture and a candid assessment in the [RedPash deep-dive](https://github.com/doumouya/redpash-rust-pwa/blob/main/docs/redpash-deep-dive.md)."
+          ],
+          "head": "**RedPash** — [github.com/doumouya/redpash-rust-pwa](https://github.com/doumouya/redpash-rust-pwa)",
+          "sub": "the platform the method was proven on (prerelease)"
+        }
+      ],
+      "id": "work",
+      "title": "Selected work — all live or public"
+    },
+    {
+      "entries": [
+        {
+          "bullets": [
+            "**Agent pipeline, not prompting** — a five-role orchestrator (Architect → Tester → Coder → Reviewer → Ops) wired to Claude through a custom **MCP server**: tests-before-code, a spec-only architect with no write access, hand-offs over a case bus, a circuit breaker. Bespoke agent skills make the first draft convention-correct.",
+            "**Measure, don't assert** — every fuzzy quality becomes an executable check: a 28-analyzer CI ratchet (fails only on *new* violations vs a committed baseline), a privacy gate encoding a 12-finding GDPR Article 25 assessment, a WebAssembly-purity gate, docs-currency enforced per commit.",
+            "**Simplify by construction** — frameworks over one-offs: object types as data, one generic endpoint, one component per concern, zero-dependency front-ends. Adding a feature should be constant-effort, not linear.",
+            "**Fail and iterate faster** — the same product rebuilt six times (2024–2026), each failure encoded as a gate the next build cannot regress past."
+          ]
+        }
+      ],
+      "id": "method",
+      "title": "Engineering method — how I build with AI"
+    },
+    {
+      "entries": [
+        {
+          "bullets": [
+            "**AI / LLM:** Claude · MCP (custom servers) · multi-agent orchestration · agent skills · context engineering · CI eval gates",
+            "**Languages:** Rust · Python · SQL (advanced) · TypeScript/JavaScript *(also C, Apex, Java)*",
+            "**Systems & Data:** WebAssembly · Axum · Polars · PostgreSQL · REST/GraphQL · ETL/ELT · Informatica IDMC",
+            "**Infrastructure & Safety:** GCP · Firebase · OAuth2 · TLS · CI/CD · GDPR · privacy-by-design"
+          ]
+        }
+      ],
+      "id": "skills",
+      "title": "Technical skills"
+    },
+    {
+      "entries": [
+        {
+          "bullets": [
+            "Advise enterprise customers and partner with account teams on ETL/ELT architecture across Informatica IDMC and Salesforce; root-cause distributed-systems issues over REST/SOAP and JDBC/ODBC; tune SQL/SAQL; translate technical trade-offs to engineering and business stakeholders."
+          ],
+          "head": "**Technical Support Engineer**",
+          "sub": "Informatica / Salesforce · Dublin",
+          "when": "2023–Present"
+        },
+        {
+          "bullets": [
+            "Led a traditional web build (React / Django / PostgreSQL / GCP) with GDPR and TLS compliance for a founder-led startup — the hand-built baseline against which I measure what an AI-agent workflow changes."
+          ],
+          "head": "**Technical Project Lead**",
+          "sub": "Durabilis & Co (startup)",
+          "when": "2024–2025"
+        },
+        {
+          "bullets": [
+            "Customer-facing operations at scale: surfaced trends and anomalies in operational data and automated data-quality controls for global teams."
+          ],
+          "head": "**Community Operations Analyst**",
+          "sub": "Meta (via Covalen) · Dublin",
+          "when": "2021–2022"
+        }
+      ],
+      "id": "experience",
+      "title": "Professional experience"
+    },
+    {
+      "entries": [
+        {
+          "bullets": [
+            "**BSc Applied Data Technologies** — Atlantic Technological University *(in progress)*",
+            "**Diploma in Mathematics, Distinction** — Cork College of FET (QQI)",
+            "**Computer Science coursework** — University of the People *(credits; withdrew)*"
+          ]
+        }
+      ],
+      "id": "education",
+      "title": "Education"
+    },
+    {
+      "entries": [
+        {
+          "bullets": [
+            "**Informatica:** Cloud Data Integration · Cloud Data Governance · Cloud Data Catalog · Cloud Application Integration",
+            "**Salesforce:** Administrator · Platform App Builder · Platform Developer I · Sales Cloud Consultant",
+            "**Profiles:** [credly.com/users/edoumouya](https://www.credly.com/users/edoumouya) · [trailblazer/edoumouya](https://www.salesforce.com/trailblazer/edoumouya) · [leetcode.com/u/doumouya](https://leetcode.com/u/doumouya)"
+          ]
+        }
+      ],
+      "id": "certifications",
+      "title": "Certifications"
+    },
+    {
+      "entries": [
+        {
+          "head": "**English** — IELTS 7.5 (C1) · **French** — C2 (native)"
+        }
+      ],
+      "id": "languages",
+      "title": "Languages"
+    }
+  ],
+  "summary": "Engineer who builds software **end-to-end with AI agents in the loop** — design, implementation, testing, and documentation all run through an agent pipeline behind CI gates I author myself. My durable asset is the **method**: fail and iterate fast, then encode each lesson as an automated guardrail (“measure, don't assert”). Roughly four years in technical, customer-facing roles (Informatica, Salesforce, Meta) grounding it all in real enterprise data problems. Everything below is **public and clickable** — live demos, open repos, honest write-ups."
+}"##;
 }

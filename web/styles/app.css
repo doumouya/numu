@@ -3099,3 +3099,14 @@ body {
 
 /* rendered markdown body in a record viewer (console v2) */
 .nu-detail-body { margin-top: var(--sp-2); }
+
+/* ── CV structured editor (portfolio manager) ── */
+.nu-pf-cv { display: flex; flex-direction: column; gap: var(--sp-3); }
+.nu-pf-cvcard { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.nu-pf-cvhead { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; }
+.nu-pf-cvhead input { flex: 1; }
+.nu-pf-cvrow { display: flex; align-items: flex-start; gap: var(--sp-2); }
+.nu-pf-cvrow > * { flex: 1; }
+.nu-pf-cvrow > button { flex: none; }
+.nu-pf-cventry { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-2); border-left: 2px solid var(--border); margin-left: var(--sp-1); }
+.nu-pf-invalid { outline: 2px solid var(--danger); }

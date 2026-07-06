@@ -117,8 +117,10 @@ Apps Rail when the boot probe admits (`GET /about` 200 = mounted on this node, `
 GENERIC object surface (the apps-tier doctrine holds: no portfolio route was added for the UI):
 **Articles** (ordinal-sorted list → markdown editor; `slug` is create-only — the registry's
 `editable:false` is the public identity contract; saves are `PATCH` + `If-Match`, a 412 tells
-the operator to reopen), **Overview** (the three `site_copy` keys), **CV** (v1: the validated
-JSON `doc` genpdf renders — a structured editor is a recorded follow-on), **Insights** (the
+the operator to reopen), **Overview** (the three `site_copy` keys), **CV** (a STRUCTURED editor
+over the genpdf contract — header · links · sections · entries · bullets, each add/remove; an
+"Import live CV" button pulls the published `content/site.json` so nothing is retyped; a Raw JSON
+escape hatch remains; `pdf.rs` carries a test that renders the real CV verbatim), **Insights** (the
 `/insights` aggregates + the feedback list). The header **Publish** button drives
 `POST /publish` and shows `{version, committed, skipped}` with a link to the live site; a 422
 (missing keys / no published articles) is surfaced verbatim.
