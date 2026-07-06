@@ -11,7 +11,8 @@
 `logout` L215) · `oauth.rs` (`start` L362, `callback` L408) · `types.rs` (`list_types` L297, `get_type`
 L319, `create_type` L334, `validate_spec` L134) · `objects.rs` (`options_body` L286, `coll_options` L541,
 `item_options` L846) · `members.rs` (router L29, `record_check` L41, `require_rank` L106) · `relations.rs`
-(L74/L140/L194) · `search.rs` (`search` L41) · `orchestrator.rs` (L144/L177/L309/L330) · `connectors.rs`
+(L74/L140/L194) · `search.rs` (`search` L41) · `conversations.rs` (`get_feed`/`post_feed`,
+`require_workspace_reach` L31) · `orchestrator.rs` (L144/L177/L309/L330) · `connectors.rs`
 (`run_connector` L30) · `debug.rs` (`echo` L48, `set_log_level` L86) · `ratelimit.rs` (`enforce` L78).
 
 ## 0. The map (one row per routed path)
@@ -29,6 +30,7 @@ L319, `create_type` L334, `validate_spec` L134) · `objects.rs` (`options_body` 
 | `POST /api/objects/:type/:id/checks/:name` | `members.rs` | session + admin+ reach; `case` only |
 | `POST·GET /api/relations` · `DELETE /api/relations/:id` | `relations.rs` | session + endpoint reach |
 | `GET /api/search` | `search.rs` | session (reach-filtered) |
+| `GET·POST /api/conversations/:key/feed` | `conversations.rs` | session + workspace reach (View reads · Edit appends) |
 | `POST·GET /api/feature-runs` · `GET /api/feature-runs/:id` · `POST …/:id/handoffs` | `orchestrator.rs` | session + Case reach |
 | `POST /api/connectors/:id/run` | `connectors.rs` | session + Edit reach |
 | `POST /api/_debug/echo` · `PATCH /api/_debug/log-level` | `debug.rs` | platform-admin (+`NUMU_DEBUG` for echo) |
@@ -240,7 +242,29 @@ wildcard grant is unrestricted; the restriction binds **on the admin branch too*
 The only error: **400** `bad_request` — captured detail `` "the `q` query param is required" ``
 (blank or missing `q`).
 
-## 12. `/api/feature-runs` — the orchestrator surface
+## 11b. `GET·POST /api/conversations/:key/feed` — the persistent workspace thread
+
+The console thread's durable store (SLICE 2a, CAS_00742b86; `conversations.rs`). `:key` is a **workspace
+(ORG) id**; the feed is one `conversation` row per workspace (migration 0023 — a registry type, not a
+table), holding the ordered `blocks[]` the console renders (the same block vocabulary the sim persists to
+localStorage — [`SEAM.md`](../frontend/SEAM.md) §wire-shapes). Reach follows the workspace: **View reads,
+Edit appends** (platform-admin bypasses); anything below is a leak-free 404 — the same 404 whether the
+workspace is unreachable or absent (no existence oracle). The first write mints the `conversation` through
+the **gated create path** (scope→workspace, owner grant, `conversation.created` event); later writes patch
+`blocks` in place. POST body is `{blocks[]}` (append) or `{blocks[], replace:true}` (replace).
+
+```
+GET  /api/conversations/ORG_…/feed                          → 200 [ {…block…}, … ]   (or [] before any write)
+POST /api/conversations/ORG_…/feed  {"blocks":[{…}]}         → 202 {"ok":true}         # append
+POST /api/conversations/ORG_…/feed  {"blocks":[{…}],"replace":true} → 202 {"ok":true}  # replace
+```
+
+| Status | When |
+|---|---|
+| 202 `accepted` | append/replace applied |
+| 404 `not_found` | caller can't reach the workspace at the required floor (View for GET, Edit for POST) — leak-free |
+
+
 
 The 5-role pipeline as DB state (semantics + the circuit breaker: [`ORCHESTRATOR.md`](ORCHESTRATOR.md)).
 Authority = reach on the run's **Case** (Edit to start/advance, View to read); a Case-less run is

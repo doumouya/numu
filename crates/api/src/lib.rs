@@ -6,6 +6,7 @@ pub mod auth;
 pub mod caller;
 pub mod config;
 pub mod connectors;
+pub mod conversations;
 pub mod db;
 pub mod debug;
 pub mod error;
@@ -135,6 +136,7 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         .merge(types::router())
         .merge(relations::router())
         .merge(search::router())
+        .merge(conversations::router())
         .merge(orchestrator::router())
         .merge(connectors::router())
         .merge(auth_routes)

@@ -15,8 +15,11 @@ itself, the http driver is the DEFAULT; `?sim=1` flips back to the sim, and
   rides every call; `NUMU_SERVE_CONSOLE=1` — docs/ops/DEPLOY.md). In dev it can
   also be `web/sim/server.node.js` (:8787) behind the dev-server proxy. The
   console needs zero code change across those — this file is the contract the
-  Rust routes satisfy. Routes the Rust api does NOT implement yet (notably
-  `POST /api/nacl`) honestly fail there; nacl verbs remain sim-only for now.
+  Rust routes satisfy. The per-workspace **feed persists** over http since
+  SLICE 2a (`GET/POST /api/conversations/:key/feed`, CAS_00742b86). `POST
+  /api/nacl` is still sim-only — in http mode the thread echoes + serves a
+  real read plane (`read:<type>`) and an honest "server nacl is next" notice
+  (app.ts `sendHttp`); nacl verbs run in full under `?sim=1`.
 
 ## The client interface
 
@@ -78,8 +81,11 @@ extractor), no `access_audit` plane.
 
 ## Phase-B route map (each is one Case)
 
-1. Port `conversations.rs` + `pipeline.rs` + migrations 0016/0017 from
-   `feat/numu-frontend-integration` (feed + `POST /api/files`).
+1. **Feed — LANDED (SLICE 2a, CAS_00742b86).** `crates/api/src/conversations.rs`
+   + migration 0023 (`conversation` type, one row per workspace, `blocks` json).
+   `GET/POST /api/conversations/:key/feed` — reach follows the workspace (view
+   reads, edit appends; a non-member gets a leak-free 404). Still pending from
+   this item: `pipeline.rs` + `POST /api/files` (the CSV write path).
 2. `POST /api/files/:id/steps` + `GET /api/files/:id/rows` over the Polars
    data plane.
 3. `GET /api/manifest` + `GET /api/values` (reach-filtered, no rows).

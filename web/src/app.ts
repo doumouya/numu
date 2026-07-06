@@ -534,8 +534,8 @@ function openPanelObject(o: PanelObject): void {
 function pushBlocks(bs: NumuBlock[]): void {
   if (!bs.length) return;
   state.feed = state.feed.concat(bs);
-  /* http feeds are session-local until /api/conversations lands — don't 404 on appendFeed */
-  if (!HTTP) void ncl.appendFeed(orgOf(state.tenantId), bs);
+  /* persist to the workspace conversation (SLICE 2a: /api/conversations/:ws/feed is real now) */
+  void ncl.appendFeed(orgOf(state.tenantId), bs);
   renderFeed();
 }
 function persistFeed(next: NumuBlock[]): void {
