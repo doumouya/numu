@@ -99,16 +99,17 @@ async function loadLive(): Promise<void> {
     const mine = items.filter((e) => e.data["workspace_id"] === state.tenantId);
     liveCache = {
       projects: mine.map((e) => {
-        const a = (e.data["attributes"] ?? {}) as Record<string, unknown>;
-        projMeta[e.id] = { version: e.version, attrs: a };
+        projMeta[e.id] = { version: e.version, attrs: {} };
+        /* channel/icon/color/pinned are device-local (the real project type has no such fields) */
+        const m = projLocal[e.id] ?? {};
         return {
           id: e.id.replace(/^PRJ_/, ""),
           name: String(e.data["name"] ?? e.id),
           mark: initialsOf(String(e.data["name"] ?? "?")),
-          icon: String(a["icon"] ?? ""),
-          color: String(a["color"] || hashTok(e.id)),
-          channel: String(a["channel"] ?? railChannels()[0]?.id ?? "general"),
-          pinned: !!a["pinned"],
+          icon: String(m.icon ?? ""),
+          color: String(m.color || hashTok(e.id)),
+          channel: String(m.channel ?? railChannels()[0]?.id ?? "general"),
+          pinned: !!m.pinned,
         };
       }),
       objects: [],
@@ -261,6 +262,19 @@ function mutateChannels(fn: (cur: ConsoleChannel[]) => ConsoleChannel[]): void {
   try { localStorage.setItem("numu_chan_v2", JSON.stringify(chanStore)); } catch { /* quota */ }
   renderObjectRail();
 }
+
+/* http: the real `project` type has no channel/icon/color/pinned — those are pure UI
+   organization, so they live device-local per project id (like channels). numu_proj_v1. */
+type ProjMeta = { channel?: string; icon?: string; color?: string; pinned?: boolean };
+let projLocal: Record<string, ProjMeta> = ((): Record<string, ProjMeta> => {
+  try { return JSON.parse(localStorage.getItem("numu_proj_v1") ?? "{}") as Record<string, ProjMeta>; } catch { return {}; }
+})();
+function setProjLocal(rid: string, patch: ProjMeta): void {
+  projLocal = { ...projLocal, [rid]: { ...projLocal[rid], ...patch } };
+  try { localStorage.setItem("numu_proj_v1", JSON.stringify(projLocal)); } catch { /* quota */ }
+}
+const slugify = (s: string): string =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || `p-${Date.now().toString(36)}`;
 
 /* ── skins (appearance = accent × mode × skin) ─────────────────────────── */
 
@@ -422,11 +436,24 @@ function patchProject(sid: string, patch: Record<string, unknown>): void {
     .catch(() => {});
 }
 const renameProject = (sid: string, name: string): void => patchProject(sid, { name });
-const moveProject = (sid: string, channel: string): void =>
-  patchProject(sid, { attributes: { ...projAttrs(sid), channel } });
+/* channel + pin are UI organization: server-attributes in sim, device-local in http (the real
+   project type has no such fields) — either way no server round-trip failure on a grouping tweak */
+const moveProject = (sid: string, channel: string): void => {
+  if (HTTP) {
+    setProjLocal(projRid(sid), { channel });
+    void loadLive();
+    renderObjectRail();
+  } else patchProject(sid, { attributes: { ...projAttrs(sid), channel } });
+};
 const togglePin = (sid: string): void => {
-  const a = projAttrs(sid);
-  patchProject(sid, { attributes: { ...a, pinned: !a["pinned"] } });
+  if (HTTP) {
+    setProjLocal(projRid(sid), { pinned: !(projLocal[projRid(sid)]?.pinned ?? false) });
+    void loadLive();
+    renderObjectRail();
+  } else {
+    const a = projAttrs(sid);
+    patchProject(sid, { attributes: { ...a, pinned: !a["pinned"] } });
+  }
 };
 function deleteProject(sid: string): void {
   const v = projVersion(sid);
@@ -449,21 +476,25 @@ function newProject(o: NewProjectOpts): void {
     notify("Project", HTTP ? "No workspace yet — create one in Settings, Directory" : "No workspace for this tenant", "warn");
     return;
   }
-  const chan = o.channel ?? railChannels()[0]?.id ?? "artists";
+  const chan = o.channel ?? railChannels()[0]?.id ?? "general";
   const nm = o.name || "New conversation";
+  /* http: the real project type is {workspace_id, name, slug, status} — no attributes/origin;
+     the channel/icon/color adornments are saved device-local against the minted id. */
+  const body: Record<string, unknown> = HTTP
+    ? { workspace_id: org, name: nm, slug: slugify(nm), status: "active" }
+    : { workspace_id: org, name: nm, origin: "manual", status: "active", attributes: { channel: chan, pinned: false, icon: o.icon, color: o.color } };
   void ncl
-    .request("POST", "/api/objects/project", {
-      body: { workspace_id: org, name: nm, origin: "manual", status: "active", attributes: { channel: chan, pinned: false, icon: o.icon, color: o.color } },
-    })
+    .request("POST", "/api/objects/project", { body })
     .then((res) => {
       const bodyOut = res.body as { id?: string } | null;
       if (res.status === 201 && bodyOut?.id) {
+        if (HTTP) setProjLocal(bodyOut.id, { channel: chan, icon: o.icon, color: o.color, pinned: false });
         state.activeProject = bodyOut.id.replace(/^PRJ_/, "");
         state.overviewActive = false;
         void loadLive();
         renderObjectRail();
         notify("Project", o.name ? `Created ${nm}` : "New conversation — rename it via ⋯", "ok");
-      } else notify("Project", "Could not create", "warn");
+      } else notify("Project", (res.body as { detail?: string } | null)?.detail ?? `Could not create (${res.status})`, "warn");
     })
     .catch(() => notify("Project", "Could not create", "warn"));
 }

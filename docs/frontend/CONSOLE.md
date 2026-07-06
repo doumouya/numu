@@ -66,6 +66,14 @@ rail every member has.
 | `console/chart-theme.ts` | token → ECharts option synthesis + `mountNuChart` (direct init on `.nu-` slots) |
 | `numu-sim.d.ts` | ambient types over the sim globals — the typed face of the seam |
 
+**Projects in HTTP mode (CAS_6b46bea7):** projects ARE the threads. The real
+`project` type is `{workspace_id, name, slug, status, …}` — no `attributes`
+bag, so create sends exactly those (slug auto-derived from the name) and the
+channel/icon/color/pinned adornments live **device-local** (`numu_proj_v1`,
+like channels): rename + delete are real server ops (PATCH/DELETE If-Match),
+channel-move + pin are local. (Before this: create sent `attributes`/`origin`
+→ a silent 400, so no project could be made and there was no thread to talk in.)
+
 **The thread in HTTP mode (CAS_6b46bea7):** the composer never swallows input —
 every send echoes a `sent` bubble, `read:<type>` (article/workspace/user/…) is
 REAL over `GET /api/objects/<type>` → an `objectTable` (row-click fetches the
