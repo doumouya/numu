@@ -2924,3 +2924,12 @@ body {
   max-width: 24rem;
   text-align: center;
 }
+
+/* the live avatar in the profile chip (initials stay the fallback + sim look) */
+.nu-me-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}

@@ -21,6 +21,7 @@ import { mountStore, type StoreOpen } from "./console/store.ts";
 import { registerApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
+import { auth, identityRecord, doLogout } from "./shell/auth.ts";
 
 const CCD = window.CONSOLE_DATA;
 
@@ -297,8 +298,11 @@ const impersonateUser = (u: ConsoleUserRecordData): void =>
   startImpersonation({ id: u.id, name: u.name, label: u.role });
 const canImpersonate = (): boolean =>
   !!ncl.engine && !state.viewAs && ncl.engine.isPlatformAdmin(ncl.actor);
-const meId = (): string => state.viewAs?.id ?? "USR_jm";
-const meRecord = (): ConsoleUserRecordData => CCD.users[meId()] ?? (CCD.users["USR_jm"] as ConsoleUserRecordData);
+/* HTTP mode: the live identity (shell/auth.ts) IS `me`; sim keeps Jean
+   Mensah as its canon (auth.identity is null there — CCD wins untouched). */
+const meId = (): string => state.viewAs?.id ?? auth.identity?.actor_id ?? "USR_jm";
+const meRecord = (): ConsoleUserRecordData =>
+  CCD.users[meId()] ?? identityRecord() ?? (CCD.users["USR_jm"] as ConsoleUserRecordData);
 
 /* ── resolve any object reference to a Record the panel can open ───────── */
 
@@ -637,9 +641,20 @@ const composer = mountComposer(composerHost, {
 function settingsCfg() {
   return {
     meId: meId(),
+    me: identityRecord() ?? undefined,
     skinId: activeSkinId(),
     mode: getMode(),
     canImpersonate: canImpersonate(),
+    onLogout:
+      ncl.kind === "http"
+        ? (): void => {
+            if (state.viewAs) exitImpersonation();
+            void doLogout(ncl).then((ok) => {
+              if (ok) location.replace(location.pathname);
+              else notify("Sign out", "could not end the session — try again", "danger");
+            });
+          }
+        : undefined,
     onSkin: (sk: ConsoleSkin) => {
       applySkin(sk);
       renderContext();
@@ -770,11 +785,16 @@ function renderChrome(): void {
   const isSettings = !!state.contextObject && "type" in state.contextObject && state.contextObject.type === "settings";
   chrome.appendChild(chromeBtn("gear", "Settings", openSettings, isSettings));
   const isProfile = !!state.contextObject && "type" in state.contextObject && state.contextObject.type === "user" && !!(state.contextObject as { self?: boolean }).self;
+  const initials = el("span", { class: "nu-me-initials" }, meRecord().name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2));
+  const avatarUrl = state.viewAs ? null : auth.identity?.avatar_url;
+  const meFace = avatarUrl
+    ? el("img", { class: "nu-me-img", src: avatarUrl, alt: "", referrerpolicy: "no-referrer", onerror: (e: Event) => (e.target as HTMLElement).replaceWith(initials) })
+    : initials;
   chrome.appendChild(
     el(
       "button",
       { class: `nu-topbar-me${isProfile ? " is-active" : ""}`, title: "Your profile", "aria-label": "Profile", onclick: openProfile },
-      el("span", { class: "nu-me-initials" }, meRecord().name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2)),
+      meFace,
     ),
   );
   topbar.appendChild(chrome);

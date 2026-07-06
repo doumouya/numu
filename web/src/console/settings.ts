@@ -9,6 +9,8 @@ import type { BadgeTone } from "amenan-ui";
 
 export interface SettingsCfg {
   meId: string;
+  /** The live identity's record (HTTP mode, console v2) — CCD.users wins when absent (sim). */
+  me?: ConsoleUserRecordData;
   skinId: string;
   mode: "dark" | "light";
   canImpersonate: boolean;
@@ -17,6 +19,8 @@ export interface SettingsCfg {
   onOpenProfile(): void;
   onOpenUser(u: ConsoleUserRecordData): void;
   onImpersonate(u: ConsoleUserRecordData): void;
+  /** When present, Account gains the Sign out row (HTTP mode only — sim has no session). */
+  onLogout?(): void;
   onToast(title: string, msg: string, tone?: string): void;
 }
 
@@ -36,7 +40,7 @@ function toggle(on: boolean, label: string, onChange: (v: boolean) => void): HTM
 export function renderSettings(host: Element, cfg: SettingsCfg): void {
   const CCD = window.CONSOLE_DATA;
   const S = CCD.settings;
-  const me = CCD.users[cfg.meId] ?? CCD.users["USR_jm"];
+  const me = CCD.users[cfg.meId] ?? cfg.me ?? CCD.users["USR_jm"];
   if (!me) return;
   const toast = cfg.onToast;
 
@@ -87,6 +91,9 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
       accountHead,
       row({ glyph: "key", label: "Password & sign-in", desc: "Change password · manage passkeys", control: button({ label: "Manage", size: "sm", onClick: () => toast("Sign-in", "Manage password & passkeys") }) }),
       row({ glyph: "translate", label: "Language", desc: "Interface language", control: langSel }),
+      cfg.onLogout
+        ? row({ glyph: "box-arrow-right", label: "Sign out", desc: "Ends every session on every device", control: button({ label: "Sign out", size: "sm", onClick: cfg.onLogout }) })
+        : null,
     ),
   );
 

@@ -55,6 +55,36 @@ export async function fetchMe(client: NumuClientApi): Promise<GateResult> {
   }
 }
 
+/** Synthesize the record shape the existing renderers (settings account head,
+    user-record self view) already know from the live identity — HTTP mode's
+    replacement for the sim's CCD.users row. Null in sim / logged out. */
+export function identityRecord(): ConsoleUserRecordData | null {
+  const i = auth.identity;
+  if (!i) return null;
+  return {
+    id: i.actor_id,
+    type: "user",
+    name: i.display_name,
+    handle: i.handle,
+    email: i.email ?? "",
+    phone: "",
+    country: "",
+    kind: "human",
+    status: "active",
+    role: i.platform_role === "admin" ? "platform admin" : "member",
+    accent: "var(--accent)",
+    joined: "",
+    lastActive: "",
+    timezone: "",
+    locale: "",
+    notes: "",
+    kyc: { status: "—", method: "—", date: "—" },
+    memberships: [],
+    activity: [],
+    owned: [],
+  };
+}
+
 /** Logout is total by design (AUTH.md §2): 204 → a clean full reload back
     through the gate (the console's mounts have no teardown contract). */
 export async function doLogout(client: NumuClientApi): Promise<boolean> {
