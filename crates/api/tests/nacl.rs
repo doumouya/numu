@@ -10,7 +10,7 @@ use numu_api::registry::TypeDefCache;
 use numu_api::request_id::RequestCtx;
 use numu_api::state::AppState;
 use numu_api::workflow::WorkflowCache;
-use serde_json::Value;
+use serde_json::{json, Value};
 use sqlx::PgPool;
 
 type R = Result<(), Box<dyn std::error::Error>>;
@@ -121,5 +121,53 @@ async fn read_new_unknown_and_reach_scope(pool: PgPool) -> R {
         b["type"] == "objectTable" && !b["rows"].as_array().map(|r| r.is_empty()).unwrap_or(true)
     });
     assert!(!leaks_rows, "a non-member must not see another's articles");
+    Ok(())
+}
+
+/// SLICE 2 pre-push review (MEDIUM): `new:` must coerce field values to their declared kind, or an
+/// int/bool field arrives as a string and create_object's validation rejects the whole create. Here
+/// `ordinal=7 published=true` must land as a JSON number + bool (not "7"/"true"), so the article creates.
+#[sqlx::test(migrations = "../../migrations")]
+async fn new_coerces_int_and_bool_field_values(pool: PgPool) -> R {
+    let st = state(&pool).await;
+    let admin_id = "USR_admin00000000000000000000009z";
+    seed_actor(&pool, admin_id).await?;
+    let admin = Caller::console(admin_id, true);
+    let nctx = NaclCtx::default();
+
+    let out = nacl_core(
+        &st,
+        &ctx(),
+        &admin,
+        "new:article slug=gamma label=\"Gamma\" tag=DATA md=\"# g\" ordinal=7 published=true",
+        &nctx,
+    )
+    .await?;
+    // the create landed (a `new` step block, not a validation `warn`) — proves coercion happened
+    assert_eq!(
+        blocks(&out)[0]["kind"],
+        "new",
+        "typed create must succeed, not warn"
+    );
+
+    // and the values are stored with the right JSON types, not as strings
+    let (ordinal,): (Value,) = sqlx::query_as(
+        "select data->'ordinal' from entity_data where type_id='article' and data->>'slug'=$1",
+    )
+    .bind("gamma")
+    .fetch_one(&pool)
+    .await?;
+    assert!(
+        ordinal.is_i64(),
+        "ordinal stored as a JSON number, got {ordinal:?}"
+    );
+    assert_eq!(ordinal, json!(7));
+    let (published,): (Value,) = sqlx::query_as(
+        "select data->'published' from entity_data where type_id='article' and data->>'slug'=$1",
+    )
+    .bind("gamma")
+    .fetch_one(&pool)
+    .await?;
+    assert_eq!(published, json!(true), "published stored as a JSON bool");
     Ok(())
 }

@@ -3,7 +3,7 @@
 //! error on BOTH read and write). See docs/frontend/SEAM.md §conversations.
 #![cfg(feature = "db-tests")]
 
-use numu_api::caller::Caller;
+use numu_api::caller::{Caller, Surface, SurfaceKind};
 use numu_api::conversations::{get_feed_core, post_feed_core};
 use numu_api::registry::TypeDefCache;
 use numu_api::request_id::RequestCtx;
@@ -130,5 +130,54 @@ async fn feed_persists_appends_replaces_and_reach_gates(pool: PgPool) -> R {
     .is_err());
     // and the outsider's rejected write left the feed untouched
     assert_eq!(len(&get_feed_core(&st, &ctx(), &member_c, ws).await?), 1);
+    Ok(())
+}
+
+/// SLICE 2 pre-push review (HIGH): the feed gate must run Plane C, not just workspace reach. A confined
+/// AGENT surface with no capability grant is fenced off the object surface; it must be fenced off the
+/// feed too — EVEN holding an owner membership on the workspace. The same membership under a CONSOLE
+/// surface (Plane C default-allow) IS admitted, proving the denial is Plane C, not reach.
+#[sqlx::test(migrations = "../../migrations")]
+async fn a_confined_agent_is_denied_the_feed_despite_workspace_membership(pool: PgPool) -> R {
+    let st = state(&pool).await;
+    let ws = "ORG_conv0000000000000000000000000b";
+    let principal = "USR_agent00000000000000000000000c";
+    seed_workspace(&pool, ws, principal, "owner").await?; // OWNER rank — reach is not the question here
+
+    let agent = Caller {
+        actor_id: principal.into(),
+        is_platform_admin: false,
+        surface: Surface {
+            kind: SurfaceKind::Agent,
+            id: principal.into(),
+        },
+        purpose: None,
+        data_class_ceiling: None,
+    };
+    // Plane C default-denies an agent with no capability grant — on read AND write, leak-free.
+    assert!(
+        get_feed_core(&st, &ctx(), &agent, ws).await.is_err(),
+        "agent read must be Plane-C denied"
+    );
+    assert!(
+        post_feed_core(
+            &st,
+            &ctx(),
+            &agent,
+            ws,
+            vec![json!({"type":"sent","text":"x"})],
+            false
+        )
+        .await
+        .is_err(),
+        "agent append must be Plane-C denied"
+    );
+
+    // the identical membership under a console surface IS admitted → the denial above was Plane C.
+    let console = Caller::console(principal, false);
+    assert!(
+        get_feed_core(&st, &ctx(), &console, ws).await.is_ok(),
+        "console with the same membership is admitted"
+    );
     Ok(())
 }

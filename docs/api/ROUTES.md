@@ -249,11 +249,16 @@ The only error: **400** `bad_request` — captured detail `` "the `q` query para
 The console thread's durable store (SLICE 2a, CAS_00742b86; `conversations.rs`). `:key` is a **workspace
 (ORG) id**; the feed is one `conversation` row per workspace (migration 0023 — a registry type, not a
 table), holding the ordered `blocks[]` the console renders (the same block vocabulary the sim persists to
-localStorage — [`SEAM.md`](../frontend/SEAM.md) §wire-shapes). Reach follows the workspace: **View reads,
-Edit appends** (platform-admin bypasses); anything below is a leak-free 404 — the same 404 whether the
-workspace is unreachable or absent (no existence oracle). The first write mints the `conversation` through
-the **gated create path** (scope→workspace, owner grant, `conversation.created` event); later writes patch
-`blocks` in place. POST body is `{blocks[]}` (append) or `{blocks[], replace:true}` (replace).
+localStorage — [`SEAM.md`](../frontend/SEAM.md) §wire-shapes). Authority runs **both planes**, like the
+object surface: **Plane C** first (the acting surface's confinement, keyed on the `conversation` type — so
+a confined app/agent can't reach the feed on mere workspace membership), then the workspace **reach**
+(**View reads, Edit appends**; platform-admin bypasses Plane A). Any refusal — Plane C or reach — is the
+same leak-free 404 (unreachable and absent are indistinguishable; no existence oracle). The first write
+mints the `conversation` through the **gated create path** (scope→workspace, owner grant,
+`conversation.created` event); later writes are **atomic** (append = jsonb concat, replace = set, one
+statement) so overlapping appends can't lose blocks, and a partial unique index (migration 0024) keeps it
+to one row per workspace (a first-write race collides on 409 and retries as an append). POST body is
+`{blocks[]}` (append) or `{blocks[], replace:true}` (replace).
 
 ```
 GET  /api/conversations/ORG_…/feed                          → 200 [ {…block…}, … ]   (or [] before any write)

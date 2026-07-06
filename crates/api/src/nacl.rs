@@ -207,6 +207,26 @@ fn unquote(s: &str) -> String {
     s.trim().trim_matches('"').to_string()
 }
 
+/// Coerce a parsed string value to the field's declared registry kind so int/bool/json fields survive
+/// create_object's validation. An unparseable value falls back to the string (create_object then
+/// rejects it with a clear 4xx → warn block, rather than a silent type failure).
+fn coerce_value(kind: &str, v: String) -> Value {
+    match kind {
+        "int" => v
+            .trim()
+            .parse::<i64>()
+            .map(|n| Value::Number(n.into()))
+            .unwrap_or(Value::String(v)),
+        "bool" => match v.trim().to_ascii_lowercase().as_str() {
+            "true" | "1" | "yes" | "on" => Value::Bool(true),
+            "false" | "0" | "no" | "off" => Value::Bool(false),
+            _ => Value::String(v),
+        },
+        "json" => serde_json::from_str::<Value>(&v).unwrap_or(Value::String(v)),
+        _ => Value::String(v), // text · enum · ref · date stay strings
+    }
+}
+
 // ── execution (over the gated object path) ───────────────────────────────────
 
 async fn read_exec(
@@ -217,7 +237,10 @@ async fn read_exec(
     filter: Option<(String, String)>,
     raw: &str,
 ) -> AppResult<Value> {
-    let items = match objects::list_core(st, ctx, caller, type_id, Some(40), Some(0)).await {
+    // With a `.attr=value` filter we must fetch a wider window than the 40 shown, or a match past row 40
+    // would silently vanish; list_core clamps to 200, so that's the honest ceiling for a filtered read.
+    let fetch = if filter.is_some() { 200 } else { 40 };
+    let items = match objects::list_core(st, ctx, caller, type_id, Some(fetch), Some(0)).await {
         Ok(v) => v,
         // a View denial (confined/out-of-reach caller) is leak-free — a warn block, not an HTTP error.
         Err(e) if e.status.is_client_error() => {
@@ -273,7 +296,15 @@ async fn new_exec(
     let type_id = td.type_id.as_str();
     let mut fields = Map::new();
     for (k, v) in pairs {
-        fields.insert(k, Value::String(v));
+        // coerce to the field's declared kind — the composer only ever produces strings, but an int/bool
+        // field must reach create_object as a number/bool or its validation rejects the whole create.
+        let kind = td
+            .fields
+            .iter()
+            .find(|f| f.field == k)
+            .map(|f| f.kind.as_str())
+            .unwrap_or("text");
+        fields.insert(k, coerce_value(kind, v));
     }
     // seed a scoped type's parent from the thread ctx when the caller didn't name it (mirrors the sim:
     // `new:case` inherits the active project, `new:booking` the workspace).
