@@ -8,6 +8,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 SRC=crates/api/src
+# the apps tier is production code too — ban staging scaffolding there as well (CAS_57309651).
+APPS=(crates/apps/*/src/*.rs)
 findings=0
 flag() { echo "  FINDING [$1] $2"; findings=$((findings + 1)); }
 
@@ -27,14 +29,14 @@ prod() {
 
 # S1 — placeholder / "until X" scaffolding prose. These phrases marked code that "temporarily" bypassed a
 # guarantee; once the real thing shipped the prose became false (the header lied). Ban them from prod.
-if prod "$SRC"/*.rs | grep -inE 'always allows|until A2|until auth lands|until auth is wired|single-user dev|dev single-user (principal|actor)|placeholder until|stub until|for now,? (allow|skip|bypass)'; then
+if prod "$SRC"/*.rs "${APPS[@]}" | grep -inE 'always allows|until A2|until auth lands|until auth is wired|single-user dev|dev single-user (principal|actor)|placeholder until|stub until|for now,? (allow|skip|bypass)'; then
   flag stale-staging-prose "a placeholder/'until X' scaffolding comment survives in production code — reconcile it with the shipped behaviour (or mark the line // staging-ok)"
 fi
 
 # S2 — a live dev-caller on a production path. `Caller::dev()` is the pre-auth stand-in; a real handler
 # must use the Caller extractor. The definition (`fn dev()`) is out of scope here — restrict it via
 # #[cfg(...)]/pub(crate) per §5c; this rule catches CALL SITES leaking into shipped handlers.
-if prod "$SRC"/*.rs | grep -nE 'Caller::dev\(\)'; then
+if prod "$SRC"/*.rs "${APPS[@]}" | grep -nE 'Caller::dev\(\)'; then
   flag dev-caller-in-prod "Caller::dev() on a production path — use the real Caller extractor (add // staging-ok only for a genuinely debug-gated call)"
 fi
 

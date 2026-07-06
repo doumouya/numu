@@ -21,9 +21,15 @@ Two rules, both structural:
 Consequence of (1): an app absent from the image or un-flagged at boot simply is not there —
 its routes 404 like everything else numu doesn't admit.
 
-> **Known audit under-claim.** The v0 audit gates (`rbac-audit`, `debuggability-audit`, …) scan
-> `crates/api/src` only; app crates are not yet in their SRC set. The discipline still applies —
-> this doc carries it, and widening the audits to `crates/apps/*` is a recorded follow-on Case.
+> **Audit coverage (CAS_57309651).** The UNIVERSAL P-DEBUG rules now scan the app tier too:
+> `debuggability-audit` (no bare panic on a request path, no secret in a log) and `stale-staging-audit`
+> both include `crates/apps/*/src`, and `outbound-audit` gates every outbound HTTP client (this app's
+> GitHub publish client stays host-pinned + hardened, or CI fails). The api-SPECIFIC wiring gates
+> (`rbac-audit`'s objects/members handler shape, the one-responder/request-id/mutation-event checks)
+> remain scoped to `crates/api/src` by design — the app tier reaches data ONLY through the core's gated
+> seams (`create_object`/`list_core`), never a raw mutation, so those invariants are inherited, not
+> re-checked. A pen-test hand-audit (2026-07) confirmed the ingest/insights/publish routes reproduce
+> every discipline (leak-free 404, airlocked 5xx, Plane-C confinement, no secret logging).
 
 ## The app's surfaces (each lands as its own Case)
 

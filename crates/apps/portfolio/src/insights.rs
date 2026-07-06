@@ -14,13 +14,44 @@ use numu_api::state::AppState;
 use serde_json::{json, Value};
 use sqlx::Row;
 
-/// Count rows of `kind` per a jsonb text field, over a trailing window (days; 0 = all time).
+/// The jsonb selector a `counts_by` aggregate groups on. A CLOSED set — the group expression is
+/// interpolated into SQL (a group-by expr can't be a bind param), so keeping it a fixed-literal enum
+/// makes it structurally impossible for any caller-derived string to reach the query (pen-test
+/// hardening, CAS_57309651; the `kind`/`days` values are already bound). `sql()` returns a `'static`.
+#[derive(Clone, Copy)]
+enum Dim {
+    Page,
+    Referrer,
+    LinkTarget,
+    Setting,
+    ViewportBand,
+    DwellBucket,
+    InstallAction,
+    WritingTag,
+}
+impl Dim {
+    fn sql(self) -> &'static str {
+        match self {
+            Dim::Page => "data->>'page'",
+            Dim::Referrer => "data->>'ref'",
+            Dim::LinkTarget => "data->'meta'->>'target'",
+            Dim::Setting => "(data->'meta'->>'setting') || '=' || (data->'meta'->>'value')",
+            Dim::ViewportBand => "data->>'vp'",
+            Dim::DwellBucket => "data->'meta'->>'bucket'",
+            Dim::InstallAction => "data->'meta'->>'action'",
+            Dim::WritingTag => "data->'meta'->>'tag'",
+        }
+    }
+}
+
+/// Count rows of `kind` per a jsonb `dim` selector, over a trailing window (days; 0 = all time).
 async fn counts_by(
     st: &AppState,
     kind: &str,
-    expr: &str,
+    dim: Dim,
     days: i32,
 ) -> AppResult<Vec<(String, i64)>> {
+    let expr = dim.sql(); // a fixed literal — never caller-derived
     let sql = format!(
         "select coalesce({expr}, '—') as k, count(*) as n \
          from entity_data \
@@ -53,26 +84,20 @@ pub async fn insights_core(st: &AppState, caller: &Caller) -> AppResult<Value> {
         return Err(AppError::not_found()); // leak-free: not "forbidden" — absent
     }
 
-    let visits_7d = counts_by(st, "route_view", "data->>'page'", 7).await?;
-    let visits_30d = counts_by(st, "route_view", "data->>'page'", 30).await?;
-    let referrers = counts_by(st, "route_view", "data->>'ref'", 0).await?;
+    let visits_7d = counts_by(st, "route_view", Dim::Page, 7).await?;
+    let visits_30d = counts_by(st, "route_view", Dim::Page, 30).await?;
+    let referrers = counts_by(st, "route_view", Dim::Referrer, 0).await?;
     let cv_downloads: i64 = sqlx::query_scalar(
         "select count(*) from entity_data where type_id = 'pt_event' and data->>'kind' = 'cv_download'",
     )
     .fetch_one(&st.pool)
     .await?;
-    let link_clicks = counts_by(st, "link_click", "data->'meta'->>'target'", 0).await?;
-    let settings = counts_by(
-        st,
-        "settings_change",
-        "(data->'meta'->>'setting') || '=' || (data->'meta'->>'value')",
-        0,
-    )
-    .await?;
-    let bands = counts_by(st, "route_view", "data->>'vp'", 0).await?;
-    let dwell = counts_by(st, "dwell", "data->'meta'->>'bucket'", 0).await?;
-    let installs = counts_by(st, "install", "data->'meta'->>'action'", 0).await?;
-    let writing_filters = counts_by(st, "writing_filter", "data->'meta'->>'tag'", 0).await?;
+    let link_clicks = counts_by(st, "link_click", Dim::LinkTarget, 0).await?;
+    let settings = counts_by(st, "settings_change", Dim::Setting, 0).await?;
+    let bands = counts_by(st, "route_view", Dim::ViewportBand, 0).await?;
+    let dwell = counts_by(st, "dwell", Dim::DwellBucket, 0).await?;
+    let installs = counts_by(st, "install", Dim::InstallAction, 0).await?;
+    let writing_filters = counts_by(st, "writing_filter", Dim::WritingTag, 0).await?;
 
     let feedback_rows = sqlx::query(
         "select (data->>'stars')::int as stars, data->>'text' as text, data->>'page' as page, \

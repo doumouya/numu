@@ -6,6 +6,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 SRC=crates/api/src
+# The apps tier (crates/apps/*/src) shares the UNIVERSAL P-DEBUG rules — no bare panic on a request
+# path, no secret in a log — even though the core-specific wiring (request-id, one responder, mutation
+# events, health verbs) lives only in crates/api. Widening these closes the app-tier blind spot the
+# PORTFOLIO.md under-claim documented (CAS_57309651).
+APPS=(crates/apps/*/src/*.rs)
 findings=0
 flag() { echo "  FINDING [$1] $2"; findings=$((findings + 1)); }
 
@@ -24,7 +29,7 @@ prod() {
 
 # R0 — structural assumption: at most one `#[cfg(test)]` per file (the trailing test module). More than
 # one means prod() could exclude real handler code past the first; fail loudly rather than miss a panic.
-for f in "$SRC"/*.rs; do
+for f in "$SRC"/*.rs "${APPS[@]}"; do
   c=$(grep -c '#\[cfg(test)\]' "$f")
   [ "$c" -le 1 ] || flag test-module-shape "$f has $c #[cfg(test)] blocks; auditor assumes one trailing test module (refactor, or upgrade to the syn analyzer)"
 done
@@ -32,7 +37,7 @@ done
 # R2 — no bare panic on a request path (handlers must return AppError, not unwrap/expect). Scans every
 # module except the bootstrap (main.rs may fail-fast at boot); new handler files are covered by default.
 mods=()
-for f in "$SRC"/*.rs; do case "$f" in */main.rs) ;; *) mods+=("$f") ;; esac; done
+for f in "$SRC"/*.rs "${APPS[@]}"; do case "$f" in */main.rs) ;; *) mods+=("$f") ;; esac; done
 if prod "${mods[@]}" | grep -nE '\.unwrap\(\)|\.expect\('; then
   flag no-bare-panic "unwrap()/expect() on a handler path (return an AppError instead)"
 fi
@@ -59,7 +64,7 @@ grep -q '/healthz'   "$SRC"/lib.rs     || flag discoverability "/healthz route m
 grep -q '/readyz'    "$SRC"/lib.rs     || flag discoverability "/readyz route missing"
 
 # R6 — no secret/credential value in a log line or span.
-if prod "$SRC"/*.rs | grep -iE 'tracing::(info|debug|warn|error)!|_span!' | grep -iE 'password|secret|cookie|bearer|authorization|api[_-]?key'; then
+if prod "$SRC"/*.rs "${APPS[@]}" | grep -iE 'tracing::(info|debug|warn|error)!|_span!' | grep -iE 'password|secret|cookie|bearer|authorization|api[_-]?key'; then
   flag no-secrets-in-logs "a log/span line names a credential (redact it)"
 fi
 
