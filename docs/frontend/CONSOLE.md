@@ -66,6 +66,17 @@ rail every member has.
 | `console/chart-theme.ts` | token → ECharts option synthesis + `mountNuChart` (direct init on `.nu-` slots) |
 | `numu-sim.d.ts` | ambient types over the sim globals — the typed face of the seam |
 
+**The plane rule (CAS_e6695638 · CAS_3bfcc22b): demo data never crosses into
+HTTP mode.** In HTTP the tenancy is REAL (`shell/workspaces.ts` — the rail
+marks + topbar chip come from the caller's reachable `workspace` rows; none →
+the honest "no workspace yet" chip pointing at Settings → Directory), the
+Object Rail is registry-fed (`loadLive`: reachable `project` rows scoped to
+the selected workspace — empty until they exist), channels seed a neutral
+`general`, the composer hints are neutral, no demo artist auto-opens, and
+Settings shows only the real sections (Account · Directory · Appearance ·
+Support). Sim keeps the full canon (orvcle tenants, Jean's members, demo
+channels/projects/objects) — it IS the design reference.
+
 **Scroll discipline**: invisible scrollbars are the house default (the
 amenan-typescript canon) — every `.nu-*` scroll region rides the `.nu-scroll`
 pattern block at the end of `app.css` (Firefox `scrollbar-width: none` +

@@ -23,8 +23,14 @@ import { mountPortfolio } from "./apps/portfolio.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
 import { auth, identityRecord, doLogout } from "./shell/auth.ts";
+import { workspaces, loadWorkspaces } from "./shell/workspaces.ts";
 
 const CCD = window.CONSOLE_DATA;
+/* the plane: http = the real node (clean org, registry-fed); local = the sim
+   and its canon (Jean Mensah, orvcle) — demo data NEVER crosses this line. */
+const HTTP = ncl.kind === "http";
+/* http: feed keys / project parents ARE the real workspace id; sim keeps its map */
+const orgOf = (tid: string): string => (HTTP ? tid : (ORG_OF[tid] ?? ""));
 
 type Accent = "numu" | "numu-blue";
 type PageId = AppId;
@@ -72,7 +78,48 @@ const CHART_TOKENS = [
 const hashTok = (s: string): string =>
   CHART_TOKENS[String(s).split("").reduce((a, c) => a + c.charCodeAt(0), 0) % CHART_TOKENS.length] ?? "var(--chart-1)";
 
+/* http: the live cache — REAL registry rows only, empty until they exist
+   (a clean org shows nothing it doesn't have; CAS_e6695638). */
+let liveCache: { projects: ConsoleProject[]; objects: ConsoleObject[] } = { projects: [], objects: [] };
+const projMeta: Record<string, { version: number; attrs: Record<string, unknown> }> = {};
+async function loadLive(): Promise<void> {
+  if (!HTTP) return;
+  if (!state.tenantId) {
+    liveCache = { projects: [], objects: [] };
+    renderObjectRail();
+    return;
+  }
+  try {
+    const res = await ncl.request("GET", "/api/objects/project?limit=200");
+    const items =
+      res.status === 200
+        ? ((res.body as { items?: Array<{ id: string; data: Record<string, unknown>; version: number }> } | null)?.items ?? [])
+        : [];
+    const mine = items.filter((e) => e.data["workspace_id"] === state.tenantId);
+    liveCache = {
+      projects: mine.map((e) => {
+        const a = (e.data["attributes"] ?? {}) as Record<string, unknown>;
+        projMeta[e.id] = { version: e.version, attrs: a };
+        return {
+          id: e.id.replace(/^PRJ_/, ""),
+          name: String(e.data["name"] ?? e.id),
+          mark: initialsOf(String(e.data["name"] ?? "?")),
+          icon: String(a["icon"] ?? ""),
+          color: String(a["color"] || hashTok(e.id)),
+          channel: String(a["channel"] ?? railChannels()[0]?.id ?? "general"),
+          pinned: !!a["pinned"],
+        };
+      }),
+      objects: [],
+    };
+  } catch {
+    liveCache = { projects: [], objects: [] };
+  }
+  renderObjectRail();
+}
+
 function buildLive(tenantId: string): { projects: ConsoleProject[]; objects: ConsoleObject[] } {
+  if (HTTP) return liveCache;
   const eng = ncl.engine;
   const T0 = CCD.data[tenantId] ?? (CCD.data["studio"] as ConsoleTenantData);
   if (!eng) return { projects: T0.projects, objects: T0.objects };
@@ -175,7 +222,8 @@ function buildLive(tenantId: string): { projects: ConsoleProject[]; objects: Con
 /* ── state ─────────────────────────────────────────────────────────────── */
 
 const state = {
-  tenantId: "studio",
+  /* http: the real selected workspace id (empty until one exists); sim: the canon */
+  tenantId: ncl.kind === "http" ? "" : "studio",
   activeProject: null as string | null,
   overviewActive: true,
   channel: "chat",
@@ -203,7 +251,9 @@ let chanStore: ChanStore = ((): ChanStore => {
   try { return JSON.parse(localStorage.getItem("numu_chan_v2") ?? "{}") as ChanStore; } catch { return {}; }
 })();
 const seedChannels = (tid: string): ConsoleChannel[] =>
-  tenantOf(tid).channels.filter((c) => c.id !== "pinned").map((c) => ({ id: c.id, name: c.name, icon: c.icon, system: true }));
+  HTTP
+    ? [{ id: "general", name: "general", icon: "hash", system: true }]
+    : tenantOf(tid).channels.filter((c) => c.id !== "pinned").map((c) => ({ id: c.id, name: c.name, icon: c.icon, system: true }));
 const railChannels = (): ConsoleChannel[] => chanStore[state.tenantId] ?? seedChannels(state.tenantId);
 function mutateChannels(fn: (cur: ConsoleChannel[]) => ConsoleChannel[]): void {
   chanStore = { ...chanStore, [state.tenantId]: fn(railChannels().slice()) };
@@ -354,43 +404,48 @@ function recordFromRef(ref: string | undefined): PanelObject {
 
 const projRid = (sid: string): string => (sid.startsWith("PRJ_") ? sid : "PRJ_" + sid);
 const projEntity = (sid: string): NumuEntity | undefined => ncl.engine?.state.entities[projRid(sid)];
+/* version + attributes resolve from the engine (sim) or the live cache (http) */
+const projVersion = (sid: string): number | null =>
+  HTTP ? (projMeta[projRid(sid)]?.version ?? null) : (projEntity(sid)?.version ?? null);
+const projAttrs = (sid: string): Record<string, unknown> =>
+  HTTP ? (projMeta[projRid(sid)]?.attrs ?? {}) : (projEntity(sid)?.data.attributes ?? {});
 function patchProject(sid: string, patch: Record<string, unknown>): void {
-  const e = projEntity(sid);
-  if (!e) return;
+  const v = projVersion(sid);
+  if (v == null) return;
   void ncl
-    .request("PATCH", "/api/objects/project/" + projRid(sid), { body: patch, headers: { "If-Match": `W/"${e.version}"` } })
-    .then(renderObjectRail)
+    .request("PATCH", "/api/objects/project/" + projRid(sid), { body: patch, headers: { "If-Match": `W/"${v}"` } })
+    .then(() => {
+      void loadLive();
+      renderObjectRail();
+    })
     .catch(() => {});
 }
 const renameProject = (sid: string, name: string): void => patchProject(sid, { name });
-const moveProject = (sid: string, channel: string): void => {
-  const e = projEntity(sid);
-  if (e) patchProject(sid, { attributes: { ...(e.data.attributes ?? {}), channel } });
-};
+const moveProject = (sid: string, channel: string): void =>
+  patchProject(sid, { attributes: { ...projAttrs(sid), channel } });
 const togglePin = (sid: string): void => {
-  const e = projEntity(sid);
-  if (!e) return;
-  const a = e.data.attributes ?? {};
+  const a = projAttrs(sid);
   patchProject(sid, { attributes: { ...a, pinned: !a["pinned"] } });
 };
 function deleteProject(sid: string): void {
-  const e = projEntity(sid);
-  if (!e) return;
+  const v = projVersion(sid);
+  if (v == null) return;
   void ncl
-    .request("DELETE", "/api/objects/project/" + projRid(sid), { headers: { "If-Match": `W/"${e.version}"` } })
+    .request("DELETE", "/api/objects/project/" + projRid(sid), { headers: { "If-Match": `W/"${v}"` } })
     .then(() => {
       if (state.activeProject === sid) {
         state.activeProject = null;
         state.overviewActive = true;
       }
+      void loadLive();
       renderObjectRail();
     })
     .catch(() => {});
 }
 function newProject(o: NewProjectOpts): void {
-  const org = ORG_OF[state.tenantId];
+  const org = orgOf(state.tenantId);
   if (!org) {
-    notify("Project", "No workspace for this tenant", "warn");
+    notify("Project", HTTP ? "No workspace yet — create one in Settings, Directory" : "No workspace for this tenant", "warn");
     return;
   }
   const chan = o.channel ?? railChannels()[0]?.id ?? "artists";
@@ -404,6 +459,7 @@ function newProject(o: NewProjectOpts): void {
       if (res.status === 201 && bodyOut?.id) {
         state.activeProject = bodyOut.id.replace(/^PRJ_/, "");
         state.overviewActive = false;
+        void loadLive();
         renderObjectRail();
         notify("Project", o.name ? `Created ${nm}` : "New conversation — rename it via ⋯", "ok");
       } else notify("Project", "Could not create", "warn");
@@ -446,12 +502,12 @@ function openPanelObject(o: PanelObject): void {
 function pushBlocks(bs: NumuBlock[]): void {
   if (!bs.length) return;
   state.feed = state.feed.concat(bs);
-  void ncl.appendFeed(ORG_OF[state.tenantId] ?? "", bs);
+  void ncl.appendFeed(orgOf(state.tenantId), bs);
   renderFeed();
 }
 function persistFeed(next: NumuBlock[]): void {
   state.feed = next;
-  if (ncl.setFeed) void ncl.setFeed(ORG_OF[state.tenantId] ?? "", next);
+  if (ncl.setFeed) void ncl.setFeed(orgOf(state.tenantId), next);
   renderFeed();
 }
 
@@ -497,7 +553,7 @@ function send(text: string): void {
     return;
   }
   const ctx: NumuNaclCtx = {
-    workspace: ORG_OF[state.tenantId],
+    workspace: orgOf(state.tenantId),
     projectId: state.activeProject ? PRJ_OF(state.activeProject) : undefined,
     itFileId: state.itFile[state.tenantId],
     channel: state.channel,
@@ -555,15 +611,16 @@ function saveAttachment(em: NumuEmailBlock): void {
 const impRail = mountRail(impRailHost, impRailCfg());
 function impRailCfg() {
   return {
-    /* sim: the canon tenants; http: none yet (real workspaces land with the
-       orgs slice) — the rail then opens with the app list. */
-    tenants: ncl.kind === "http" ? [] : CCD.tenants,
+    /* sim: the canon tenants; http: the caller's REAL workspaces (CAS_e6695638) */
+    tenants: HTTP
+      ? workspaces().map((w) => ({ id: w.id, mark: initialsOf(w.name), name: w.name, sub: w.slug, accent: hashTok(w.id) }))
+      : CCD.tenants,
     activeTenantId: state.tenantId,
     impTargets: impTargetsFor(state.tenantId),
     canImpersonate: !!ncl.engine && !state.viewAs,
     onTenant: (id: string) => {
       switchTenant(id);
-      const t = CCD.tenants.find((x) => x.id === id);
+      const t = HTTP ? workspaces().find((x) => x.id === id) : CCD.tenants.find((x) => x.id === id);
       if (t) notify("Workspace", t.name);
     },
     onImpersonate: startImpersonation,
@@ -629,9 +686,15 @@ function feedCfg() {
 }
 const feed = mountFeed(feedPage, feedCfg());
 
+/* http: neutral composer hints — the demo suggestions are Jean's world */
+const composerHints = (): { naclHint: string; suggestions: Array<{ text: string }> } =>
+  HTTP
+    ? { naclHint: "read:users · new:project · upload a CSV", suggestions: [{ text: "read:users" }, { text: "new:project" }] }
+    : { naclHint: tenantOf(state.tenantId).naclHint, suggestions: tenantOf(state.tenantId).suggestions };
+
 const composer = mountComposer(composerHost, {
-  naclHint: tenantOf(state.tenantId).naclHint,
-  suggestions: tenantOf(state.tenantId).suggestions,
+  naclHint: composerHints().naclHint,
+  suggestions: composerHints().suggestions,
   page: state.page,
   feed: () => state.feed,
   onSend: send,
@@ -646,6 +709,7 @@ function settingsCfg() {
   return {
     meId: meId(),
     me: identityRecord() ?? undefined,
+    demo: !HTTP,
     skinId: activeSkinId(),
     mode: getMode(),
     canImpersonate: canImpersonate(),
@@ -665,6 +729,12 @@ function settingsCfg() {
             const res = await ncl.request("POST", "/api/objects/workspace", { body: { name, slug, status: "active" } });
             const ok = res.status === 201;
             notify("Workspace", ok ? `${name} created` : ((res.body as { detail?: string } | null)?.detail ?? `failed (${res.status})`), ok ? "ok" : "danger");
+            if (ok) {
+              const id = (res.body as { id?: string } | null)?.id;
+              await loadWorkspaces(ncl);
+              if (id) switchTenant(id);
+              else renderChrome();
+            }
             return ok;
           }
         : undefined,
@@ -816,8 +886,14 @@ function renderChrome(): void {
     banner.appendChild(el("button", { class: "nu-imp-exit", onclick: exitImpersonation }, "Exit"));
   }
 
-  /* the topbar */
-  const tenant = CCD.tenants.find((t) => t.id === state.tenantId) ?? CCD.tenants[1];
+  /* the topbar — http: the REAL selected workspace (or the honest none-yet
+     chip); sim: the canon tenants */
+  const ws = HTTP ? (workspaces().find((w) => w.id === state.tenantId) ?? null) : null;
+  const tenant: ConsoleTenant | undefined = HTTP
+    ? ws
+      ? { id: ws.id, mark: initialsOf(ws.name), name: ws.name, sub: ws.slug || "workspace", accent: hashTok(ws.id) }
+      : { id: "", mark: "+", name: "no workspace yet", sub: "Settings, Directory", accent: "var(--surface-2)" }
+    : (CCD.tenants.find((t) => t.id === state.tenantId) ?? CCD.tenants[1]);
   if (!tenant) return;
   topbar.textContent = "";
   if (state.page === "workspace" || state.page === "store") {
@@ -909,28 +985,42 @@ function renderFeed(): void {
 /* ── tenant switch + feed bootstrap (EMPTY by default — clean slate) ───── */
 
 function loadFeed(tenantId: string): void {
-  const key = ORG_OF[tenantId] ?? "";
-  void ncl.feed(key).then((f) => {
-    if (tenantId !== state.tenantId) return;
-    state.feed = f && f.length ? f : [];
-    renderFeed();
-  });
+  const key = orgOf(tenantId);
+  if (!key) return;
+  void ncl
+    .feed(key)
+    .then((f) => {
+      if (tenantId !== state.tenantId) return;
+      state.feed = f && f.length ? f : [];
+      renderFeed();
+    })
+    .catch(() => {
+      state.feed = [];
+      renderFeed();
+    });
 }
 
 function switchTenant(id: string): void {
-  const nt = tenantOf(id);
   state.tenantId = id;
+  if (HTTP) {
+    try {
+      localStorage.setItem("nu-ws", id);
+    } catch {
+      /* quota */
+    }
+  }
   state.activeProject = null;
   state.overviewActive = true;
   state.contextExpanded = false;
   state.feed = [];
-  /* open on the artist record when the tenant has one (the real EP) */
-  state.contextObject = buildLive(id).objects.find((o) => o.type === "artist") ?? null;
-  composer.update({ naclHint: nt.naclHint, suggestions: nt.suggestions });
+  /* sim opens on the artist record (the canon EP); http starts clean */
+  state.contextObject = HTTP ? null : (buildLive(id).objects.find((o) => o.type === "artist") ?? null);
+  composer.update(composerHints());
   renderChrome();
   renderObjectRail();
   renderContext();
   renderCenter();
+  void loadLive();
   loadFeed(id);
 }
 
@@ -952,4 +1042,19 @@ renderChrome();
 renderCenter();
 state.contextObject = buildLive(state.tenantId).objects.find((o) => o.type === "artist") ?? null;
 renderContext();
-loadFeed(state.tenantId);
+if (!HTTP) loadFeed(state.tenantId);
+/* http boot: the REAL workspace list first, then everything keys off it */
+if (HTTP) {
+  void loadWorkspaces(ncl).then((ws) => {
+    let saved = "";
+    try {
+      saved = localStorage.getItem("nu-ws") ?? "";
+    } catch {
+      /* private mode */
+    }
+    state.tenantId = ws.some((w) => w.id === saved) ? saved : (ws[0]?.id ?? "");
+    renderChrome();
+    void loadLive();
+    if (state.tenantId) loadFeed(state.tenantId);
+  });
+}

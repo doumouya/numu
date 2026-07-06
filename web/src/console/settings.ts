@@ -25,6 +25,9 @@ export interface SettingsCfg {
       (console v2, CAS_e6695638) — POSTs ride the generic gated pipeline. */
   onCreateWorkspace?(name: string, slug: string): Promise<boolean>;
   onCreateUser?(displayName: string, handle: string, email: string): Promise<boolean>;
+  /** false (HTTP mode) hides every demo-data section — a clean org shows only
+      what is REAL: Account · Directory · Appearance · Support (CAS_e6695638). */
+  demo?: boolean;
   onToast(title: string, msg: string, tone?: string): void;
 }
 
@@ -51,6 +54,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
   const wrap = el("div", { class: "nu-set" });
   host.appendChild(wrap);
 
+  const demo = cfg.demo !== false;
   function section(glyph: string, label: string, body: HTMLElement, hideHeader = false): void {
     const sec = el("div", { class: "nu-set-section" });
     if (!hideHeader) {
@@ -58,6 +62,10 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
     }
     sec.appendChild(body);
     wrap.appendChild(sec);
+  }
+  /* demo-data sections render in sim only — a clean org never shows Jean's world */
+  function demoSection(glyph: string, label: string, body: HTMLElement, hideHeader = false): void {
+    if (demo) section(glyph, label, body, hideHeader);
   }
 
   function card(...rows: Array<HTMLElement | null>): HTMLElement {
@@ -203,7 +211,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
   wsGrid.appendChild(wsField("locale", locSel));
   wsGrid.appendChild(wsField("timezone", input({ value: w.timezone })));
   wsGrid.appendChild(wsField("region", input({ value: w.region })));
-  section(
+  demoSection(
     "building-gear",
     "Workspace",
     card(
@@ -267,7 +275,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
     ),
   );
   membersWrap.appendChild(membersCard);
-  section("people", "Members & roles", membersWrap);
+  demoSection("people", "Members & roles", membersWrap);
 
   /* ── apps & permissions (order + grants) ── */
   const appsWrap = el("div", { class: "nu-set-stack" });
@@ -327,7 +335,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
     grantsCard.appendChild(el("div", {}, head, detail));
   });
   appsWrap.appendChild(el("div", {}, el("span", { class: "nu-set-fieldlabel" }, "permissions granted to installed apps"), grantsCard));
-  section("grid-3x3-gap", "Apps & permissions", appsWrap);
+  demoSection("grid-3x3-gap", "Apps & permissions", appsWrap);
 
   /* ── AI agents (bring your own model) ── */
   const aiGrid = el("div", { class: "nu-set-aigrid" });
@@ -376,7 +384,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
   const aiWrap = el("div", { class: "nu-set-stack" });
   aiWrap.appendChild(el("p", { class: "nu-set-lede" }, "Bring your own model subscription — numu never resells tokens. Connected models power agents, the composer assistant, and nacl drafting."));
   aiWrap.appendChild(aiGrid);
-  section("stars", "AI agents", aiWrap);
+  demoSection("stars", "AI agents", aiWrap);
 
   /* ── plan & billing ── */
   const planGrid = el("div", { class: "nu-set-plans" });
@@ -399,7 +407,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
       ),
     );
   });
-  section("credit-card", "Plan & billing", planGrid);
+  demoSection("credit-card", "Plan & billing", planGrid);
 
   /* ── notifications ── */
   const notifCard = el("div", { class: "nu-set-card" });
@@ -408,7 +416,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
       row({ glyph: "bell", label: n.label, desc: n.desc, control: toggle(n.on, n.label, () => {}), first: i === 0 }),
     );
   });
-  section("bell", "Notifications", notifCard);
+  demoSection("bell", "Notifications", notifCard);
 
   /* ── security & sessions ── */
   const secWrap = el("div", { class: "nu-set-stack" });
@@ -442,7 +450,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
   });
   secWrap.appendChild(el("div", {}, el("span", { class: "nu-set-fieldlabel" }, "active sessions"), sessCard));
   secWrap.appendChild(el("div", {}, button({ label: "Sign out everywhere else", icon: "bi-box-arrow-right", size: "sm", onClick: () => toast("Sessions", "Signed out of all other devices", "warn") })));
-  section("shield-lock", "Security & sessions", secWrap);
+  demoSection("shield-lock", "Security & sessions", secWrap);
 
   /* ── data & privacy ── */
   const dataWrap = el("div", { class: "nu-set-stack" });
@@ -453,7 +461,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
     ),
   );
   dataWrap.appendChild(el("div", {}, button({ label: "Clear local data", icon: "bi-trash", size: "sm", onClick: () => toast("Local data", "This clears cached data on this device", "danger") })));
-  section("database-lock", "Data & privacy", dataWrap);
+  demoSection("database-lock", "Data & privacy", dataWrap);
 
   /* ── support & feedback ── */
   const fbArea = el("textarea", { class: "nu-set-fbtext", rows: "3", placeholder: "What's working well? What's missing?" });
@@ -489,7 +497,7 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
   section("life-preserver", "Support & feedback", supWrap);
 
   /* ── danger zone ── */
-  section(
+  demoSection(
     "exclamation-octagon",
     "Danger zone",
     el(
