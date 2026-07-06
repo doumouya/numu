@@ -21,6 +21,7 @@ import { mountStore, type StoreOpen } from "./console/store.ts";
 import type { DirRow } from "./console/settings.ts";
 import { registerApp, appList, getApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
 import { mountPortfolio } from "./apps/portfolio.ts";
+import { mountDocs } from "./apps/docs.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
 import { auth, identityRecord, doLogout, saveProfile } from "./shell/auth.ts";
@@ -1011,6 +1012,43 @@ if (ncl.kind === "http") {
         mountStoreFresh();
         impRail.update(impRailCfg());
       }
+    })
+    .catch(() => {});
+}
+
+/* the Docs app (CAS_25dbaded) — markdown documents over the document type (0025).
+   Admits on the boot probe: the registry serves the type (list 200). */
+const docsPage = layout.addSurface("nu-docs-page");
+let docsReady = false;
+registerApp({
+  id: "docs",
+  label: "Docs",
+  icon: "file-earmark-text",
+  desc: "markdown documents — write, preview, save",
+  order: 45,
+  available: () => docsReady,
+  surface: docsPage,
+  objectRail: false,
+});
+if (ncl.kind === "http") {
+  void ncl
+    .request("GET", "/api/objects/document?limit=1")
+    .then((res) => {
+      if (res.status !== 200) return;
+      docsReady = true;
+      mountDocs(docsPage, {
+        onToast: notify,
+        onPreview: (node: HTMLElement | null): void => {
+          if (node) openPanelObject({ id: "doc-preview", type: "preview", name: "Document preview", node, icon: "file-earmark-text", accent: "var(--accent)" });
+          else if (state.contextObject && "type" in state.contextObject && state.contextObject.type === "preview") {
+            state.contextObject = null;
+            renderContext();
+            renderCenter();
+          }
+        },
+      });
+      mountStoreFresh();
+      impRail.update(impRailCfg());
     })
     .catch(() => {});
 }
