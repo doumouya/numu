@@ -998,7 +998,17 @@ if (ncl.kind === "http") {
     .then(([about, ins]) => {
       if (about.status === 200 && ins.status !== 404) {
         portfolioReady = true;
-        mountPortfolio(portfolioPage, { onToast: notify });
+        mountPortfolio(portfolioPage, {
+          onToast: notify,
+          onPreview: (node: HTMLElement | null): void => {
+            if (node) openPanelObject({ id: "cv-preview", type: "preview", name: "CV preview", node, icon: "eye", accent: "var(--accent)" });
+            else if (state.contextObject && "type" in state.contextObject && state.contextObject.type === "preview") {
+              state.contextObject = null;
+              renderContext();
+              renderCenter();
+            }
+          },
+        });
         mountStoreFresh();
         impRail.update(impRailCfg());
       }

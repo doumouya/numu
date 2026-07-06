@@ -606,6 +606,11 @@ export function mountContextPanel(host: Element, cfg: ContextPanelCfg): ContextP
     root.appendChild(body);
 
     switch (o.type) {
+      case "preview": {
+        const node = (o as ConsoleObject).node;
+        if (node) body.appendChild(node);
+        break;
+      }
       case "settings":
         renderSettings(body, c.settings);
         break;

@@ -3110,3 +3110,29 @@ body {
 .nu-pf-cvrow > button { flex: none; }
 .nu-pf-cventry { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-2); border-left: 2px solid var(--border); margin-left: var(--sp-1); }
 .nu-pf-invalid { outline: 2px solid var(--danger); }
+
+/* ── mini-md toolbar + inline spans + CV preview (portfolio manager, console v2) ── */
+.nu-md-field { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.nu-md-tb { display: flex; gap: 0.15rem; }
+.nu-md-tb-btn { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border: 0; padding: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-mute); cursor: pointer; }
+.nu-md-tb-btn:hover { background: var(--hover); color: var(--text); }
+.nu-md-tb-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nu-md-ta { width: 100%; }
+
+.nu-mdi-b { font-weight: 700; }
+.nu-mdi-i { font-style: italic; }
+.nu-mdi-l { color: var(--accent); }
+
+.nu-cvp { padding: var(--sp-3); font-size: var(--text-sm); line-height: 1.5; color: var(--text); }
+.nu-cvp-name { font-size: var(--text-xl); font-weight: 700; }
+.nu-cvp-headline { font-weight: 700; color: var(--accent); margin-top: 0.1rem; }
+.nu-cvp-contact { color: var(--text-mute); font-size: var(--text-xs); margin-top: 0.2rem; }
+.nu-cvp-links { color: var(--accent); font-size: var(--text-xs); margin-top: 0.1rem; }
+.nu-cvp-summary { margin: var(--sp-2) 0; }
+.nu-cvp-sectitle { text-transform: uppercase; font-weight: 700; color: var(--accent); font-size: var(--text-xs); letter-spacing: 0.04em; margin-top: var(--sp-3); border-bottom: 1px solid var(--border); padding-bottom: 0.15rem; }
+.nu-cvp-entryhead { display: flex; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-2); }
+.nu-cvp-head { font-weight: 600; }
+.nu-cvp-when { color: var(--text-mute); font-size: var(--text-xs); white-space: nowrap; }
+.nu-cvp-sub { color: var(--text-mute); font-size: var(--text-xs); }
+.nu-cvp-bullet { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
+.nu-cvp-dot { color: var(--accent); font-weight: 700; }

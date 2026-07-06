@@ -118,9 +118,12 @@ GENERIC object surface (the apps-tier doctrine holds: no portfolio route was add
 **Articles** (ordinal-sorted list → markdown editor; `slug` is create-only — the registry's
 `editable:false` is the public identity contract; saves are `PATCH` + `If-Match`, a 412 tells
 the operator to reopen), **Overview** (the three `site_copy` keys), **CV** (a STRUCTURED editor
-over the genpdf contract — header · links · sections · entries · bullets, each add/remove; an
-"Import live CV" button pulls the published `content/site.json` so nothing is retyped; a Raw JSON
-escape hatch remains; `pdf.rs` carries a test that renders the real CV verbatim), **Insights** (the
+over the genpdf contract — header · links · sections · entries · bullets, each add/remove; the
+mini-md fields carry a **Bold/Italic/Link toolbar** (select-and-click, no markers typed) and a
+**live preview in the Context panel** rendered by the SAME inline tokenizer as `pdf.rs` — what
+you see is what Publish renders; an "Import live CV" button pulls the published `content/site.json`
+so nothing is retyped; a Raw JSON escape hatch remains; `pdf.rs` carries a test that renders the
+real CV verbatim), **Insights** (the
 `/insights` aggregates + the feedback list). The header **Publish** button drives
 `POST /publish` and shows `{version, committed, skipped}` with a link to the live site; a 422
 (missing keys / no published articles) is surfaced verbatim.

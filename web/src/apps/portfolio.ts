@@ -8,6 +8,8 @@
 import { el, icon, badge, button, input, mountTabs, renderMarkdown } from "amenan-ui";
 import { ncl } from "../client.ts";
 import { onAppChange } from "../shell/apps.ts";
+import { mdField } from "./md-inline.ts";
+import { renderCvPreview } from "./cv-preview.ts";
 
 interface Ent {
   id: string;
@@ -17,6 +19,8 @@ interface Ent {
 }
 
 export interface PortfolioCfg {
+  /** show a live-preview node in the Context panel (null clears it) — the CV editor uses it. */
+  onPreview?(node: HTMLElement | null): void;
   onToast(title: string, msg: string, tone?: string): void;
 }
 
@@ -318,17 +322,18 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
       }
     };
 
+    /* the live preview node — handed to the Context panel; mutated in place on every edit */
+    const previewEl = el("div", {});
+    const touch = (): void => renderCvPreview(previewEl, doc);
+    /* a plain input that also refreshes the preview */
     const tIn = (val: string | undefined, on: (v: string) => void, ph = ""): HTMLInputElement => {
       const i = input({ value: val ?? "", placeholder: ph }) as HTMLInputElement;
-      i.addEventListener("input", () => on(i.value));
+      i.addEventListener("input", () => { on(i.value); touch(); });
       return i;
     };
-    const tArea = (val: string | undefined, on: (v: string) => void, rows = "3"): HTMLTextAreaElement => {
-      const t = el("textarea", { class: "nu-pf-md", rows }) as HTMLTextAreaElement;
-      t.value = val ?? "";
-      t.addEventListener("input", () => on(t.value));
-      return t;
-    };
+    /* a mini-md field with the Bold/Italic/Link toolbar (also refreshes the preview) */
+    const mdIn = (label: string, val: string | undefined, on: (v: string) => void, rows = "3"): HTMLElement =>
+      mdField(label, val ?? "", (v) => { on(v); touch(); }, rows);
     const field = (label: string, control: HTMLElement): HTMLElement =>
       el("label", { class: "nu-pf-field" }, el("span", { class: "nu-pf-flabel" }, label), control);
 
@@ -345,7 +350,7 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
           field("Name", tIn(doc.name, (v) => (doc.name = v), "EMMANUEL DOUMOUYA")),
           field("Headline", tIn(doc.headline, (v) => (doc.headline = v), "AI Software Engineer | …")),
           field("Contact line", tIn(doc.contact, (v) => (doc.contact = v), "Dublin, Ireland · em@…")),
-          field("Summary (mini-md: **bold** *italic* [label](url))", tArea(doc.summary, (v) => (doc.summary = v))),
+          mdIn("Summary", doc.summary, (v) => (doc.summary = v)),
         ),
       );
 
@@ -379,17 +384,17 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
           en.bullets ??= [];
           const enCard = el("div", { class: "nu-pf-cventry" },
             el("div", { class: "nu-pf-cvrow" },
-              field("Head (mini-md)", tIn(en.head, (v) => (en.head = v), "**Role** — Company")),
+              mdIn("Head", en.head, (v) => (en.head = v), "1"),
               field("When", tIn(en.when, (v) => (en.when = v), "2023–Present")),
-              button({ icon: "bi-trash3", size: "sm", variant: "ghost", title: "Delete entry", onClick: () => { sec.entries!.splice(ei, 1); paint(); } }),
+              button({ icon: "bi-trash3", size: "sm", variant: "ghost", title: "Delete entry", onClick: () => { sec.entries!.splice(ei, 1); paint(); touch(); } }),
             ),
-            field("Sub (mini-md)", tIn(en.sub, (v) => (en.sub = v), "context line")),
+            mdIn("Sub", en.sub, (v) => (en.sub = v), "1"),
           );
           (en.bullets ?? []).forEach((_, bi) => {
             enCard.appendChild(
               el("div", { class: "nu-pf-cvrow" },
-                tArea(en.bullets![bi], (v) => (en.bullets![bi] = v), "2"),
-                button({ icon: "bi-x-lg", size: "sm", variant: "ghost", onClick: () => { en.bullets!.splice(bi, 1); paint(); } }),
+                mdIn("", en.bullets![bi], (v) => (en.bullets![bi] = v), "2"),
+                button({ icon: "bi-x-lg", size: "sm", variant: "ghost", onClick: () => { en.bullets!.splice(bi, 1); paint(); touch(); } }),
               ),
             );
           });
@@ -420,7 +425,7 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
       bodyEl.appendChild(el("div", { class: "nu-pf-editor" }, ta));
     }
 
-    const paint = (): void => (rawMode ? paintRaw() : paintStructured());
+    const paint = (): void => { rawMode ? paintRaw() : paintStructured(); touch(); };
 
     bodyHost.textContent = "";
     const headHost = el("div", {});
@@ -428,8 +433,9 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
       headHost.textContent = "";
       headHost.appendChild(
         el("div", { class: "nu-pf-edhead" },
-          el("p", { class: "nu-pf-sub" }, item ? `${item.id} — genpdf renders this on Publish` : "no CV yet — Import the live one or fill it in"),
+          el("p", { class: "nu-pf-sub" }, item ? `${item.id} — live preview in the panel · genpdf renders it on Publish` : "no CV yet — Import the live one or fill it in"),
           el("span", { class: "nu-spring" }),
+          button({ label: "Preview", icon: "bi-eye", size: "sm", variant: "ghost", onClick: () => { touch(); cfg.onPreview?.(previewEl); } }),
           button({ label: "Import live CV", icon: "bi-cloud-download", size: "sm", variant: "ghost", onClick: () => void importLive() }),
           button({ label: rawMode ? "Structured" : "Raw JSON", icon: "bi-braces", size: "sm", variant: "ghost", onClick: () => { rawMode = !rawMode; mountHead(); paint(); } }),
           button({ label: item ? "Save" : "Create", icon: "bi-check-lg", size: "sm", variant: "accent", onClick: () => void save() }),
@@ -440,6 +446,7 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
     bodyHost.appendChild(headHost);
     bodyHost.appendChild(bodyEl);
     paint();
+    cfg.onPreview?.(previewEl); // open the live preview in the Context panel
   }
 
   /* ── Insights ─────────────────────────────────────────────────────────── */
@@ -506,6 +513,7 @@ export function mountPortfolio(host: Element, cfg: PortfolioCfg): { el: HTMLElem
   async function render(): Promise<void> {
     bodyHost.textContent = "";
     bodyHost.appendChild(el("div", { class: "nu-pf-iempty" }, "loading…"));
+    if (tab !== "cv") cfg.onPreview?.(null); // the preview belongs to the CV tab only
     try {
       if (tab === "articles") await renderArticles();
       else if (tab === "overview") await renderOverview();

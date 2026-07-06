@@ -270,6 +270,8 @@ interface ConsoleObject {
   fields?: Array<[string, string]>;
   /** a long markdown body (article/site_copy content) rendered as prose, not a raw field. */
   bodyMd?: string;
+  /** a live-preview DOM node the panel mounts verbatim (type "preview" — e.g. the CV editor). */
+  node?: HTMLElement;
   charts?: NumuChartSpec[];
   /** artist grouping (buildLive) */
   plays?: string;
