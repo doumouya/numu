@@ -5,7 +5,8 @@
 #
 # Creates: the backup bucket (+30d lifecycle), a least-privilege VM service account
 # (objectCreator on that bucket ONLY), IAP-SSH + in-VPC Postgres firewall rules, and the
-# e2-micro VM (NO external IP). Then bootstraps ON the VM (via IAP ssh): Postgres 16 (pgdg),
+# e2-micro VM (NO external IP). Then bootstraps ON the VM (via IAP ssh): Postgres $PG_MAJOR
+# (pgdg; 18 since CAS_612250dc — set PG_MAJOR to pin another major),
 # private listen + scram auth for the subnet, the numu role/db, the GCP Ops Agent
 # (docs/ops/MONITORING.md layer 2), a nightly pg_dump→GCS timer, and the telemetry
 # retention-prune timer (GOVERNANCE #4).
@@ -14,7 +15,8 @@ set -euo pipefail
 PROJECT="${PROJECT:-doumouya-portfolio}"
 REGION="${REGION:-us-central1}"
 ZONE="${ZONE:-us-central1-a}"
-VM="${VM:-numu-pg}"
+PG_MAJOR="${PG_MAJOR:-18}"                       # pgdg major (CAS_612250dc: 16 → 18)
+VM="${VM:-numu-pg${PG_MAJOR}}"
 BUCKET="${BUCKET:-gs://numu-pg-backups-${PROJECT}}"
 DB_NAME="${DB_NAME:-numu}"
 DB_USER="${DB_USER:-numu}"
@@ -77,9 +79,9 @@ if ! command -v psql >/dev/null; then
   sudo install -d /usr/share/postgresql-common/pgdg
   sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
   echo \"deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt \$(lsb_release -cs)-pgdg main\" | sudo tee /etc/apt/sources.list.d/pgdg.list
-  sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-16
+  sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-${PG_MAJOR}
 fi
-PGCONF=/etc/postgresql/16/main
+PGCONF=/etc/postgresql/${PG_MAJOR}/main
 sudo sed -i \"s/^#\\?listen_addresses.*/listen_addresses = '*'/\" \$PGCONF/postgresql.conf
 sudo sed -i \"s/^#\\?max_connections.*/max_connections = 50/\" \$PGCONF/postgresql.conf
 grep -q '$SUBNET_RANGE' \$PGCONF/pg_hba.conf || echo 'hostssl all all $SUBNET_RANGE scram-sha-256

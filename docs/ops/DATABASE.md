@@ -1,6 +1,6 @@
 # numu — the database substrate (Postgres HA, backups, DB-level observability)
 
-> **Current prod posture (CASE 0026):** a single-node Postgres 16 on a private GCE
+> **Current prod posture (CASE 0026):** a single-node Postgres 18 (16 until the CAS_612250dc restore-drill move) on a private GCE
 > e2-micro with nightly `pg_dump → GCS` + the Ops Agent ([`DEPLOY.md`](DEPLOY.md) ·
 > [`MONITORING.md`](MONITORING.md)). The HA topology below (1+2, Patroni, pgBackRest/PITR)
 > remains the designed forward posture — not yet deployed.
