@@ -16,6 +16,9 @@ export interface UserRecordCfg {
   editable: boolean;
   canImpersonate: boolean;
   onImpersonate(u: ConsoleUserRecordData): void;
+  /** HTTP mode: persist a self-edit to the real actor (PATCH If-Match). Returns whether it stuck.
+      Absent (sim) → inline edits stay on-device exactly as before. */
+  onSave?(field: "display_name" | "handle" | "first_name" | "last_name" | "email", value: string): Promise<boolean>;
   onToast(title: string, msg: string, tone?: string): void;
 }
 
@@ -115,9 +118,89 @@ export function renderUserRecord(host: Element, cfg: UserRecordCfg): void {
   }
   wrap.appendChild(header);
 
-  /* contact */
+  /* identity — the self-editable profile block (HTTP: real PATCH; sim: on-device) */
+  if (canEdit) {
+    const idVals: Record<string, string> = {
+      display_name: user.name,
+      handle: user.handle,
+      first_name: user.firstName ?? "",
+      last_name: user.lastName ?? "",
+      email: user.email,
+    };
+    type IdField = "display_name" | "handle" | "first_name" | "last_name" | "email";
+    const validate = (field: IdField, v: string): string | null => {
+      if (field === "display_name" && !v.trim()) return "Display name can't be empty";
+      if (field === "handle" && !/^[a-z0-9_-]+$/.test(v)) return "Handle: a–z, 0–9, - or _ only";
+      return null;
+    };
+    const idRow = (field: IdField, label: string): HTMLElement => {
+      const row = el("div", { class: "nu-field-row nu-ur-field" }, el("span", { class: "nu-field-k" }, label));
+      const show = (): void => {
+        row.querySelector(".nu-ur-fv")?.remove();
+        row.appendChild(
+          el(
+            "button",
+            { class: "nu-ur-fv nu-ur-fvbtn", title: `Edit ${label}`, onclick: () => open() },
+            el("span", { class: "nu-ur-fvtext" }, idVals[field] || "—"),
+            icon("pencil", { size: "0.62rem", color: "var(--text-mute)" }),
+          ),
+        );
+      };
+      const open = (): void => {
+        row.querySelector(".nu-ur-fv")?.remove();
+        const input = el("input", { class: "nu-ur-input nu-ur-fv", value: idVals[field] ?? "" }) as HTMLInputElement;
+        const commit = (): void => {
+          const v = input.value.trim();
+          if (v === (idVals[field] ?? "")) return show();
+          const err = validate(field, v);
+          if (err) {
+            cfg.onToast("Profile", err, "warn");
+            input.focus();
+            return;
+          }
+          if (cfg.onSave) {
+            void cfg.onSave(field, v).then((ok) => {
+              if (ok) idVals[field] = v;
+              show();
+            });
+          } else {
+            idVals[field] = v;
+            cfg.onToast("Saved", `${label} updated · on device`, "ok");
+            show();
+          }
+        };
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") show();
+        });
+        input.addEventListener("blur", commit);
+        row.appendChild(input);
+        input.focus();
+      };
+      show();
+      return row;
+    };
+    const idCard = el(
+      "div",
+      { class: "nu-ur-card" },
+      idRow("display_name", "display name"),
+      idRow("first_name", "first name"),
+      idRow("last_name", "last name"),
+      idRow("handle", "handle"),
+      idRow("email", "email"),
+    );
+    wrap.appendChild(el("div", {}, secLabel("person-badge", "identity"), idCard));
+  }
+
+  /* contact — email moves to the identity block when self-editable (one save path) */
   const contact = el("div", {}, secLabel("person-lines-fill", "contact"));
-  const contactCard = el("div", { class: "nu-ur-card" }, fieldRow("email", "email"), fieldRow("phone", "phone"), fieldRow("country", "country"));
+  const contactCard = el(
+    "div",
+    { class: "nu-ur-card" },
+    canEdit ? null : fieldRow("email", "email"),
+    fieldRow("phone", "phone"),
+    fieldRow("country", "country"),
+  );
   contactCard.appendChild(
     el("div", { class: "nu-field-row nu-ur-field nu-ur-field--last" }, el("span", { class: "nu-field-k" }, "locale"), el("span", { class: "nu-field-v" }, user.locale)),
   );

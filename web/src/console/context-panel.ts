@@ -40,6 +40,8 @@ export interface ContextPanelCfg {
   settings: Omit<SettingsCfg, "onToast" | "onOpenUser" | "onImpersonate" | "onOpenProfile"> & SettingsCfg;
   onOpenObject(o: PanelObject): void;
   onImpersonate(u: ConsoleUserRecordData): void;
+  /** HTTP mode: persist a self-profile edit (passed to the user-record self view). */
+  onSaveProfile?(field: "display_name" | "handle" | "first_name" | "last_name" | "email", value: string): Promise<boolean>;
   onToast(title: string, msg: string, tone?: string): void;
   onExpand(): void;
   onClose(): void;
@@ -606,6 +608,7 @@ export function mountContextPanel(host: Element, cfg: ContextPanelCfg): ContextP
           editable: !!(o as { self?: boolean }).self,
           canImpersonate: c.canImpersonate,
           onImpersonate: c.onImpersonate,
+          onSave: (o as { self?: boolean }).self ? c.onSaveProfile : undefined,
           onToast: c.onToast,
         });
         break;

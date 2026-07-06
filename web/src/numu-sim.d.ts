@@ -334,6 +334,9 @@ interface ConsoleUserRecordData {
   type: "user";
   name: string;
   handle: string;
+  /** actor name parts (0022) — HTTP mode; sim leaves them unset (display name is the canon). */
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   country: string;

@@ -22,7 +22,7 @@ import { registerApp, appList, getApp, currentApp, onAppChange, type AppId } fro
 import { mountPortfolio } from "./apps/portfolio.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
-import { auth, identityRecord, doLogout } from "./shell/auth.ts";
+import { auth, identityRecord, doLogout, saveProfile } from "./shell/auth.ts";
 import { workspaces, loadWorkspaces } from "./shell/workspaces.ts";
 
 const CCD = window.CONSOLE_DATA;
@@ -769,6 +769,17 @@ function contextCfg(): ContextPanelCfg {
     settings: settingsCfg(),
     onOpenObject: openPanelObject,
     onImpersonate: impersonateUser,
+    onSaveProfile: HTTP
+      ? async (field, value): Promise<boolean> => {
+          const ok = await saveProfile(ncl, field, value);
+          if (ok) {
+            notify("Profile", "updated", "ok");
+            renderChrome();
+            renderContext();
+          } else notify("Profile", "could not save — reopen and retry", "danger");
+          return ok;
+        }
+      : undefined,
     onToast: notify,
     onExpand() {
       state.contextExpanded = !state.contextExpanded;

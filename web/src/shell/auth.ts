@@ -10,6 +10,8 @@ export interface AuthIdentity {
   handle: string;
   email: string | null;
   avatar_url: string | null;
+  first_name: string | null;
+  last_name: string | null;
   platform_role: string;
 }
 
@@ -30,6 +32,8 @@ function asIdentity(body: unknown): AuthIdentity | null {
     handle: typeof b["handle"] === "string" ? b["handle"] : "",
     email: typeof b["email"] === "string" ? b["email"] : null,
     avatar_url: typeof b["avatar_url"] === "string" ? b["avatar_url"] : null,
+    first_name: typeof b["first_name"] === "string" ? b["first_name"] : null,
+    last_name: typeof b["last_name"] === "string" ? b["last_name"] : null,
     platform_role: typeof b["platform_role"] === "string" ? b["platform_role"] : "member",
   };
 }
@@ -66,6 +70,8 @@ export function identityRecord(): ConsoleUserRecordData | null {
     type: "user",
     name: i.display_name,
     handle: i.handle,
+    firstName: i.first_name ?? "",
+    lastName: i.last_name ?? "",
     email: i.email ?? "",
     phone: "",
     country: "",
@@ -83,6 +89,29 @@ export function identityRecord(): ConsoleUserRecordData | null {
     activity: [],
     owned: [],
   };
+}
+
+/** Persist a self-edit to the caller's own actor: GET for the etag → PATCH If-Match → re-fetch
+    /auth/me so the chrome (avatar chip, settings head) updates live. Returns whether it stuck. */
+export async function saveProfile(
+  client: NumuClientApi,
+  field: string,
+  value: string,
+): Promise<boolean> {
+  const id = auth.identity?.actor_id;
+  if (!id) return false;
+  const cur = await client.request("GET", `/api/objects/actor/${id}`);
+  if (cur.status !== 200) return false;
+  const etag = (cur.body as { etag?: string } | null)?.etag;
+  const res = await client.request("PATCH", `/api/objects/actor/${id}`, {
+    body: { [field]: value },
+    headers: etag ? { "If-Match": etag } : {},
+  });
+  if (res.status === 200) {
+    await fetchMe(client);
+    return true;
+  }
+  return false;
 }
 
 /** Logout is total by design (AUTH.md §2): 204 → a clean full reload back
