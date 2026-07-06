@@ -18,7 +18,8 @@ import { mountFeed } from "./console/feed.ts";
 import { mountComposer } from "./console/composer.ts";
 import { mountContextPanel, type ContextPanelCfg } from "./console/context-panel.ts";
 import { mountStore, type StoreOpen } from "./console/store.ts";
-import { registerApp, appList, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
+import { registerApp, appList, getApp, currentApp, onAppChange, type AppId } from "./shell/apps.ts";
+import { mountPortfolio } from "./apps/portfolio.ts";
 import { initRouter, navigate } from "./shell/router.ts";
 import { buildLayout } from "./shell/layout.ts";
 import { auth, identityRecord, doLogout } from "./shell/auth.ts";
@@ -723,15 +724,51 @@ function storeInventory(): { groups: StoreCfgGroups; apps: ConsoleStoreApp[]; ag
   };
 }
 type StoreCfgGroups = Array<{ group: string; items: ConsoleConnector[] }>;
-const store = mountStore(storePage, {
-  ...storeInventory(),
-  activeId: null,
-  onOpen: (o: StoreOpen) => {
-    openPanelObject(o);
-    store.update({ activeId: o.id });
-  },
-  onToast: notify,
+function mountStoreFresh(): ReturnType<typeof mountStore> {
+  storePage.textContent = "";
+  const handle = mountStore(storePage, {
+    ...storeInventory(),
+    activeId: null,
+    onOpen: (o: StoreOpen) => {
+      openPanelObject(o);
+      handle.update({ activeId: o.id });
+    },
+    onToast: notify,
+  });
+  return handle;
+}
+mountStoreFresh();
+
+/* the Portfolio manager — admits on the boot probe: the app is mounted on
+   this node (about 200) AND the caller is admin (insights ≠ 404). The Store
+   re-mounts so the new app lists as installed. */
+const portfolioPage = layout.addSurface("nu-portfolio-page");
+let portfolioReady = false;
+registerApp({
+  id: "portfolio",
+  label: "Portfolio",
+  icon: "briefcase",
+  desc: "em.numu.im — articles · CV · publish · insights",
+  order: 50,
+  available: () => portfolioReady,
+  surface: portfolioPage,
+  objectRail: false,
 });
+if (ncl.kind === "http") {
+  void Promise.all([
+    ncl.request("GET", "/api/apps/portfolio/about"),
+    ncl.request("GET", "/api/apps/portfolio/insights"),
+  ])
+    .then(([about, ins]) => {
+      if (about.status === 200 && ins.status !== 404) {
+        portfolioReady = true;
+        mountPortfolio(portfolioPage, { onToast: notify });
+        mountStoreFresh();
+        impRail.update(impRailCfg());
+      }
+    })
+    .catch(() => {});
+}
 
 /* ── renders ───────────────────────────────────────────────────────────── */
 
@@ -833,7 +870,8 @@ function renderCenter(): void {
   /* app-surface visibility belongs to showApp (shell/apps.ts) — this render
      only owns the panel-chrome flags around the center. */
   const hideCenter = state.contextExpanded;
-  objectRailHost.hidden = hideCenter || !state.objectRailOpen;
+  const appWantsRail = getApp(currentApp() ?? "")?.objectRail !== false;
+  objectRailHost.hidden = hideCenter || !state.objectRailOpen || !appWantsRail;
   centerHost.hidden = hideCenter;
 }
 

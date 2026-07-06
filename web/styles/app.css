@@ -3038,3 +3038,52 @@ body {
     height: 2.75rem;
   }
 }
+
+/* ── the Portfolio manager (console v2) ──────────────────────────────────── */
+
+.nu-portfolio-page { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.nu-pf { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: var(--sp-4); gap: var(--sp-3); }
+.nu-pf-head { display: flex; align-items: flex-start; gap: var(--sp-3); }
+.nu-pf-h { margin: 0; font-size: var(--text-xl); font-family: var(--font-mono); }
+.nu-pf-sub { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--text-mute); }
+.nu-pf-headact { margin-left: auto; }
+.nu-pf-pubout { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--text-sm); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.nu-pf-link { color: var(--accent); }
+.nu-pf-body { flex: 1; min-height: 0; overflow-y: auto; }
+.nu-pf-err, .nu-pf-iempty { color: var(--text-mute); font-size: var(--text-sm); padding: var(--sp-3); }
+
+.nu-pf-list { display: flex; flex-direction: column; gap: var(--sp-1); }
+.nu-pf-listhead { display: flex; align-items: center; justify-content: space-between; font-size: var(--text-sm); color: var(--text-mute); padding: var(--sp-1) 0; }
+.nu-pf-row { display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; }
+.nu-pf-row:hover { border-color: var(--accent); }
+.nu-pf-roword { font-family: var(--font-mono); color: var(--text-mute); min-width: 1.5rem; }
+.nu-pf-rowmeta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.nu-pf-rowlabel { font-weight: 600; }
+.nu-pf-rowsub { font-size: var(--text-xs); color: var(--text-mute); font-family: var(--font-mono); }
+
+.nu-pf-editor { display: flex; flex-direction: column; gap: var(--sp-3); }
+.nu-pf-edhead { display: flex; align-items: center; gap: var(--sp-2); }
+.nu-pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--sp-2); }
+.nu-pf-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.nu-pf-flabel { font-size: var(--text-xs); color: var(--text-mute); }
+.nu-pf-md { width: 100%; resize: vertical; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.55; }
+.nu-pf-md:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nu-pf-preview { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-4); background: var(--surface); }
+.nu-pf-copyblock { display: flex; flex-direction: column; gap: var(--sp-1); }
+
+.nu-pf-insights { display: flex; flex-direction: column; gap: var(--sp-4); }
+.nu-pf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--sp-2); }
+.nu-pf-stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.nu-pf-statn { font-size: var(--text-xl); }
+.nu-pf-statl { font-size: var(--text-xs); color: var(--text-mute); }
+.nu-pf-igrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--sp-3); }
+.nu-pf-itable { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: var(--sp-2) var(--sp-3); }
+.nu-pf-ititle { font-size: var(--text-xs); color: var(--text-mute); font-family: var(--font-mono); padding-bottom: var(--sp-1); }
+.nu-pf-irow { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--text-sm); padding: 0.2rem 0; }
+.nu-pf-ikey { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nu-pf-icount { color: var(--text-mute); }
+.nu-pf-fb { display: flex; flex-direction: column; gap: var(--sp-1); }
+.nu-pf-fbrow { display: flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.nu-pf-fbstars { color: var(--warn); letter-spacing: 0.1em; }
+.nu-pf-fbtext { flex: 1; min-width: 0; font-size: var(--text-sm); }
+.nu-pf-fbmeta { font-size: var(--text-xs); color: var(--text-mute); }

@@ -108,3 +108,17 @@ the public ingest (migration 0020, `SVC_collector`, the hardened route, db-tests
 shipped the admin insights endpoint. CASE 0024 shipped the publish pipeline (migration 0021,
 genpdf CV writer, GitHub Contents client, mock-hosted db-tests). The app surface is complete;
 what remains is deployment (the ops Case) and the console serving flag.
+
+## The console surface (CAS_357473a7 — console v2)
+
+The app's OPERATOR face lives in the console: `web/src/apps/portfolio.ts`, registered in the
+Apps Rail when the boot probe admits (`GET /about` 200 = mounted on this node, `GET /insights`
+≠ 404 = the caller is platform admin — everyone else never sees the app). Four tabs over the
+GENERIC object surface (the apps-tier doctrine holds: no portfolio route was added for the UI):
+**Articles** (ordinal-sorted list → markdown editor; `slug` is create-only — the registry's
+`editable:false` is the public identity contract; saves are `PATCH` + `If-Match`, a 412 tells
+the operator to reopen), **Overview** (the three `site_copy` keys), **CV** (v1: the validated
+JSON `doc` genpdf renders — a structured editor is a recorded follow-on), **Insights** (the
+`/insights` aggregates + the feedback list). The header **Publish** button drives
+`POST /publish` and shows `{version, committed, skipped}` with a link to the live site; a 422
+(missing keys / no published articles) is surfaced verbatim.
