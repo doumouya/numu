@@ -27,7 +27,11 @@
   --brand: linear-gradient(120deg, #ff512f 0%, #f09819 100%);
   --brand-on: #1a1206;
 }
-[data-skin="midnight"] {
+/* midnight is a DARK aesthetic — its true-black surfaces only apply in dark mode. Without the
+   `[data-mode="dark"]` guard, toggling mode → light while midnight stays selected forces every
+   surface near-black under a light-mode (dark) text palette → dark-on-dark, app-wide. The skin
+   sits on `.nu-app` (a descendant of `html[data-mode]`), so the mode ancestor selector gates it. */
+html[data-mode="dark"] [data-skin="midnight"] {
   --bg: #06070a;
   --surface: #0c0e13;
   --surface-2: #14171f;
