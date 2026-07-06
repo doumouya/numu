@@ -16,7 +16,7 @@ say() { printf '\n── %s\n' "$*"; }
 
 say "notification channel (email ${EMAIL})"
 CHANNEL=$(gcloud beta monitoring channels list --project "$PROJECT" \
-  --filter="type=email AND labels.email_address=${EMAIL}" --format='value(name)' | head -1)
+  --filter="type=\"email\" AND labels.email_address=\"${EMAIL}\"" --format='value(name)' | head -1)
 if [ -z "$CHANNEL" ]; then
   CHANNEL=$(gcloud beta monitoring channels create --project "$PROJECT" \
     --display-name="numu ops (${EMAIL})" --type=email \
@@ -27,7 +27,7 @@ echo "  channel: $CHANNEL"
 policy() { # $1 display name, $2 filter, $3 threshold, $4 duration
   local name="$1" filter="$2" threshold="$3" duration="$4"
   gcloud alpha monitoring policies list --project "$PROJECT" \
-    --filter="displayName='${name}'" --format='value(name)' | grep -q . && { echo "  exists: $name"; return; }
+    --filter="display_name=\"${name}\"" --format='value(name)' | grep -q . && { echo "  exists: $name"; return; }
   cat > /tmp/numu-policy.json <<JSON
 {
   "displayName": "${name}",
