@@ -2933,3 +2933,34 @@ body {
   object-fit: cover;
   display: block;
 }
+
+/* ── invisible scrollbars — the house default (amenan-typescript canon) ──── */
+/* One utility, one home: content scrolls, chrome doesn't. Regions keep a
+   visible affordance (partial rows / fade) and stay keyboard-scrollable. */
+.nu-scroll,
+.nu-orail-scroll,
+.nu-feed-scroll,
+.nu-data-cols,
+.nu-ctx-scroll,
+.nu-set-scroll,
+.nu-store-scroll,
+.nu-conn-list,
+.nu-otable-body,
+.nu-ipick-grid,
+.nu-imp-pop {
+  -ms-overflow-style: none;   /* IE/legacy Edge */
+  scrollbar-width: none;      /* Firefox */
+}
+.nu-scroll::-webkit-scrollbar,
+.nu-orail-scroll::-webkit-scrollbar,
+.nu-feed-scroll::-webkit-scrollbar,
+.nu-data-cols::-webkit-scrollbar,
+.nu-ctx-scroll::-webkit-scrollbar,
+.nu-set-scroll::-webkit-scrollbar,
+.nu-store-scroll::-webkit-scrollbar,
+.nu-conn-list::-webkit-scrollbar,
+.nu-otable-body::-webkit-scrollbar,
+.nu-ipick-grid::-webkit-scrollbar,
+.nu-imp-pop::-webkit-scrollbar {
+  display: none;              /* Chrome/Safari/Opera */
+}

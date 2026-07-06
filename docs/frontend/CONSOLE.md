@@ -61,6 +61,12 @@ what the member sees.
 | `console/chart-theme.ts` | token → ECharts option synthesis + `mountNuChart` (direct init on `.nu-` slots) |
 | `numu-sim.d.ts` | ambient types over the sim globals — the typed face of the seam |
 
+**Scroll discipline**: invisible scrollbars are the house default (the
+amenan-typescript canon) — every `.nu-*` scroll region rides the `.nu-scroll`
+pattern block at the end of `app.css` (Firefox `scrollbar-width: none` +
+webkit `display: none`); content scrolls, chrome doesn't, keyboard
+scrollability and a partial-row affordance stay.
+
 No framework: state lives in `app.ts`, each region is a mount exposing
 `update()`, and a state change re-renders exactly the regions it touches.
 
