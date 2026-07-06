@@ -129,7 +129,7 @@ SPA/PWA · gate authoring); packaged export kept at
 
 [`runbooks/`](runbooks/README.md) `0001` NUMU_DEBUG env leak in tests · `0002` css-drift hex
 fallbacks in charts · `0003` REL_ prefix collision (day-one rule) · `0004` docs-currency
-same-commit · `0005` first prod deploy, six walls. Template: symptom → root
+same-commit · `0005` first prod deploy, seven walls. Template: symptom → root
 cause → fix → verify → related; each closes a hole a standing test/gate keeps closed.
 
 ### cases/ — the ledger

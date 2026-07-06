@@ -96,15 +96,24 @@ if ! systemctl is-active --quiet google-cloud-ops-agent 2>/dev/null; then
   curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
   sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 fi
-# nightly dump → GCS (backup freshness is a page-level signal)
+# nightly dump → GCS (backup freshness is a page-level signal). The command lives in a
+# WRAPPER SCRIPT, not an inline ExecStart: the four escaping layers (local shell → remote
+# heredoc → systemd → bash) once turned \$\$ into the remote shell's PID and the dump never
+# ran — the bucket was empty when the restore drill needed it (runbook 0005).
+printf '#!/bin/bash\nset -euo pipefail\npg_dump -Fc $DB_NAME | gzip | gsutil cp - $BUCKET/numu-\$(date +%%F).dump.gz\n' | sudo tee /usr/local/bin/numu-pg-dump.sh >/dev/null
+sudo chmod +x /usr/local/bin/numu-pg-dump.sh
 sudo tee /etc/systemd/system/numu-pg-dump.service >/dev/null <<UNIT
 [Unit]
 Description=numu nightly pg_dump to GCS
 [Service]
 Type=oneshot
 User=postgres
-ExecStart=/bin/bash -c 'pg_dump -Fc $DB_NAME | gzip | gsutil cp - $BUCKET/numu-\$\$(date +%%F).dump.gz'
+ExecStart=/usr/local/bin/numu-pg-dump.sh
 UNIT
+# prove the pipeline ONCE at provision time — a backup job that has never
+# succeeded is not a backup job
+sudo systemctl daemon-reload
+sudo systemctl start numu-pg-dump.service && echo FIRST-DUMP-OK
 sudo tee /etc/systemd/system/numu-pg-dump.timer >/dev/null <<UNIT
 [Unit]
 Description=nightly numu pg_dump
