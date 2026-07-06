@@ -612,15 +612,20 @@ async function openHttpRecord(ref: string | undefined): Promise<void> {
   const res = await ncl.request("GET", `/api/objects/${t}/${ref}`);
   if (res.status !== 200) return;
   const d = (res.body as { data?: Record<string, unknown> } | null)?.data ?? {};
+  /* lift a markdown/long-text body out of the raw fields into rendered prose; keep the short
+     scalars as key-value rows (a 2000-char md blob in a field row is the "not great" formatting). */
+  const bodyKey = ["md", "body", "body_md", "content", "text"].find((k) => typeof d[k] === "string" && (d[k] as string).trim());
+  const bodyMd = bodyKey ? String(d[bodyKey]) : undefined;
   const fields: Array<[string, string]> = Object.entries(d)
-    .filter(([, v]) => v != null && typeof v !== "object")
-    .map(([k, v]) => [k, String(v)]);
+    .filter(([k, v]) => k !== bodyKey && k !== "doc" && v != null && typeof v !== "object")
+    .map(([k, v]) => [k, String(v).length > 120 ? String(v).slice(0, 117) + "…" : String(v)]);
   openPanelObject({
     id: ref,
     code: ref,
     name: String(d["display_name"] ?? d["name"] ?? d["label"] ?? d["title"] ?? ref),
-    status: String(d["status"] ?? d["published"] ?? "active"),
+    status: d["status"] ? String(d["status"]) : typeof d["published"] === "boolean" ? (d["published"] ? "published" : "draft") : "active",
     fields,
+    bodyMd,
     type: "record",
     icon: "collection",
     accent: "var(--chart-2)",

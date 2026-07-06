@@ -7,7 +7,7 @@
    connector config (brand logos) · user (the user-record viewer) · settings ·
    app (iframe) · case/record detail (workflow stepper + people & routing). */
 
-import { el, icon, badge, button, mountCode, mountField, input } from "amenan-ui";
+import { el, icon, badge, button, mountCode, mountField, input, renderMarkdown } from "amenan-ui";
 import type { BadgeTone } from "amenan-ui";
 import { mountNuChart } from "./chart-theme.ts";
 import { renderUserRecord } from "./user-record.ts";
@@ -534,6 +534,13 @@ function detailViewer(o: ConsoleObject, host: HTMLElement): void {
   const fields = el("div", {}, secLabel("fields"));
   (o.fields ?? []).forEach(([k, v]) => fields.appendChild(fieldRow(k, v)));
   host.appendChild(fields);
+
+  /* a markdown body (article/copy content) renders as prose, not a raw field */
+  if (o.bodyMd) {
+    const content = el("div", {}, secLabel("content"));
+    content.appendChild(el("div", { class: "nu-detail-body amu-md" }, renderMarkdown(o.bodyMd)));
+    host.appendChild(content);
+  }
 
   host.appendChild(
     el(

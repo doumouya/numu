@@ -268,6 +268,8 @@ interface ConsoleObject {
   code?: string;
   status?: string;
   fields?: Array<[string, string]>;
+  /** a long markdown body (article/site_copy content) rendered as prose, not a raw field. */
+  bodyMd?: string;
   charts?: NumuChartSpec[];
   /** artist grouping (buildLive) */
   plays?: string;

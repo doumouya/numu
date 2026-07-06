@@ -3096,3 +3096,6 @@ body {
 /* directory manage sub-list (settings, console v2) */
 .nu-set-subtitle { margin-top: var(--sp-3); }
 .nu-set-grouphead { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-mute); }
+
+/* rendered markdown body in a record viewer (console v2) */
+.nu-detail-body { margin-top: var(--sp-2); }
