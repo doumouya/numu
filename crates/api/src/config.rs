@@ -10,6 +10,13 @@ pub struct Config {
     /// per-client `/auth` fixed-window limit (requests per window).
     pub auth_rate_limit: u32,
     pub auth_rate_window_secs: u64,
+    /// max request body bytes — an explicit, tunable cap over Axum's implicit default (DoS hygiene,
+    /// CAS_57309651). Applied to the whole surface.
+    pub max_body_bytes: usize,
+    /// per-client fixed-window limit on the AUTHENTICATED object/search/nacl surface — a generous
+    /// backstop so a single valid session can't hammer the DB. Sized well above real console bursts.
+    pub api_rate_limit: u32,
+    pub api_rate_window_secs: u64,
     /// browser origins allowed to call the API with credentials (the frontend's dev/prod origins).
     pub cors_origins: Vec<String>,
 }
@@ -51,6 +58,11 @@ impl Config {
             debug: env_flag("NUMU_DEBUG"),
             auth_rate_limit: env_parse("NUMU_AUTH_RATE_LIMIT", 30),
             auth_rate_window_secs: env_parse("NUMU_AUTH_RATE_WINDOW_SECS", 60),
+            // 2 MiB default — the same order as Axum's implicit default, but explicit + tunable.
+            max_body_bytes: env_parse("NUMU_MAX_BODY_BYTES", 2 * 1024 * 1024),
+            // 1200 req / 60 s per client — ~20 rps sustained, far above any real console burst.
+            api_rate_limit: env_parse("NUMU_API_RATE_LIMIT", 1200),
+            api_rate_window_secs: env_parse("NUMU_API_RATE_WINDOW_SECS", 60),
             // comma-separated; defaults cover the common Vite/Next dev ports so a local frontend works
             // out of the box. Set NUMU_CORS_ORIGINS to your real origin(s) in any other setup.
             cors_origins: std::env::var("NUMU_CORS_ORIGINS")

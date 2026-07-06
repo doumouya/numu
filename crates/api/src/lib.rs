@@ -132,7 +132,14 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         ])
         .expose_headers([header::ETAG, header::LOCATION]);
 
-    let mut app = Router::new()
+    // A generous per-client window on the AUTHENTICATED data surface — a valid session can't hammer the
+    // DB (the /auth limiter guards only /auth; health/ready stay unthrottled for the load balancer).
+    // Sized well above any real console burst; env-tunable (CAS_57309651).
+    let api_limiter = RateLimiter::new(
+        cfg.api_rate_limit,
+        Duration::from_secs(cfg.api_rate_window_secs),
+    );
+    let data_surface = Router::new()
         .nest("/api/objects", objects::router().merge(members::router()))
         .merge(types::router())
         .merge(relations::router())
@@ -141,6 +148,12 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
         .merge(nacl::router())
         .merge(orchestrator::router())
         .merge(connectors::router())
+        .route_layer(middleware::from_fn(move |req, next| {
+            let l = api_limiter.clone();
+            async move { ratelimit::enforce(l, req, next).await }
+        }));
+
+    let mut app = data_surface
         .merge(auth_routes)
         .merge(debug::router())
         .route("/healthz", get(health::healthz))
@@ -173,9 +186,14 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
     }
 
     let app = app
+        // an explicit, tunable request body cap (DoS hygiene) — the apps tier can set a tighter inner
+        // limit (ingest is 64 KiB) and it wins for that route.
+        .layer(axum::extract::DefaultBodyLimit::max(cfg.max_body_bytes))
         // inner: structured request/response span; outer: request-id (runs first, wraps everything).
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(middleware::from_fn(request_id::request_id_layer))
+        // security response headers on every response (incl. API error bodies).
+        .layer(middleware::from_fn(security_headers))
         // outermost: handle the CORS preflight before anything else touches the request.
         .layer(cors)
         .with_state(state);
@@ -191,6 +209,45 @@ pub async fn run_with(apps: Vec<AppMount>) -> Result<(), Box<dyn std::error::Err
     .with_graceful_shutdown(shutdown_signal())
     .await?;
     Ok(())
+}
+
+/// Conservative security response headers on EVERY response (including API error bodies), the edge
+/// hardening the pen-test flagged as missing (CAS_57309651). A full script-CSP is deferred — the
+/// console's index.html inlines a theme pre-paint snippet that a strict `script-src` would break — so
+/// this ships the headers that need no per-page tuning: MIME-sniff off, clickjacking off
+/// (`frame-ancestors`/`X-Frame-Options`), a tight referrer + permissions policy, and HSTS on release
+/// (it only means anything over https). The Firebase/edge layer adds its own for the static site.
+async fn security_headers(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    use axum::http::HeaderValue;
+    let mut res = next.run(req).await;
+    let h = res.headers_mut();
+    h.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    h.insert("x-frame-options", HeaderValue::from_static("DENY"));
+    h.insert(
+        "referrer-policy",
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    h.insert(
+        "content-security-policy",
+        HeaderValue::from_static("frame-ancestors 'none'"),
+    );
+    h.insert(
+        "permissions-policy",
+        HeaderValue::from_static("geolocation=(), camera=(), microphone=()"),
+    );
+    if !cfg!(debug_assertions) {
+        h.insert(
+            "strict-transport-security",
+            HeaderValue::from_static("max-age=31536000; includeSubDomains"),
+        );
+    }
+    res
 }
 
 /// Resolve on Ctrl-C or SIGTERM so in-flight requests drain instead of being cut mid-flight.

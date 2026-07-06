@@ -101,6 +101,10 @@ impl AppError {
             "Expected application/json",
         )
     }
+    /// The request (or the state it would grow) exceeds a size cap — a resource-exhaustion backstop. 413.
+    pub fn payload_too_large(d: impl Into<String>) -> Self {
+        Self::new(StatusCode::PAYLOAD_TOO_LARGE, "payload_too_large", d)
+    }
     pub fn precondition_required() -> Self {
         Self::new(
             StatusCode::PRECONDITION_REQUIRED,

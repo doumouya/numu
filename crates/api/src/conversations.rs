@@ -20,8 +20,12 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::caller::{self, Action, Caller};
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 use crate::rbac;
+
+/// The accumulated per-workspace feed cap (DoS backstop, CAS_57309651). The per-request body limit
+/// bounds one append; this bounds the total the feed can grow to across appends.
+const MAX_FEED_BYTES: usize = 512 * 1024;
 use crate::request_id::RequestCtx;
 use crate::state::AppState;
 
@@ -136,6 +140,34 @@ pub async fn post_feed_core(
 ) -> AppResult<()> {
     require_workspace_reach(st, caller, key, Action::Edit, ctx).await?;
     let arr = Value::Array(blocks);
+
+    // DoS backstop: the feed ACCUMULATES across appends, so cap the stored total (the per-request body
+    // limit only bounds one append). The pre-read races benignly — landing slightly over the cap is
+    // fine for a coarse resource guard.
+    let incoming = serde_json::to_vec(&arr).map(|v| v.len()).unwrap_or(0);
+    if incoming > MAX_FEED_BYTES {
+        return Err(
+            AppError::payload_too_large("feed blocks exceed the per-request limit")
+                .with_request_id(ctx.request_id.clone()),
+        );
+    }
+    if !replace {
+        let current: Option<i64> = sqlx::query_scalar(
+            "select octet_length(coalesce(data->>'blocks', ''))::bigint \
+             from entity_data where type_id = 'conversation' and data->>'workspace_id' = $1",
+        )
+        .bind(key)
+        .fetch_optional(&st.pool)
+        .await?
+        .flatten();
+        if current.unwrap_or(0) as usize + incoming > MAX_FEED_BYTES {
+            return Err(AppError::payload_too_large(
+                "conversation feed is full — start a new thread",
+            )
+            .with_request_id(ctx.request_id.clone()));
+        }
+    }
+
     if apply_blocks(st, key, &arr, replace).await? > 0 {
         return Ok(());
     }
