@@ -659,6 +659,26 @@ function settingsCfg() {
             });
           }
         : undefined,
+    onCreateWorkspace:
+      ncl.kind === "http"
+        ? async (name: string, slug: string): Promise<boolean> => {
+            const res = await ncl.request("POST", "/api/objects/workspace", { body: { name, slug, status: "active" } });
+            const ok = res.status === 201;
+            notify("Workspace", ok ? `${name} created` : ((res.body as { detail?: string } | null)?.detail ?? `failed (${res.status})`), ok ? "ok" : "danger");
+            return ok;
+          }
+        : undefined,
+    onCreateUser:
+      ncl.kind === "http"
+        ? async (displayName: string, handle: string, email: string): Promise<boolean> => {
+            const body: Record<string, unknown> = { display_name: displayName, handle, kind: "human", platform_role: "member", status: "active" };
+            if (email) body["email"] = email;
+            const res = await ncl.request("POST", "/api/objects/actor", { body });
+            const ok = res.status === 201;
+            notify("User", ok ? `${displayName} created` : ((res.body as { detail?: string } | null)?.detail ?? `failed (${res.status})`), ok ? "ok" : "danger");
+            return ok;
+          }
+        : undefined,
     onSkin: (sk: ConsoleSkin) => {
       applySkin(sk);
       renderContext();

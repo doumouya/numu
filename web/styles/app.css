@@ -3087,3 +3087,8 @@ body {
 .nu-pf-fbstars { color: var(--warn); letter-spacing: 0.1em; }
 .nu-pf-fbtext { flex: 1; min-width: 0; font-size: var(--text-sm); }
 .nu-pf-fbmeta { font-size: var(--text-xs); color: var(--text-mute); }
+
+/* directory creation rows (settings, console v2) */
+.nu-set-createrow { align-items: flex-start; }
+.nu-set-createfields { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
+.nu-set-createfields input { min-width: 11rem; }

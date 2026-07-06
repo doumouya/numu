@@ -61,7 +61,7 @@ rail every member has.
 | `console/nacl-suggest.ts` | PURE staging logic (verb→object→column→operator→value, `read:users`) — unit-tested, no DOM |
 | `console/context-panel.ts` | the panel shell + the viewer registry (below) |
 | `console/store.ts` | the numu Store: Apps / Agents / Connectors shelves, search, install/enable state, brand logos. **The store's truth depends on the plane** (CAS_3bfcc22b): sim shows the full demo catalog; HTTP shows the REAL registry as installed and the catalog as an honest roadmap — `soon: true` items render "coming soon" with NO install/connect action and never a fake connected state (the apps doctrine: [`../apps/README.md`](../apps/README.md), one app per purpose, brands become sources) |
-| `console/settings.ts` | the Settings surface (opens expanded in the panel): account · appearance (skin cards + density) · workspace · members & roles · apps & permissions · AI-connect · plan · notifications · security & sessions · data · support · danger |
+| `console/settings.ts` | the Settings surface (opens expanded in the panel): account (+ Sign out when a session exists) · **Directory** (HTTP mode, CAS_e6695638: create real workspaces/users through the generic pipeline) · appearance (skin cards + density) · workspace · members & roles · apps & permissions · AI-connect · plan · notifications · security & sessions · data · support · danger |
 | `console/user-record.ts` | Profile == Record: identity · contact (inline-editable when self) · memberships · KYC · activity · owned · notes; Impersonate/Message for others |
 | `console/chart-theme.ts` | token → ECharts option synthesis + `mountNuChart` (direct init on `.nu-` slots) |
 | `numu-sim.d.ts` | ambient types over the sim globals — the typed face of the seam |

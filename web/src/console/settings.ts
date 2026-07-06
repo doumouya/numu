@@ -21,6 +21,10 @@ export interface SettingsCfg {
   onImpersonate(u: ConsoleUserRecordData): void;
   /** When present, Account gains the Sign out row (HTTP mode only — sim has no session). */
   onLogout?(): void;
+  /** When present (HTTP mode), a Directory section offers real principal creation
+      (console v2, CAS_e6695638) — POSTs ride the generic gated pipeline. */
+  onCreateWorkspace?(name: string, slug: string): Promise<boolean>;
+  onCreateUser?(displayName: string, handle: string, email: string): Promise<boolean>;
   onToast(title: string, msg: string, tone?: string): void;
 }
 
@@ -96,6 +100,60 @@ export function renderSettings(host: Element, cfg: SettingsCfg): void {
         : null,
     ),
   );
+
+  /* ── directory: real principal creation (HTTP mode, console v2) ── */
+  if (cfg.onCreateWorkspace && cfg.onCreateUser) {
+    const onCreateWorkspace = cfg.onCreateWorkspace;
+    const onCreateUser = cfg.onCreateUser;
+    const wsName = input({ placeholder: "Workspace name" });
+    const wsSlug = input({ placeholder: "slug-like-this" });
+    const uName = input({ placeholder: "Display name" });
+    const uHandle = input({ placeholder: "handle" });
+    const uEmail = input({ placeholder: "email (optional)" });
+    section(
+      "diagram-3",
+      "Directory",
+      card(
+        el(
+          "div",
+          { class: "nu-set-row is-first nu-set-createrow" },
+          icon("building", { size: "1rem", color: "var(--text-mute)" }),
+          el("span", { class: "nu-set-rowmeta" }, el("span", { class: "nu-set-rowlabel" }, "New workspace"), el("span", { class: "nu-set-createfields" }, wsName, wsSlug)),
+          button({
+            label: "Create",
+            size: "sm",
+            variant: "accent",
+            onClick: () =>
+              void onCreateWorkspace(wsName.value, wsSlug.value).then((ok) => {
+                if (ok) {
+                  wsName.value = "";
+                  wsSlug.value = "";
+                }
+              }),
+          }),
+        ),
+        el(
+          "div",
+          { class: "nu-set-row nu-set-createrow" },
+          icon("person-plus", { size: "1rem", color: "var(--text-mute)" }),
+          el("span", { class: "nu-set-rowmeta" }, el("span", { class: "nu-set-rowlabel" }, "New user"), el("span", { class: "nu-set-rowdesc" }, "an RBAC principal — they sign in later via an allowed Google account"), el("span", { class: "nu-set-createfields" }, uName, uHandle, uEmail)),
+          button({
+            label: "Create",
+            size: "sm",
+            variant: "accent",
+            onClick: () =>
+              void onCreateUser(uName.value, uHandle.value, uEmail.value).then((ok) => {
+                if (ok) {
+                  uName.value = "";
+                  uHandle.value = "";
+                  uEmail.value = "";
+                }
+              }),
+          }),
+        ),
+      ),
+    );
+  }
 
   /* ── appearance: the skin cards + dark toggle ── */
   const skinGrid = el("div", { class: "nu-set-skins" });
