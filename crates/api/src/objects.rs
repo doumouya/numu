@@ -508,6 +508,14 @@ pub async fn create_object(
     if !caller::require_action(&st.pool, caller, td, parent, Action::Create).await? {
         return Err(deny_404(ctx));
     }
+    // Plane B on CREATE (the seal): the caller can only SET a field they'd be allowed to WRITE in the
+    // creation context — mirrors item_patch's require_write, so an above-rank field can't be forged at
+    // birth. Gates only the client-supplied keys.
+    let written: Vec<String> = payload
+        .as_object()
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default();
+    field_perms::require_write_on_create(&st.pool, caller, td, parent, &written, ctx).await?;
 
     let id = ids::mint(&td.id_prefix);
     let mut tx = st.pool.begin().await?;
@@ -556,6 +564,7 @@ async fn coll_create(
 ) -> AppResult<Response> {
     let reg = st.registry.load_full();
     let td = resolve(&reg, &type_id, &ctx)?;
+    caller::require_verb_unmasked(td, "POST", false, &ctx)?;
     let payload = read_json(&headers, &body, false)?;
     let (id, data) = create_object(&st, &ctx, &caller, td, &payload).await?;
 
@@ -697,6 +706,7 @@ async fn item_put(
             .await?
             .ok_or_else(|| deny_404(&ctx))?
             .try_get("data")?;
+    caller::require_verb_unmasked(td, "PUT", true, &ctx)?;
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, false)?;
     check_input(td, &payload, false)?;
@@ -773,6 +783,7 @@ async fn item_patch(
             .ok_or_else(|| deny_404(&ctx))?
             .try_get("data")?;
 
+    caller::require_verb_unmasked(td, "PATCH", true, &ctx)?;
     let expected = require_if_match(&headers, &ctx)?;
     let payload = read_json(&headers, &body, true)?;
     check_input(td, &payload, false)?;
@@ -836,6 +847,7 @@ async fn item_delete(
 ) -> AppResult<Response> {
     let reg = st.registry.load_full();
     let td = resolve(&reg, &type_id, &ctx)?;
+    caller::require_verb_unmasked(td, "DELETE", true, &ctx)?;
     if !caller::require_action(&st.pool, &caller, td, Some(&id), Action::Delete).await? {
         return Err(deny_404(&ctx));
     }

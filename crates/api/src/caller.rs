@@ -9,8 +9,9 @@
 
 use sqlx::{PgPool, Row};
 
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 use crate::registry::TypeDef;
+use crate::request_id::RequestCtx;
 use crate::state::AppState;
 
 /// The acting surface — WHO/WHAT the request arrives through, orthogonal to the principal.
@@ -389,6 +390,28 @@ pub async fn permitted_verbs(
         }
     }
     Ok(out)
+}
+
+/// Enforce `method_policy.mask` at the HANDLER, not just in the OPTIONS `Allow` set — the runtime
+/// backstop the mask contract promised (HTTP.md §7). A masked verb is `405 method_not_allowed` carrying
+/// the surviving `Allow` set. Type-level policy (not object-specific), so it runs before the reach gate
+/// and leaks nothing: the same 405 whether or not the object exists / the caller reaches it.
+pub fn require_verb_unmasked(
+    td: &TypeDef,
+    verb: &str,
+    is_item: bool,
+    ctx: &RequestCtx,
+) -> AppResult<()> {
+    let masked = td.masked_verbs();
+    if masked.iter().any(|m| m == verb) {
+        let allow: Vec<String> = verb_actions(is_item)
+            .iter()
+            .map(|(v, _)| v.to_string())
+            .filter(|v| !masked.contains(v))
+            .collect();
+        return Err(AppError::method_not_allowed(allow).with_request_id(ctx.request_id.clone()));
+    }
+    Ok(())
 }
 
 /// Per-verb RBAC verdict for the OPTIONS self-description body.

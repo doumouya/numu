@@ -58,7 +58,7 @@ registry (unknown → leak-free **404**).
 |---|---|---|---|---|
 | **GET** | List entities of type, reach-filtered (a no-reach caller gets a `200` empty list, never a 404); paginated | no | **200** | 400 · 401 · 404 (unknown type, leak-free) |
 | **HEAD** | GET metadata only (count/existence probe within reach) | no | **200** | as GET |
-| **POST** | Create one; server mints the id; creator gets an `owner` membership in the same txn | yes | **201** (+`Location`, +`ETag`) | 400 (unknown / non-settable field — the schema gate) · 401 · 404 (unknown type) · 415 · 422 (validation/domain rule) — the per-field rank `403` on create is planned (the seal slice, §4) |
+| **POST** | Create one; server mints the id; creator gets an `owner` membership in the same txn | yes | **201** (+`Location`, +`ETag`) | 400 (unknown / non-settable field — the schema gate) · 401 · 403 (a client-set field above the caller's creation-context rank — the seal, §4) · 404 (unknown type) · 415 · 422 (validation/domain rule) |
 | **PUT / PATCH / DELETE** | **not offered on a collection** (no bulk wipe by default) | — | — | **405** (+`Allow`) |
 | **OPTIONS** | Self-description of the **type** (§2) | no | **200** (+`Allow`) | 404 (unknown type) |
 
@@ -77,8 +77,8 @@ registry (unknown → leak-free **404**).
 **405 vs 404 (locked):** `405` is returned when the type is registered but the verb is structurally not
 offered (PUT on a collection, POST on an item). Unknown type → **404**. The `Allow` header on a 405 is
 the **type-level** permitted set (computed with no object gate), so it reveals only that the type exists
-— never whether a particular entity does. (A §7-masked verb answering 405 here is part of the planned
-seal slice; today the mask shapes OPTIONS/`Allow` only.)
+— never whether a particular entity does. A §7-masked verb answers **405** (`caller::require_verb_unmasked`,
+CAS_57309651) with the surviving `Allow` set — enforced at the handler, no longer OPTIONS-only.
 
 ### PUT vs PATCH — the precise rule
 
@@ -177,7 +177,7 @@ field matrix). No per-verb ACL table.
 | Verb(s) | Safety | Action | Min role | Then |
 |---|---|---|---|---|
 | GET, HEAD, OPTIONS | safe | **View** | `viewer` | reach + per-field `can_read` filter on the response |
-| POST | unsafe | **Create** | `member` | schema `settable()` gate on the body (→ 400); mint the owner edge — the per-field rank gate on create is planned (the seal slice) |
+| POST | unsafe | **Create** | `member` | schema `settable()` gate on the body (→ 400) **then** the per-field rank gate `field_perms::require_write_on_create` (→ 403; the seal, CAS_57309651): a client-set field must satisfy its `write_min` against the caller's rank on the creation context (parent scope, or a member baseline at root); mint the owner edge |
 | PUT, PATCH | unsafe | **Edit** | `member` | per-field `can_write` (`require_write`) gate on each written field |
 | DELETE | unsafe | **Delete** | `admin` *(raisable to `owner` per type)* | no 409 guard on the object itself — the sole-owner `409` lives on the members surface (demote/remove of the last `owner`) |
 
@@ -252,10 +252,11 @@ A single JSON column (over a typed bitmask) is forward-compatible — room for f
 `close_checks` are already JSON-in-a-row). Default `'{}'` means **the principle holds by default; opt-out
 is the rare, declared exception** — what keeps the feature O(1).
 
-**Shipped vs contract:** today the mask is **advisory** — honored only where the `Allow` set is computed
-(`permitted_verbs`/`rbac_verdict` in `caller.rs`, i.e. OPTIONS + the `Allow` header); the mutation
-handlers do not yet consult it, so a masked verb still executes. Handler-level `405` (+`Allow`)
-enforcement remains the contract (planned — the phase-B "seal" slice). `delete_min_role` **is** enforced
+**Shipped:** the mask is **enforced** (CAS_57309651). Every objects.rs mutation handler calls
+`caller::require_verb_unmasked` before it executes, so a masked verb answers **405** (+`Allow` of the
+surviving verbs) — not a silent success; the `tools/method-policy-audit` gate keeps the four handlers
+wired. It's still ALSO honored where the `Allow` set is computed (`permitted_verbs`/`rbac_verdict`, i.e.
+OPTIONS). `delete_min_role` **is** enforced
 today (§4).
 
 ## 8. TRACE & CONNECT — the explicit, security-aware call

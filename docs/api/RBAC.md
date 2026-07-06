@@ -49,8 +49,12 @@ A field's `perm_class` gives a floor `(read_min, write_min)` over the rank ladde
 viewer / write member; `owner_grade` = read admin / write owner; `system`/`readonly` = never user-written),
 so a **custom role slots in by rank**. A sparse **`field_permissions(type_id, field, role, can_read,
 can_write)`** row overrides a specific `(type, field)` (resolved role→rank). `require_write` gates each
-written field (→ `403 field_forbidden`, after existence); `filter_readable` drops unreadable fields from
-reads; OPTIONS `can_read` + the per-object verb verdict reflect the caller's real rank. (`migrations/0004`.)
+written field on PATCH/PUT (→ `403 field_forbidden`, after existence); `require_write_on_create` gates
+CREATE too — **the seal** (CAS_57309651): the object doesn't exist yet, so authority is the caller's rank
+on the CREATION CONTEXT (the parent scope, or a member baseline at root, since the creator becomes owner),
+which closes the create/patch asymmetry that let a member set an above-rank field at birth. `filter_readable`
+drops unreadable fields from reads; OPTIONS `can_read` + the per-object verb verdict reflect the caller's
+real rank. (`migrations/0004`.)
 
 ## 2b. Plane C — capability confinement of the acting surface
 

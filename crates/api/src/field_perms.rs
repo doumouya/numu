@@ -118,6 +118,57 @@ pub async fn require_write(
     Ok(())
 }
 
+/// The authority floor for a ROOT create: any authenticated caller may create a root object and
+/// becomes its owner, so `standard` fields (write_min 2) are theirs — but a higher-rank field
+/// (`owner_grade`, write_min 4) still demands that rank. Member-equal, so it never breaks a confined
+/// create-only service (the portfolio `SVC_collector` writes only `standard` telemetry fields).
+const CREATE_BASELINE_RANK: i32 = 2;
+
+/// Plane-B WRITE gate for CREATE — the create/patch seal (closes the asymmetry where `item_patch`
+/// gated fields by rank but `create_object` did not, so a member could set an above-rank field at
+/// birth). The object doesn't exist yet, so authority is the caller's rank on the CREATION CONTEXT:
+/// the parent scope for a scoped type, or the member baseline for a root create. Only the caller's
+/// EXPLICITLY-supplied fields are gated; the ceiling binds first; admin (MAX) bypasses. A violation is
+/// `403` naming the field (existence isn't leaked — the create was already Plane-A/C admitted).
+pub async fn require_write_on_create(
+    pool: &PgPool,
+    caller: &Caller,
+    td: &TypeDef,
+    parent: Option<&str>,
+    written: &[String],
+    ctx: &RequestCtx,
+) -> AppResult<()> {
+    // The Plane-C ceiling first — it binds regardless of rank (even MAX).
+    for field in written {
+        if let Some(f) = td.field(field) {
+            if !ceiling_admits(caller, &f.data_class) {
+                return Err(
+                    AppError::forbidden_field(field).with_request_id(ctx.request_id.clone())
+                );
+            }
+        }
+    }
+    let rank = if caller.is_platform_admin {
+        i32::MAX
+    } else {
+        match parent {
+            Some(p) => rank_on(pool, caller, p).await?,
+            None => CREATE_BASELINE_RANK,
+        }
+    };
+    if rank == i32::MAX {
+        return Ok(());
+    }
+    for field in written {
+        let Some(f) = td.field(field) else { continue };
+        let (_r, write_min) = field_floors(pool, &td.type_id, field, &f.perm_class).await?;
+        if rank < write_min {
+            return Err(AppError::forbidden_field(field).with_request_id(ctx.request_id.clone()));
+        }
+    }
+    Ok(())
+}
+
 /// Plane-B READ filter: drop the fields the caller can't read from `data` (passive — never a 403).
 pub async fn filter_readable(
     pool: &PgPool,
