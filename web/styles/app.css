@@ -673,8 +673,9 @@ body {
   place-items: center;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  /* the brand channel: a gradient under aurora/dusk/ember, = accent under ink/blue/midnight */
+  background: var(--brand);
+  color: var(--brand-on);
   cursor: pointer;
   flex: none;
 }
@@ -874,8 +875,8 @@ body {
   width: 3.4rem;
   height: 3.4rem;
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--brand);
+  color: var(--brand-on);
   display: grid;
   place-items: center;
   box-shadow: var(--shadow-dialog);
@@ -910,8 +911,8 @@ body {
   width: 3rem;
   height: 3rem;
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--brand);
+  color: var(--brand-on);
   border: none;
   cursor: pointer;
   display: grid;
@@ -943,7 +944,7 @@ body {
   top: 0;
   bottom: 0;
   border-radius: var(--radius-pill);
-  background: var(--accent);
+  background: var(--brand);
 }
 .nu-scrub-knob {
   position: absolute;
@@ -2970,6 +2971,7 @@ body {
 /* ── the Apps Rail (console v2) — borderless squares + the flyout ────────── */
 
 .nu-rail-app {
+  position: relative;
   width: 2.1rem;
   height: 2.1rem;
   display: grid;
@@ -2989,6 +2991,19 @@ body {
 .nu-rail-app.is-active {
   color: var(--accent);
   background: var(--hover);
+}
+/* the active-app indicator: a left brand bar — a visible gradient under aurora/dusk/ember,
+   a solid accent under ink/blue/midnight. Always on screen, so the skin reads at a glance. */
+.nu-rail-app.is-active::before {
+  content: "";
+  position: absolute;
+  left: -0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.2rem;
+  height: 1.1rem;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
 }
 .nu-rail-app:focus-visible {
   outline: 2px solid var(--accent);

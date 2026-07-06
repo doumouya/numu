@@ -6,7 +6,12 @@ document attributes — `html[data-theme="numu"|"numu-blue"]` ×
 re-resolved by the CSS cascade (`set:theme.mode=dark` and the topbar buttons
 are the same write). The console adds a third, console-local axis: the **skin**
 (`data-skin` on the app root, the `--brand` channel — midnight + the gradient
-trio; see CONSOLE.md §Appearance).
+trio; see CONSOLE.md §Appearance). Two rules keep skins honest: **midnight's
+true-black surfaces are gated to `html[data-mode="dark"]`** (else light mode
+breaks app-wide), and **`--brand` is a `background`-only channel** (it can be a
+gradient, so never `color`/`border`) wired into the always-visible accent
+surfaces — the composer send button, the active Apps-Rail bar, the media
+transport — so the gradient skins actually read, not just a lone accent dot.
 
 ## Where each tier lives
 
