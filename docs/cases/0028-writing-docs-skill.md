@@ -36,7 +36,7 @@ conventions enter as citations only). Shape:
 |---|---|---|
 | 1 | Case + scaffold: SKILL.md complete (frontmatter §1 verbatim, body §2) + 3 reference stubs so every link resolves | **landed** |
 | 2 | `references/doc-types-and-templates.md` in full (exemplars verified on disk) | **landed** |
-| 3 | `references/docmap-conventions.md` in full (rule ids verbatim vs `tools/doc-coverage-audit/audit.sh`) | pending |
+| 3 | `references/docmap-conventions.md` in full (rule ids verbatim vs `tools/doc-coverage-audit/audit.sh`) | **landed** |
 | 4 | `references/drift-audit-recipes.md` in full (5 recipes run read-only vs birama-engine + numu; results below) | pending |
 | 5 | Install symlink + routing acceptance | parent session |
 | 6 | doc-coverage R4 (skills-tree links) | parent session |
@@ -66,4 +66,19 @@ conventions enter as citations only). Shape:
 - The three skeletons (README / reference / how-to) are repo-agnostic:
   `awk '/^```/{f=!f; next} f' | grep -iE 'birama|numu|amenan|redpash'` over the file → no hits.
 - README checklist carries the support-channel + license items (the audited corpora gaps).
+- `bash tools/ci.sh` green.
+
+### Slice 3 (2026-07-09)
+
+- Cited-path existence check exits 0: the three DOCMAPs + `tools/doc-coverage-audit/audit.sh`,
+  `tools/ci.sh`, `tools/nacl-ref-gen`, CASE 0018, birama's `tools/docs-currency-audit`, and the
+  one relative link (`../../enforcement-gates/SKILL.md`) all resolve.
+- **Diff-read of the R-rules against `audit.sh`:** the script's complete `flag`/FINDING id set is
+  `no-docmap · index-missing (R1) · index-dangling (R2) · orphan-link (R3) · malformed-link (R6)
+  · nacl-ref-drift / nacl-ref-missing (R5)` — all seven quoted verbatim in the reference, and the
+  R1 wildcard exemption list is transcribed literally (`DOCMAP.md | cases/* | apps/* |
+  runbooks/*`). There is no R4 in the script (reserved; slice 6 proposes it) — the reference says
+  so explicitly rather than inventing one.
+- Mechanization section ports, not restates: harness/FINDING/self-test defer to the
+  enforcement-gates skill by link.
 - `bash tools/ci.sh` green.
