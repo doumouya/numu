@@ -37,7 +37,7 @@ conventions enter as citations only). Shape:
 | 1 | Case + scaffold: SKILL.md complete (frontmatter §1 verbatim, body §2) + 3 reference stubs so every link resolves | **landed** |
 | 2 | `references/doc-types-and-templates.md` in full (exemplars verified on disk) | **landed** |
 | 3 | `references/docmap-conventions.md` in full (rule ids verbatim vs `tools/doc-coverage-audit/audit.sh`) | **landed** |
-| 4 | `references/drift-audit-recipes.md` in full (5 recipes run read-only vs birama-engine + numu; results below) | pending |
+| 4 | `references/drift-audit-recipes.md` in full (5 recipes run read-only vs birama-engine + numu; results below) | **landed** |
 | 5 | Install symlink + routing acceptance | parent session |
 | 6 | doc-coverage R4 (skills-tree links) | parent session |
 
@@ -81,4 +81,40 @@ conventions enter as citations only). Shape:
   so explicitly rather than inventing one.
 - Mechanization section ports, not restates: harness/FINDING/self-test defer to the
   enforcement-gates skill by link.
+- `bash tools/ci.sh` green.
+
+### Slice 4 (2026-07-09) — the five recipes, executed once, read-only, both trees
+
+All six fenced bash blocks (5 recipes + the promotion skeleton) extracted and pass `bash -n`
+(6/6 OK). Real runs (`REPO=<tree> bash <block>`; nothing was mutated):
+
+- **(a) dangling-md-links** — birama-engine: **0** · numu: **0**. Expected: both trees are
+  gate-kept (birama drift-audited at freeze; numu's doc-coverage R3 runs in ci).
+- **(b) docmap-totality** — birama-engine (`WILDCARDS=cases`): **0** · numu
+  (`WILDCARDS="cases apps runbooks"`, matching audit.sh R1): **0**.
+- **(c) cited-paths** — birama-engine: **33** · numu: **43** findings — the fragile-refs class
+  the design predicted, in five buckets:
+  1. **Genuinely stale (the catch):** `web/src/console/impersonation-rail.ts` is cited by
+     `docs/DOCMAP.md` AND `docs/frontend/IMPERSONATION.md` but no longer exists on disk
+     (impersonation code now lives under `web/src/shell/` + `web/src/app.ts`) — a real
+     post-re-org doc drift no ci gate sees today (R2/R3 only check `.md` links).
+  2. Migration shorthand: `migrations/0005` cited where the file is `0005_sessions.sql`
+     (12+ instances across both trees).
+  3. Crate-relative shorthand: `tests/g7.rs` for `crates/api/tests/g7.rs` (both trees).
+  4. Cross-repo cites: `src/kernel/responsive.ts`, `src/theme/themes/numu.css` — verified
+     present in the sibling amenan-ui checkout; missing only from numu's root.
+  5. Forward/planned + illustrative: phase-B paths (`crates/data/src/*.rs`, `web/sw.ts`,
+     `docs/decisions/…`) and example literals in birama's case 0009 (`docs/ZZZ.md`,
+     `crates/api/src/foo.rs`). Confirms the reference's triage note: promote (c) only with
+     a ratchet baseline, never zero-or-red.
+- **(d) stale-literals** (filled per the recipe's harvest instruction) — birama-engine
+  claims `pg-tests`→`crates/` · `NU001`→`migrations/` · `require_action`→`crates/`: **0**.
+  numu claims `db-tests`→`crates/` · `NUMU_SECRET`→`crates/` · `__session`→`crates/` ·
+  `nacl-commands.js`→`web/`: **0**. Every doc-stated constant still lives where claimed.
+- **(e) status-headers** — birama-engine: **5** header-side absences (ARCHITECTURE, DOCMAP,
+  ENGINE, GETTING-STARTED, MCP) · numu: **30**. In both trees the status lives in the DOCMAP
+  Status column instead — the convention allows either, so these are triage-passes, exactly
+  the expected-output note in the reference. A headers-always adoption would make (e) a gate.
+- Promotion path ends the reference: link to the enforcement-gates skill + only its 10-line
+  `flag` skeleton restated; (a)/(b) noted as already-promoted in numu.
 - `bash tools/ci.sh` green.
