@@ -124,7 +124,10 @@
 [`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) — the front-end discipline
 (tokens/drift · responsive/devices incl. Fold6 · the 30×18 layout grid (**forward design**) ·
 SPA/PWA · gate authoring); packaged export kept at
-[`skills/amenan-typescript.skill`](skills/amenan-typescript.skill).
+[`skills/amenan-typescript.skill`](skills/amenan-typescript.skill) ·
+[`writing-docs`](../.claude/skills/writing-docs/SKILL.md) — the documentation-craft discipline
+(doc taxonomy/templates · DOCMAP conventions · drift-audit recipes), **draft** until its
+install acceptance (CASE [0028](cases/0028-writing-docs-skill.md)).
 
 ### runbooks/ — incident & regression records
 
