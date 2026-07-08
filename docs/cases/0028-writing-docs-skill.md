@@ -35,7 +35,7 @@ conventions enter as citations only). Shape:
 | # | Deliverable | Status |
 |---|---|---|
 | 1 | Case + scaffold: SKILL.md complete (frontmatter §1 verbatim, body §2) + 3 reference stubs so every link resolves | **landed** |
-| 2 | `references/doc-types-and-templates.md` in full (exemplars verified on disk) | pending |
+| 2 | `references/doc-types-and-templates.md` in full (exemplars verified on disk) | **landed** |
 | 3 | `references/docmap-conventions.md` in full (rule ids verbatim vs `tools/doc-coverage-audit/audit.sh`) | pending |
 | 4 | `references/drift-audit-recipes.md` in full (5 recipes run read-only vs birama-engine + numu; results below) | pending |
 | 5 | Install symlink + routing acceptance | parent session |
@@ -54,3 +54,16 @@ conventions enter as citations only). Shape:
   rule 9 ("navigation is a doc") applied to itself; `cases/*` rides the wildcard section row,
   so this Case needs no row of its own (doc-coverage R1).
 - Baseline `bash tools/ci.sh` was green before the change; green again after.
+
+### Slice 2 (2026-07-09)
+
+- Taxonomy complete: 9 doc types, each with a "read it when" and a live exemplar; a for-loop
+  existence check over every cited `/home/mansa/…` exemplar path exits 0 (11/11 OK).
+- Glossary honesty note: no standalone hand-written glossary exists in the corpora — the
+  nearest live exemplar is the GENERATED vocabularies section of `docs/nacl/REFERENCE.md`,
+  cited as such. Troubleshooting cited as a *section* of `docs/GETTING-STARTED.md` (the house
+  pattern: troubleshooting rides the how-to; incident history goes to runbooks).
+- The three skeletons (README / reference / how-to) are repo-agnostic:
+  `awk '/^```/{f=!f; next} f' | grep -iE 'birama|numu|amenan|redpash'` over the file → no hits.
+- README checklist carries the support-channel + license items (the audited corpora gaps).
+- `bash tools/ci.sh` green.
