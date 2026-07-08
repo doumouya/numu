@@ -2949,8 +2949,15 @@ body {
 .nu-store-scroll,
 .nu-conn-list,
 .nu-otable-body,
+.nu-otable-rows,
 .nu-ipick-grid,
-.nu-imp-pop {
+.nu-imp-pop,
+.nu-try-row,
+.nu-prompt-input,
+.nu-context-body,
+.nu-connectors,
+.nu-video-strip,
+.nu-pf-body {
   -ms-overflow-style: none;   /* IE/legacy Edge */
   scrollbar-width: none;      /* Firefox */
 }
@@ -2963,8 +2970,15 @@ body {
 .nu-store-scroll::-webkit-scrollbar,
 .nu-conn-list::-webkit-scrollbar,
 .nu-otable-body::-webkit-scrollbar,
+.nu-otable-rows::-webkit-scrollbar,
 .nu-ipick-grid::-webkit-scrollbar,
-.nu-imp-pop::-webkit-scrollbar {
+.nu-imp-pop::-webkit-scrollbar,
+.nu-try-row::-webkit-scrollbar,
+.nu-prompt-input::-webkit-scrollbar,
+.nu-context-body::-webkit-scrollbar,
+.nu-connectors::-webkit-scrollbar,
+.nu-video-strip::-webkit-scrollbar,
+.nu-pf-body::-webkit-scrollbar {
   display: none;              /* Chrome/Safari/Opera */
 }
 
