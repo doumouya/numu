@@ -1,6 +1,6 @@
 # Doc types & templates
 
-> **Status: DRAFT** marker only (strips at install acceptance, CASE 0028 slice 5) — the
+> **Status: LIVE** (installed 2026-07-09, CASE 0028 slice 5) — the
 > content below is complete. Every exemplar path was verified on disk before being cited.
 
 ## The taxonomy — pick the doc type by the question it answers

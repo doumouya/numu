@@ -1,6 +1,6 @@
 # DOCMAP conventions
 
-> **Status: DRAFT** marker only (strips at install acceptance, CASE 0028 slice 5) — the
+> **Status: LIVE** (installed 2026-07-09, CASE 0028 slice 5) — the
 > content below is complete. Every claim cites one of the three live DOCMAPs or the numu
 > doc-coverage audit; rule ids are quoted verbatim from the script.
 

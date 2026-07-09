@@ -1,6 +1,6 @@
 # Drift-audit recipes
 
-> **Status: DRAFT** marker only (strips at install acceptance, CASE 0028 slice 5) — the
+> **Status: LIVE** (installed 2026-07-09, CASE 0028 slice 5) — the
 > content below is complete. Five copy-paste, **read-only** bash recipes for auditing a
 > docs corpus against reality. Each was executed once against the birama-engine and numu
 > trees during authoring; the real results live in numu

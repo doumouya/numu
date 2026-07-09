@@ -118,3 +118,17 @@ All six fenced bash blocks (5 recipes + the promotion skeleton) extracted and pa
 - Promotion path ends the reference: link to the enforcement-gates skill + only its 10-line
   `flag` skeleton restated; (a)/(b) noted as already-promoted in numu.
 - `bash tools/ci.sh` green.
+
+## Slice 5 — install + routing acceptance (2026-07-09)
+
+- Symlink: `~/.claude/skills/writing-docs -> /home/mansa/rust-project/numu/.claude/skills/writing-docs`
+  (the amenan-typescript precedent, byte-for-byte); resolves, SKILL.md readable.
+- Install-time DRAFT markers stripped from the three references (→ Status: LIVE).
+- Routing acceptance: the harness surfaced the skill in a live session immediately after the
+  symlink. Against the 5 acceptance prompts: (1) "Write a README for the nacl kernel module" —
+  triggers (README named in the description); (2) "OBJECTS.md still says relations live in
+  objects.rs — audit our docs for drift" — triggers (drift/audit/stale named); (3) "Restructure
+  amenan-ui's docs tree — DOCMAP unwieldy" — triggers (restructure/DOCMAP named); (4) "Write
+  rustdoc comments for WorkflowDef::evaluate" — does NOT trigger (rustdoc excluded → rust skill);
+  (5) "Create a new agent skill for polars conventions" — does NOT trigger (skill-authoring
+  excluded → writing-skills). 5/5 as designed. Slice 6 (doc-coverage R4) remains optional backlog.
