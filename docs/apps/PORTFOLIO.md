@@ -98,7 +98,9 @@ the generic console object lists for feedback).
 3. **Render**: `portfolio/content/site.json` (version + generated_at stamped) and the CV PDF via
    **genpdf** (`pdf.rs`: embedded Montserrat, OFL.txt shipped; DARK/BLUE/MUTED house style; the
    mini-markdown tokenizer mirrors the web `inline()` — links render as blue labels, PDF
-   annotations aren't exposed by genpdf).
+   annotations aren't exposed by genpdf). **Local PDF preview** (no DB, no publish):
+   `cargo run -p numu-app-portfolio --example render_cv -- cv.json out.pdf` renders a CvData
+   document with the same `pdf::render_cv` the pipeline uses.
 4. **Commit** both via the GitHub Contents API (`github.rs`: pinned `api.github.com`,
    https-only, no redirects, 10s timeout, capped reads — the SsrfFetcher recipe; token =
    `GITHUB_TOKEN`, a fine-grained PAT with contents:rw on the ONE repo, never logged). The
