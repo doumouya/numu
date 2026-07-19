@@ -13,7 +13,8 @@
 2. [`GETTING-STARTED.md`](GETTING-STARTED.md) — **zero → a running console + api** (the on-ramp).
 3. **DOCMAP.md** (this) — where everything lives.
 3. **LAYER 0 · kernel** — [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) (the UI framework boundary) ·
-   [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) (the engine lineage). *What numu stands on.*
+   [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) (the engine lineage) ·
+   [`kernel/NUMU-V2.md`](kernel/NUMU-V2.md) (the greenfield-rewrite design, forward). *What numu stands on.*
 4. **LAYER 0.5 · substrate** — [`ops/DATABASE.md`](ops/DATABASE.md): the Postgres under everything
    (HA · backups/PITR · DB-level observability). *Forward-looking; current = single-node dev.*
 5. **LAYER 1 · api** — [`api/OBJECTS.md`](api/OBJECTS.md) (the object catalog — START HERE for the
@@ -49,6 +50,7 @@
 |---|---|---|---|
 | [`kernel/AMENAN-UI.md`](kernel/AMENAN-UI.md) | the framework boundary: what numu consumes (imports, build alias, css cat), token/structure ownership, upstream-vs-overlay rules | `web/` ↔ the sibling `amenan-ui` repo (its docs are the reference) | **LIVE** |
 | [`kernel/BIRAMA-ENGINE.md`](kernel/BIRAMA-ENGINE.md) | the engine lineage: shared architecture vs divergence, cross-repo maintenance rules | `crates/api` ↔ the sibling `birama-engine` repo | **LIVE** |
+| [`kernel/NUMU-V2.md`](kernel/NUMU-V2.md) | the **greenfield rewrite** on birama-engine (wrapper-only): crate map, the kernel facade law, two-seed TCK (T1–T17 + N1–N17), install/visibility model, routing + 3 public-surface patterns, the impersonation app, gates registry, cutover runbook, unlock ledger, sliced roadmap S1–S14 | future `/home/mansa/numu2` · `crates/*` (design source: this repo) | **DRAFT** (design contract; CAS_9f8ee4d490b446fb83e9895e1bab18cc) |
 | [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) | privacy/governance as engine properties: the 7-control set (classification ✅ 0016 · read-audit ✅ 0019 · operator access · retention · DSR · encryption · egress), each = registry property + chokepoint + gate | `migrations/0016,0019` · `crates/api/src/{types,db,objects}.rs` · `tools/{data-class,access}-audit` | **LIVE** (#1+#2) |
 
 ### Layer 0.5 · substrate
@@ -89,6 +91,7 @@
 | [`frontend/RESPONSIVE.md`](frontend/RESPONSIVE.md) | **the human guide** to mobile-first: the breakpoint ladder (JS ⇄ `--bp-*`), `dvh`/`svh`, 44px touch, Fold6, the invisible-scrollbar utility, the JS signals — ports the amenan-typescript skill for people | `web/` · the [`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) skill | **LIVE** |
 | [`frontend/LAYOUT.md`](frontend/LAYOUT.md) | **the human guide** to the 30×18 layout grid: the canvas model, layout-as-data, `.amu-grid` ownership, container-first, stages — forward (the grid component lands in amenan-ui when the freeze lifts; the apps proposals already spec their layouts) | future `web/src/apps/` · the [`amenan-typescript`](../.claude/skills/amenan-typescript/SKILL.md) skill | **proposal/forward** |
 | [`frontend/DESIGN-SYNC.md`](frontend/DESIGN-SYNC.md) | the design-project round-trip: verbatim set, the manifest, the no-fork gate, upstream nits | `tools/design-sync.sh` · `tools/sim-verbatim-audit/` | **LIVE** |
+| [`apps/APPS.md`](apps/APPS.md) | the **numu v2 app-building contract**: the doctrine, the `AppManifest` reference, types-without-migrations, the install/enable/upgrade lifecycle, backend + GUI walkthroughs (portfolio · docs), the `AppTestRig` A1–A8 app-TCK, the gates, the ship checklist | future `crates/apps/*` + `web/src/apps/*` on numu v2 · [`../kernel/NUMU-V2.md`](kernel/NUMU-V2.md) | **DRAFT** (design contract; CAS_9f8ee4d490b446fb83e9895e1bab18cc — v1 doctrine stays [`PORTFOLIO.md`](apps/PORTFOLIO.md)) |
 | [`apps/`](apps/README.md) | the consolidated app catalog — one generic app per purpose-type, brands become sources ([README doctrine](apps/README.md) + 9 proposals: wallet · player · video · mail · files · calendar · sheets · insights · releases) | future `web/src/apps/` · the Store regroup in the Design project | **proposal** (docs-authoritative until code lands) |
 | [`apps/DATA-MODEL.md`](apps/DATA-MODEL.md) | the apps on the universal catalog: tier model (system → catalog → app-registered → entity data), per-app type adjudication, app-registered prefixes, the pin & icon-suggestion contract | `../object-model/{CATALOG,numu_id}.md` · the type registry | **proposal** |
 | [`apps/DISTRIBUTION.md`](apps/DISTRIBUTION.md) | standalone ⇄ platform delivery: one origin/path scopes, one SW + N manifest faces (headless runtime), two shells, cache/no-double-storage model, install-state, offline tiers | phase-B `web-build.sh` multi-entry · manifests/sw · the `pwa-audit` gate | **proposal** |

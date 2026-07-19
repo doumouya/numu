@@ -30,7 +30,9 @@ repos share:
 workspace — `engine` (wasm-clean decision core) · `api` (Axum edge) · `mcp` (a JSON-RPC tool surface,
 13 tools, so AI agents drive builds through it). numu's `crates/api` **continues the same
 architecture** in place; they are siblings from one design, not a dependency edge — numu does NOT
-link birama crates.
+link birama crates. *(This is the **v1** posture. The **numu v2** design reverses it: a greenfield
+workspace links `engine` + `birama-core` as pinned cargo deps and decorates them wrapper-only — see
+[`NUMU-V2.md`](NUMU-V2.md), an Em-level decision in CAS_9f8ee4d490b446fb83e9895e1bab18cc.)*
 
 | | birama-engine | numu `crates/api` |
 |---|---|---|
