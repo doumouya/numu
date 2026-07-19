@@ -1,10 +1,15 @@
 # numu v2 — the greenfield rewrite on birama-engine (design contract)
 
-> **Status: DRAFT · design contract (forward-looking).** Authoritative *until the code lands*,
-> then code is truth and this reconciles in the same change (docs-currency). Nothing here is
-> built yet; numu v1 (this repo) remains the running system and the Cases system-of-record until
-> cutover (S13). **Owner-level to change** the decisions in §1 — they are Em decisions, noted in
-> **CAS_9f8ee4d490b446fb83e9895e1bab18cc**.
+> **⇒ MOVED.** The living v2 design now has its own home: the **numu2 docs plane** at
+> `/home/mansa/numu2/docs/` (repo `github.com/doumouya/numu-v2`), where it is a dated, gate-checked
+> contract ladder (ARCHITECTURE · CONSOLE · APPS · LEGAL · decisions/ · contracts/). Em's follow-up
+> directives (no locked model · write-execute impersonation window · manifest-contributed composer
+> languages · locales-as-data · the contract ladder · expert review) are folded in there. **This
+> file is the historical first-pass design record** (CAS_9f8ee4d490b446fb83e9895e1bab18cc); read
+> the numu2 plane for current truth.
+>
+> **Status: DRAFT · design contract (forward-looking, superseded home).** numu v1 (this repo)
+> remains the running system and the Cases system-of-record until cutover.
 >
 > **Reader:** a contributor deciding how v2 is shaped, or judging whether a slice honors the
 > design. The *why* lives here; the app-author's *how* lives in [`../apps/APPS.md`](../apps/APPS.md);

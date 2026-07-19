@@ -1,10 +1,12 @@
 # APPS.md — building an app on numu v2 (the apps-tier contract)
 
-> **Status: DRAFT · design contract (forward-looking).** Authoritative *until `numu-app-sdk`
-> lands*, then code is truth and this reconciles in the same change (docs-currency). The v2 app
-> model; v1's shipped doctrine remains [`PORTFOLIO.md`](PORTFOLIO.md) until cutover. Design Case:
-> **CAS_9f8ee4d490b446fb83e9895e1bab18cc**; the architecture it sits in is
-> [`../kernel/NUMU-V2.md`](../kernel/NUMU-V2.md).
+> **⇒ MOVED.** The living v2 app contract now lives in the **numu2 docs plane**
+> (`/home/mansa/numu2/docs/APPS.md`, repo `github.com/doumouya/numu-v2`), where the manifest gains
+> `languages` (manifest-contributed composer languages) and `strings` (locales-as-data). This file
+> is the historical first pass. v1's shipped doctrine remains [`PORTFOLIO.md`](PORTFOLIO.md).
+>
+> **Status: DRAFT · design contract (forward-looking, superseded home).** Design Case:
+> **CAS_9f8ee4d490b446fb83e9895e1bab18cc**.
 >
 > **Reader:** you are writing (or reviewing) an app on numu v2. This is the *how*; the *why* — the
 > wrapper law, the crate map, the install model — lives in NUMU-V2.md. Read it once first.
